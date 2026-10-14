@@ -1,0 +1,66 @@
+.goals-page, .domain-list { display: grid; gap: 20px; }
+.goals-heading, .goal-card-title, .annual-goals > div, .records > div { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.goals-heading h2 { margin: 0 0 8px; color: #203234; font-size: 1.2rem; }
+.goals-heading p, .goal-muted { margin: 0; color: var(--color-muted); }
+.goals-empty, .goal-card, .goal-summary { padding: 28px 32px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
+.goals-empty h3, .goal-card h3, .goal-summary h3 { margin: 0 0 8px; color: #203234; }
+.goals-empty .button { margin-top: 18px; }
+.goal-card-title h3 { margin: 8px 0; }
+.goal-card-title p { margin: 0; color: var(--color-muted); }
+.goal-actions, .annual-goals li, .semester-goal-row, .record-row { display: flex; align-items: center; gap: 10px; }
+.text-button { padding: 4px 6px; border: 0; background: transparent; color: #246d6b; font: inherit; font-weight: 700; cursor: pointer; }
+.goal-danger { color: #a23a3a; }
+.goal-badge, .goal-label { display: inline-block; margin: 0; color: #246d6b; font-size: .86rem; font-weight: 700; }
+.goal-badge { padding: 4px 8px; border-radius: 20px; background: #e5f3f1; }
+.domain-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 28px; margin: 22px 0; padding: 18px; border-radius: 6px; background: #f7faf9; }
+.domain-details p { display: grid; gap: 4px; margin: 0; color: #526466; white-space: pre-wrap; overflow-wrap: anywhere; }
+.domain-details b { color: #33484a; }
+.annual-goals { border-top: 1px solid #e1e9e8; padding-top: 18px; }
+.annual-goals h4, .records h4 { margin: 0; color: #33484a; }
+.annual-goals ol { display: grid; gap: 10px; margin: 16px 0; padding-left: 24px; }
+.annual-goals li span { flex: 1; overflow-wrap: anywhere; }
+.goal-dialog { width: min(820px, calc(100dvw - 32px)); max-height: calc(100dvh - 40px); padding: 0; border: 1px solid var(--color-border); border-radius: 12px; color: var(--color-text); background: var(--color-surface); box-shadow: 0 20px 80px #0003; }
+.goal-dialog::backdrop { background: #172b36a6; }
+.goal-dialog header { display: flex; justify-content: space-between; align-items: center; padding: 20px 28px; border-bottom: 1px solid var(--color-border); }
+.goal-dialog h2 { margin: 0; font-size: 1.2rem; }
+.goal-dialog-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; padding: 24px 28px 28px; }
+.goal-dialog-body > label, .goal-dialog-body fieldset > label, .criterion-fields > label, .goal-filter, .goal-filters label, .goal-summary > label { display: grid; gap: 7px; color: #405153; font-size: .94rem; font-weight: 700; }
+.goal-dialog input, .goal-dialog select, .goal-dialog textarea, .goal-filter select, .goal-filters select, .goal-summary textarea { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid #c9d5d5; border-radius: 5px; background: #fff; color: var(--color-text); font: inherit; }
+.goal-dialog textarea, .goal-summary textarea { min-height: 96px; resize: vertical; }
+.goal-dialog input:focus, .goal-dialog select:focus, .goal-dialog textarea:focus, .goal-summary textarea:focus { border-color: var(--color-primary); outline: 3px solid #d9eeec; }
+.goal-full, .goal-dialog footer { grid-column: 1 / -1; }
+.goal-dialog footer, .confirm-dialog footer { display: flex; justify-content: flex-end; gap: 12px; }
+.linked-goal { padding: 14px; border-radius: 6px; background: #f1f7f6; }
+.linked-goal p { margin: 7px 0 0; white-space: pre-wrap; }
+.goal-dialog fieldset, .decision { min-width: 0; padding: 14px; border: 1px solid #d8e4e2; border-radius: 6px; }
+.goal-dialog legend, .decision legend { color: #405153; font-weight: 700; }
+.goal-checks { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+.goal-checks label, .goal-radio, .decision > label:not(.goal-full) { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0; color: #405153; }
+.goal-dialog fieldset > label:not(.goal-radio) { margin-top: 12px; }
+.criterion-fields { display: grid; gap: 12px; }
+.criterion-fields > label input { display: inline-block; width: 100px; margin: 0 8px; }
+.goal-inline-fields { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.goal-inline-fields label { display: grid; gap: 7px; }
+.goal-inline-fields p, .criterion-scale { margin: 0; color: var(--color-muted); }
+.semester-switch { display: flex; width: fit-content; margin-bottom: 2px; padding: 4px; border-radius: 8px; background: #eaf1f0; }
+.semester-switch button { padding: 9px 18px; border: 0; border-radius: 5px; background: transparent; color: #506164; font: inherit; font-weight: 700; cursor: pointer; }
+.semester-switch .is-active { background: #fff; color: var(--color-primary-dark); box-shadow: 0 1px 3px #1232; }
+.goal-filter { min-width: 210px; }
+.semester-group h3 { white-space: pre-wrap; overflow-wrap: anywhere; }
+.semester-goal-row { margin: 14px 0; padding: 13px; border-radius: 6px; background: #f7faf9; }
+.semester-goal-row span { flex: 1; overflow-wrap: anywhere; }
+.goal-filters { display: flex; flex-wrap: wrap; gap: 14px; }
+.goal-filters label { min-width: 150px; }
+.status-card dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; margin: 20px 0; }
+.status-card dl div { min-width: 0; }
+.status-card dt { margin-bottom: 5px; color: #526466; font-size: .88rem; font-weight: 700; }
+.status-card dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.records { margin-top: 20px; padding-top: 18px; border-top: 1px solid #e1e9e8; }
+.record-row { margin-top: 10px; padding: 10px; border-radius: 5px; background: #f7faf9; }
+.record-row span:nth-child(3) { flex: 1; overflow-wrap: anywhere; }
+.decision { display: flex; flex-wrap: wrap; gap: 10px 18px; margin: 20px 0 0; }
+.decision legend, .decision .goal-full { flex-basis: 100%; }
+.goal-summary { margin-top: 4px; }
+.goal-summary > div { display: flex; flex-wrap: wrap; gap: 14px; margin: 16px 0; }
+.goal-summary p { display: grid; gap: 4px; min-width: 145px; margin: 0; padding: 12px; border-radius: 6px; background: #f1f7f6; color: #245d5f; }
+@media (max-width: 680px) { .goals-heading, .goal-card-title { flex-direction: column; } .goals-empty, .goal-card, .goal-summary { padding: 22px 18px; } .domain-details, .status-card dl, .goal-dialog-body { grid-template-columns: 1fr; } .goal-dialog header, .goal-dialog-body { padding: 18px; } .goal-full, .goal-dialog footer { grid-column: auto; } .goal-dialog footer, .confirm-dialog footer { flex-direction: column-reverse; } .goal-dialog footer .button, .confirm-dialog footer .button { width: 100%; } .semester-goal-row, .record-row { align-items: flex-start; flex-wrap: wrap; } .semester-goal-row span { flex-basis: calc(100% - 32px); } .record-row span:nth-child(3) { flex-basis: 100%; } }

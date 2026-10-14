@@ -1,0 +1,38 @@
+.student-course-plan { display: grid; gap: 24px; }
+.course-plan-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.course-plan-heading h2 { margin: 0 0 8px; color: #203234; font-size: 1.2rem; }
+.course-plan-heading p { margin: 0; color: var(--color-muted); }
+.course-add-button { flex: 0 0 auto; margin-top: 0; }
+.course-table-wrap { overflow-x: auto; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
+.course-table { width: 100%; min-width: 900px; border-collapse: collapse; }
+.course-table th, .course-table td { padding: 13px 14px; border-bottom: 1px solid #e1e9e8; text-align: left; vertical-align: top; }
+.course-table th { background: #f1f6f5; color: #425557; font-size: .9rem; white-space: nowrap; }
+.course-table td { color: #405153; }
+.course-table tbody tr:last-child td { border-bottom: 0; }
+.course-table-actions { display: flex; gap: 10px; white-space: nowrap; }
+.course-delete-button { color: #a23a3a; }
+.course-empty-state { display: grid; justify-items: start; padding: 42px 32px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
+.course-empty-state h3 { margin: 0 0 8px; color: #203234; font-size: 1.1rem; }
+.course-empty-state p { margin: 0; color: var(--color-muted); }
+.course-empty-state .button { margin-top: 20px; }
+.course-plan-dialog { width: min(700px, calc(100dvw - 32px)); max-height: calc(100dvh - 48px); padding: 0; border: 1px solid var(--color-border); border-radius: 12px; color: var(--color-text); background: var(--color-surface); box-shadow: 0 20px 80px #0003; }
+.course-plan-dialog::backdrop, .course-delete-backdrop { background: #172b36a6; }
+.course-plan-dialog header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 28px; border-bottom: 1px solid var(--color-border); }
+.course-plan-dialog h2 { margin: 0; font-size: 1.2rem; }
+.course-plan-dialog-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; padding: 24px 28px 28px; }
+.course-plan-dialog-body > label { display: grid; gap: 7px; color: #405153; font-size: .94rem; font-weight: 700; }
+.course-plan-dialog-body input, .course-plan-dialog-body select, .course-plan-dialog-body textarea { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid #c9d5d5; border-radius: 5px; background: #fff; color: var(--color-text); font: inherit; }
+.course-plan-dialog-body textarea { min-height: 100px; resize: vertical; }
+.course-plan-dialog-body input:focus, .course-plan-dialog-body select:focus, .course-plan-dialog-body textarea:focus { border-color: var(--color-primary); outline: 3px solid #d9eeec; }
+.course-dialog-full, .course-plan-dialog-body footer, .course-dialog-error { grid-column: 1 / -1; }
+.course-plan-dialog-body footer { display: flex; justify-content: flex-end; gap: 12px; }
+.course-plan-dialog-body footer .button { margin-top: 0; }
+.course-dialog-error { margin: 0; padding: 10px 12px; border-radius: 6px; color: #a52626; background: #fff0f0; }
+.course-delete-backdrop { position: fixed; z-index: 10; inset: 0; display: grid; place-items: center; padding: 16px; }
+.course-delete-dialog { width: min(440px, 100%); padding: 24px; border-radius: 10px; background: var(--color-surface); box-shadow: 0 20px 80px #0003; }
+.course-delete-dialog h2 { margin: 0 0 10px; font-size: 1.15rem; }
+.course-delete-dialog p { margin: 0; color: var(--color-muted); }
+.course-delete-dialog > div { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+.course-delete-dialog .button { margin-top: 0; }
+.course-confirm-delete { border: 1px solid #a23a3a; background: #a23a3a; color: #fff; }
+@media (max-width: 620px) { .course-plan-heading { align-items: stretch; flex-direction: column; } .course-add-button { align-self: flex-start; } .course-empty-state { padding: 30px 22px; } .course-plan-dialog header, .course-plan-dialog-body { padding: 18px; } .course-plan-dialog-body { grid-template-columns: 1fr; } .course-dialog-full, .course-plan-dialog-body footer, .course-dialog-error { grid-column: auto; } .course-plan-dialog-body footer { flex-direction: column-reverse; } .course-plan-dialog-body footer .button { width: 100%; } }

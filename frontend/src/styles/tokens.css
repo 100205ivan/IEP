@@ -1,0 +1,12 @@
+:root {
+  --color-page: #f3f6f6;
+  --color-surface: #ffffff;
+  --color-text: #263638;
+  --color-muted: #657477;
+  --color-border: #d8e1e1;
+  --color-primary: #176f73;
+  --color-primary-dark: #10585c;
+  --color-primary-soft: #e5f1f0;
+  --color-success: #33805b;
+  --font-sans: "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+}

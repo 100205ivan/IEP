@@ -1,0 +1,20 @@
+.curriculum-adjustment { display: grid; gap: 24px; }
+.curriculum-adjustment-heading { padding: 0 2px; }
+.curriculum-adjustment-heading h2 { margin: 0 0 8px; color: #203234; font-size: 1.2rem; }
+.curriculum-adjustment-heading p { margin: 0; color: var(--color-muted); }
+.adjustment-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.adjustment-card { padding: 26px 28px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
+.adjustment-card > h2 { margin: 0 0 20px; padding-bottom: 14px; border-bottom: 1px solid #e6eded; color: #203234; font-size: 1.1rem; }
+.adjustment-section + .adjustment-section { margin-top: 22px; }
+.adjustment-section h3 { margin: 0 0 12px; color: #405153; font-size: .96rem; }
+.adjustment-checkbox-list { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+.adjustment-checkbox-list label { display: inline-flex; align-items: center; gap: 7px; color: #405153; font-size: .92rem; cursor: pointer; }
+.adjustment-checkbox-list input { width: 17px; height: 17px; accent-color: var(--color-primary); }
+.adjustment-field { display: grid; gap: 7px; color: #405153; font-size: .94rem; font-weight: 700; }
+.adjustment-field input, .adjustment-field textarea { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid #c9d5d5; border-radius: 5px; background: #fff; color: var(--color-text); font: inherit; }
+.adjustment-field textarea { min-height: 108px; resize: vertical; }
+.adjustment-field input:focus, .adjustment-field textarea:focus { border-color: var(--color-primary); outline: 3px solid #d9eeec; }
+.conditional-adjustment-field { max-width: 420px; margin-top: 14px; }
+.adjustment-field--full { margin-top: 22px; }
+@media (max-width: 1050px) { .adjustment-card-grid { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .adjustment-card { padding: 22px 18px; } .adjustment-checkbox-list { display: grid; gap: 10px; } }

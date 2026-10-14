@@ -1,0 +1,42 @@
+.student-weekly-schedule { display: grid; gap: 24px; }
+.weekly-schedule-heading h2, .weekly-schedule-empty h2 { margin: 0 0 8px; color: #203234; font-size: 1.2rem; }
+.weekly-schedule-heading p, .weekly-schedule-empty p { margin: 0; color: var(--color-muted); }
+.weekly-schedule-wrap { overflow-x: auto; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
+.weekly-schedule-table { width: 100%; min-width: 940px; border-collapse: collapse; table-layout: fixed; }
+.weekly-schedule-table th, .weekly-schedule-table td { padding: 0; border-right: 1px solid #e1e9e8; border-bottom: 1px solid #e1e9e8; }
+.weekly-schedule-table tr:last-child th, .weekly-schedule-table tr:last-child td { border-bottom: 0; }
+.weekly-schedule-table th:last-child, .weekly-schedule-table td:last-child { border-right: 0; }
+.weekly-schedule-table thead th { padding: 13px 10px; background: #f1f6f5; color: #425557; font-size: .9rem; }
+.weekly-schedule-table tbody > tr > th { width: 92px; padding: 12px 10px; background: #f8fbfb; color: #405153; font-size: .9rem; white-space: nowrap; }
+.schedule-cell { display: grid; align-content: center; width: 100%; min-height: 84px; padding: 10px; border: 0; background: transparent; color: #97a6a7; text-align: left; }
+.schedule-cell:hover { background: #f5f9f8; color: var(--color-primary-dark); }
+.schedule-cell.has-course { gap: 4px; background: #f4faf9; color: #345c5a; }
+.schedule-cell strong { font-size: .93rem; }
+.schedule-cell span { font-size: .84rem; }
+.schedule-cell small { color: #617476; font-size: .79rem; }
+.course-schedule-summary { padding: 24px 28px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
+.course-schedule-summary h3 { margin: 0 0 16px; color: #203234; font-size: 1.08rem; }
+.course-schedule-summary > div { display: grid; gap: 10px; }
+.course-schedule-summary article { display: grid; grid-template-columns: minmax(160px, 1fr) auto; gap: 8px 24px; align-items: center; padding: 11px 12px; border: 1px solid #e0e9e8; border-radius: 6px; color: #405153; }
+.course-schedule-summary article.is-over { border-color: #e3c78b; background: #fffaf0; }
+.course-schedule-summary article small { grid-column: 1 / -1; color: #845900; }
+.weekly-schedule-empty { padding: 38px 32px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
+.weekly-schedule-empty .button { margin-top: 20px; }
+.schedule-course-dialog { width: min(680px, calc(100dvw - 32px)); max-height: calc(100dvh - 48px); padding: 0; border: 1px solid var(--color-border); border-radius: 12px; color: var(--color-text); background: var(--color-surface); box-shadow: 0 20px 80px #0003; }
+.schedule-course-dialog::backdrop { background: #172b36a6; }
+.schedule-course-dialog header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 28px; border-bottom: 1px solid var(--color-border); }
+.schedule-course-dialog h2 { margin: 0; font-size: 1.2rem; }
+.schedule-dialog-body { padding: 22px 28px 28px; }
+.schedule-slot-label { margin: 0 0 10px; color: #245d5f; font-weight: 700; }
+.schedule-current-course { margin: 0 0 18px; color: #405153; }
+.schedule-dialog-body fieldset { display: grid; gap: 10px; margin: 0; padding: 0; border: 0; }
+.schedule-dialog-body legend { margin-bottom: 10px; color: #405153; font-weight: 700; }
+.schedule-course-option { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 1px solid #dce8e6; border-radius: 7px; color: #405153; cursor: pointer; }
+.schedule-course-option:has(input:checked) { border-color: var(--color-primary); background: var(--color-primary-soft); }
+.schedule-course-option input { width: 17px; height: 17px; margin-top: 2px; accent-color: var(--color-primary); }
+.schedule-course-option span { display: grid; gap: 4px; }
+.schedule-course-option small { color: #617476; }
+.schedule-dialog-body footer { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; margin-top: 24px; }
+.schedule-dialog-body footer .button { margin-top: 0; }
+.schedule-remove-button { justify-self: start; border: 1px solid #a23a3a; background: #fff; color: #a23a3a; }
+@media (max-width: 620px) { .weekly-schedule-empty, .course-schedule-summary { padding: 24px 18px; } .course-schedule-summary article { grid-template-columns: 1fr; gap: 4px; } .schedule-course-dialog header, .schedule-dialog-body { padding: 18px; } .schedule-dialog-body footer { grid-template-columns: 1fr; } .schedule-dialog-body footer .button { width: 100%; } .schedule-remove-button { justify-self: stretch; } }

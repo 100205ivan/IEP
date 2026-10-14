@@ -1,0 +1,332 @@
+/* HTML prototype styles, scoped to the React game. */
+.cpt-game { line-height: normal; }
+.cpt-game {
+  --ink:#30415f;
+  --purple:#7567cf;
+  --pink:#ff8eac;
+  --cream:#fffdf7;
+  --card:#ffffffdf;
+  --mint:#d8f3ec;
+}
+.cpt-game * {
+  box-sizing:border-box;
+}
+.cpt-game {
+  margin:0;
+  min-height:100vh;
+  color:var(--ink);
+  font-family:"Microsoft JhengHei","Noto Sans TC",Arial,sans-serif;
+  background:linear-gradient(145deg,#e8f7ff 0%,#f8edff 56%,#fff5db 100%);
+  overflow-x:hidden;
+}
+.cpt-game::before {
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  opacity:.24;
+  background-image:radial-gradient(#fff 1.5px,transparent 1.5px);
+  background-size:24px 24px;
+}
+.cpt-game .app-shell {
+  min-height:100vh;
+  padding:32px 20px;
+  display:grid;
+  place-items:center;
+  position:relative;
+  z-index:1;
+}
+.cpt-game .screen {
+  display:none;
+}
+.cpt-game .screen.active {
+  display:block;
+}
+.cpt-game .card {
+  width:min(680px,100%);
+  padding:40px clamp(24px,6vw,56px);
+  text-align:center;
+  border:1px solid #fff;
+  border-radius:30px;
+  background:var(--card);
+  box-shadow:0 18px 55px #59649029;
+}
+.cpt-game h1, .cpt-game h2, .cpt-game h3, .cpt-game p {
+  margin-top:0;
+}
+.cpt-game h1 {
+  font-size:clamp(2rem,6vw,3.4rem);
+  margin-bottom:12px;
+  letter-spacing:.04em;
+}
+.cpt-game h2 {
+  font-size:clamp(1.7rem,4vw,2.3rem);
+}
+.cpt-game .lead {
+  font-size:1.2rem;
+  line-height:1.7;
+}
+.cpt-game .lead strong {
+  color:#f05f88;
+  font-size:1.4em;
+}
+.cpt-game .badge {
+  display:inline-block;
+  padding:8px 15px;
+  color:#6257b9;
+  background:#eeeaff;
+  border-radius:999px;
+  font-weight:bold;
+}
+.cpt-game .rules {
+  margin:26px auto;
+  padding:15px 20px;
+  max-width:420px;
+  background:#f4fbff;
+  border-radius:18px;
+  text-align:left;
+}
+.cpt-game .rules p {
+  margin:8px 0;
+}
+.cpt-game .rules b {
+  color:#f05f88;
+  font-size:1.2em;
+}
+.cpt-game .primary-btn, .cpt-game .response-btn {
+  border:0;
+  cursor:pointer;
+  color:white;
+  font:inherit;
+  font-weight:bold;
+  transition:transform .15s,filter .15s;
+  touch-action:manipulation;
+}
+.cpt-game .primary-btn:hover, .cpt-game .response-btn:hover {
+  transform:translateY(-2px);
+  filter:brightness(1.04);
+}
+.cpt-game .primary-btn:disabled {
+  opacity:.45;
+  cursor:not-allowed;
+  transform:none;
+}
+.cpt-game .primary-btn {
+  padding:15px 34px;
+  border-radius:999px;
+  background:linear-gradient(135deg,#7567cf,#917add);
+  font-size:1.1rem;
+  box-shadow:0 8px 0 #5a4eaa;
+}
+.cpt-game .primary-btn:active {
+  transform:translateY(5px);
+  box-shadow:0 3px 0 #5a4eaa;
+}
+.cpt-game .muted, .cpt-game .note {
+  color:#68748b;
+  line-height:1.65;
+}
+.cpt-game .age-options {
+  margin:25px auto 30px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+.cpt-game .age-btn {
+  padding:14px 8px;
+  border:2px solid #ded9f8;
+  color:#534b94;
+  background:#faf9ff;
+  border-radius:16px;
+  cursor:pointer;
+  font:inherit;
+  font-weight:bold;
+}
+.cpt-game .age-btn.selected {
+  background:#7567cf;
+  border-color:#7567cf;
+  color:#fff;
+}
+.cpt-game .game-screen {
+  width:min(720px,100%);
+  text-align:center;
+}
+.cpt-game .game-top {
+  display:flex;
+  justify-content:space-between;
+  padding:12px 6px;
+  font-weight:bold;
+  color:#57627c;
+}
+.cpt-game .stimulus-card {
+  height:min(45vh,390px);
+  min-height:260px;
+  display:grid;
+  place-items:center;
+  margin:8px 0 16px;
+  border:7px solid #fff;
+  border-radius:38px;
+  background:linear-gradient(145deg,#fff,#f4f7ff);
+  box-shadow:0 14px 35px #59649024;
+}
+.cpt-game .stimulus {
+  font-size:clamp(8rem,30vw,15rem);
+  font-weight:800;
+  line-height:1;
+  color:#3d4d6a;
+}
+.cpt-game .response-btn {
+  width:min(420px,100%);
+  padding:19px 20px 15px;
+  border-radius:24px;
+  background:linear-gradient(135deg,#ff859f,#fa7193);
+  font-size:1.7rem;
+  box-shadow:0 8px 0 #d65e79;
+}
+.cpt-game .response-btn:active {
+  transform:translateY(5px);
+  box-shadow:0 3px 0 #d65e79;
+}
+.cpt-game .response-btn small {
+  display:block;
+  margin-top:3px;
+  font-size:.72rem;
+  font-weight:normal;
+  opacity:.9;
+}
+.cpt-game .keyboard-note {
+  margin:13px 0;
+  color:#65718a;
+}
+.cpt-game .practice-feedback {
+  height:27px;
+  margin:0 0 7px;
+  font-size:1.08rem;
+  font-weight:bold;
+}
+.cpt-game .feedback-good {
+  color:#2c9e79;
+}
+.cpt-game .feedback-bad {
+  color:#e25872;
+}
+.cpt-game .big-star {
+  color:#ffbd4a;
+  font-size:4rem;
+  text-shadow:0 5px 0 #ef9e35;
+}
+.cpt-game .metric-grid {
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+  margin:24px 0;
+}
+.cpt-game .metric {
+  padding:14px 10px;
+  background:#f6f7ff;
+  border-radius:16px;
+}
+.cpt-game .metric span {
+  display:block;
+  color:#68748b;
+  font-size:.9rem;
+}
+.cpt-game .metric strong {
+  display:block;
+  margin-top:4px;
+  color:#51469b;
+  font-size:1.35rem;
+}
+.cpt-game .comparison {
+  padding:20px;
+  text-align:left;
+  background:#fff9ec;
+  border-radius:18px;
+}
+.cpt-game .comparison h3 {
+  margin-bottom:12px;
+  text-align:center;
+}
+.cpt-game .comparison p {
+  margin:9px 0;
+  line-height:1.5;
+}
+.cpt-game .note {
+  margin:20px 0;
+  font-size:.86rem;
+}
+.cpt-game .star {
+  position:fixed;
+  color:#ffbd4a;
+  opacity:.8;
+  font-size:2rem;
+  z-index:0;
+}
+.cpt-game .star-a {
+  top:12%;
+  left:9%;
+}
+.cpt-game .star-b {
+  top:25%;
+  right:12%;
+  font-size:1.4rem;
+}
+.cpt-game .star-c {
+  bottom:13%;
+  right:8%;
+}
+.cpt-game .cloud {
+  position:fixed;
+  z-index:0;
+  width:120px;
+  height:32px;
+  border-radius:30px;
+  background:#fff9;
+}
+.cpt-game .cloud::before, .cpt-game .cloud::after {
+  content:"";
+  position:absolute;
+  bottom:0;
+  border-radius:50%;
+  background:#fff9;
+}
+.cpt-game .cloud::before {
+  width:54px;
+  height:54px;
+  left:18px;
+}
+.cpt-game .cloud::after {
+  width:40px;
+  height:40px;
+  right:15px;
+}
+.cpt-game .cloud-a {
+  top:9%;
+  right:9%;
+}
+.cpt-game .cloud-b {
+  bottom:11%;
+  left:8%;
+  transform:scale(.7);
+}
+@media (max-width:480px) {
+  .cpt-game .app-shell {
+    padding:20px 14px;
+  }
+  .cpt-game .card {
+    border-radius:24px;
+    padding:30px 20px;
+  }
+  .cpt-game .age-options {
+    grid-template-columns:repeat(4,1fr);
+  }
+  .cpt-game .stimulus-card {
+    min-height:235px;
+  }
+  .cpt-game .metric-grid {
+    gap:8px;
+  }
+  .cpt-game .metric {
+    padding:12px 6px;
+  }
+}

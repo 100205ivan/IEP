@@ -1,0 +1,83 @@
+.page-container {
+  width: min(100% - 64px, 1680px);
+  margin: 0 auto;
+}
+
+.site-header { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+
+.header-content {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  min-height: 78px;
+  gap: 24px;
+}
+
+.brand { display: flex; align-items: baseline; gap: 12px; }
+.brand-name { color: var(--color-primary-dark); font-size: 1.45rem; font-weight: 750; letter-spacing: .02em; }
+.brand-subtitle { color: var(--color-muted); font-size: .94rem; }
+.student-summary { display: flex; align-items: center; gap: 18px; color: var(--color-muted); font-size: .94rem; white-space: nowrap; }
+.student-name { color: var(--color-text); font-size: 1.05rem; font-weight: 700; }
+.save-status { justify-self: end; display: flex; align-items: center; gap: 8px; color: var(--color-muted); font-size: .9rem; white-space: nowrap; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); }
+
+.main-navigation { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.tab-scroll-area { overflow-x: auto; scrollbar-width: thin; }
+.main-tabs, .sub-tabs { display: flex; width: max-content; }
+
+.main-tab {
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 60px;
+  padding: 11px 18px;
+  border: 0;
+  background: transparent;
+  color: #526466;
+  font-size: .94rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.main-tab::after { position: absolute; right: 18px; bottom: 0; left: 18px; height: 3px; background: transparent; content: ''; }
+.main-tab:hover { color: var(--color-primary-dark); background: #f5f9f8; }
+.main-tab.is-active { color: var(--color-primary-dark); }
+.main-tab.is-active::after { background: var(--color-primary); }
+
+.main-content { padding-top: 38px; padding-bottom: 64px; }
+.content-panel { min-height: 420px; }
+.section-heading { margin-bottom: 26px; }
+.section-heading h1 { margin: 3px 0 8px; color: #203234; font-size: clamp(1.45rem, 2vw, 1.85rem); line-height: 1.35; }
+.section-heading p { margin: 0; color: var(--color-muted); }
+.eyebrow { color: var(--color-primary) !important; font-size: .88rem; font-weight: 700; letter-spacing: .08em; }
+
+.sub-navigation { margin: 0 0 24px; border-bottom: 1px solid var(--color-border); overflow-x: auto; }
+.sub-tabs { gap: 8px; padding-bottom: 10px; }
+.sub-tab { flex: 0 0 auto; padding: 9px 14px; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); color: #506164; font-size: .94rem; white-space: nowrap; }
+.sub-tab:hover { border-color: #8cbab8; background: #f5f9f8; color: var(--color-primary-dark); }
+.sub-tab.is-active { border-color: var(--color-primary); background: var(--color-primary-soft); color: var(--color-primary-dark); font-weight: 700; }
+
+.placeholder-section, .unavailable-panel { border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
+.placeholder-section { padding: 30px 32px; }
+.placeholder-section h2 { margin: 0 0 10px; font-size: 1.2rem; }
+.placeholder-section p, .unavailable-panel p { margin: 0; color: var(--color-muted); }
+.unavailable-panel { display: grid; min-height: 300px; place-items: center; padding: 32px; }
+
+@media (max-width: 900px) {
+  .page-container { width: min(100% - 36px, 1680px); }
+  .header-content { grid-template-columns: 1fr auto; min-height: auto; padding: 14px 0; }
+  .student-summary { grid-row: 2; grid-column: 1 / -1; justify-content: flex-start; gap: 13px; }
+  .save-status { grid-row: 1; grid-column: 2; }
+}
+
+@media (max-width: 560px) {
+  .page-container { width: min(100% - 28px, 1680px); }
+  .brand { display: block; }
+  .brand-subtitle { display: block; margin-top: -3px; }
+  .save-status { font-size: .78rem; }
+  .student-summary { flex-wrap: wrap; gap: 4px 12px; }
+  .main-content { padding-top: 26px; }
+  .main-tab { min-height: 56px; padding: 9px 14px; font-size: .88rem; }
+  .main-tab::after { right: 14px; left: 14px; }
+  .sub-tab { font-size: .88rem; }
+  .placeholder-section { padding: 24px; }
+}

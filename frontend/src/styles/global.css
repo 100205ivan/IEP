@@ -1,0 +1,16 @@
+* { box-sizing: border-box; }
+
+html, body, #root { min-width: 320px; min-height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--color-page);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+button { font: inherit; cursor: pointer; }
+
+button:focus-visible { outline: 3px solid #91c8c5; outline-offset: -3px; }

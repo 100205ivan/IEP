@@ -1,0 +1,20 @@
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import type { CoursePlanItem } from './StudentCoursePlan'
+import { ScheduleCourseDialog } from './ScheduleCourseDialog'
+
+export const weekdays = ['星期一', '星期二', '星期三', '星期四', '星期五'] as const
+export const periods = ['早自習', '第一節', '第二節', '第三節', '第四節', '午休', '第五節', '第六節', '第七節'] as const
+export type Weekday = typeof weekdays[number]
+export type PeriodId = typeof periods[number]
+export interface WeeklyScheduleEntry { day: Weekday; period: PeriodId; courseId: string }
+
+export function StudentWeeklySchedule({ courses, schedule, setSchedule, onGoToCoursePlan }: { courses: CoursePlanItem[]; schedule: WeeklyScheduleEntry[]; setSchedule: Dispatch<SetStateAction<WeeklyScheduleEntry[]>>; onGoToCoursePlan: () => void }) {
+  const [activeSlot, setActiveSlot] = useState<{ day: Weekday; period: PeriodId } | null>(null)
+  useEffect(() => { const ids = new Set(courses.map((course) => course.id)); setSchedule((current) => current.filter((entry) => ids.has(entry.courseId))) }, [courses, setSchedule])
+  const counts = useMemo(() => Object.fromEntries(courses.map((course) => [course.id, schedule.filter((entry) => entry.courseId === course.id).length])), [courses, schedule])
+  const entryFor = (day: Weekday, period: PeriodId) => schedule.find((entry) => entry.day === day && entry.period === period)
+  const save = (courseId: string) => { if (!activeSlot) return; setSchedule((current) => [...current.filter((entry) => entry.day !== activeSlot.day || entry.period !== activeSlot.period), { ...activeSlot, courseId }]); setActiveSlot(null) }
+  const remove = () => { if (!activeSlot) return; setSchedule((current) => current.filter((entry) => entry.day !== activeSlot.day || entry.period !== activeSlot.period)); setActiveSlot(null) }
+  if (courses.length === 0) return <section className="weekly-schedule-empty" id="services-weekly-schedule" role="tabpanel" aria-labelledby="services-tab-weekly-schedule"><h2>尚未建立學生課程規劃</h2><p>請先至「四、學生課程規劃表」新增課程，再安排每週課表。</p><button className="button button--primary" type="button" onClick={onGoToCoursePlan}>前往學生課程規劃表</button></section>
+  return <section className="student-weekly-schedule" id="services-weekly-schedule" role="tabpanel" aria-labelledby="services-tab-weekly-schedule"><div className="weekly-schedule-heading"><h2>五、學生每週課表</h2><p>依學生課程規劃安排每週上課時段，呈現原班、抽離及特殊需求課程之實際安排。</p></div><div className="weekly-schedule-wrap"><table className="weekly-schedule-table"><thead><tr><th scope="col">節次</th>{weekdays.map((day) => <th scope="col" key={day}>{day}</th>)}</tr></thead><tbody>{periods.map((period) => <tr key={period}><th scope="row">{period}</th>{weekdays.map((day) => { const entry = entryFor(day, period); const course = entry && courses.find((item) => item.id === entry.courseId); return <td key={day}><button type="button" className={`schedule-cell${course ? ' has-course' : ''}`} onClick={() => setActiveSlot({ day, period })}>{course ? <><strong>{course.courseName}</strong><span>{course.teachingMethod === '其他' ? course.otherTeachingMethod || '其他' : course.teachingMethod}</span>{course.teacher && <small>{course.teacher}</small>}</> : <span>＋ 安排</span>}</button></td> })}</tr>)}</tbody></table></div><section className="course-schedule-summary"><h3>課程安排摘要</h3><div>{courses.map((course) => { const count = counts[course.id] ?? 0; const over = course.weeklyPeriods > 0 && count > course.weeklyPeriods; return <article key={course.id} className={over ? 'is-over' : ''}><strong>{course.courseName}</strong><span>已安排 {count} / {course.weeklyPeriods} 節</span>{over && <small>已超過課程規劃的每週節數</small>}</article> })}</div></section>{activeSlot && <ScheduleCourseDialog day={activeSlot.day} period={activeSlot.period} courses={courses} currentCourseId={entryFor(activeSlot.day, activeSlot.period)?.courseId} onClose={() => setActiveSlot(null)} onSave={save} onRemove={remove} />}</section>
+}

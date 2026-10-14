@@ -1,0 +1,45 @@
+.transition-page, .transition-content { display: grid; gap: 24px; }
+.transition-card { padding: 28px 32px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
+.transition-card h2 { margin: 0 0 20px; padding-bottom: 14px; border-bottom: 1px solid #e6eded; color: #203234; font-size: 1.12rem; }
+.transition-card h3 { margin: 0 0 14px; color: #245d5f; font-size: 1rem; }
+.transition-card h4 { margin: 0 0 12px; color: #405153; font-size: .94rem; }
+.transition-no-need, .transition-radio { display: inline-flex; align-items: center; gap: 7px; color: #405153; font-weight: 700; cursor: pointer; }
+.transition-no-need input, .transition-radio input, .transition-checks input { width: 17px; height: 17px; accent-color: var(--color-primary); }
+.transition-basic-grid, .preference-grid, .transition-services, .transition-fields, .followup-dialog-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.transition-basic-grid > div, .preference-grid > div, .transition-service-card { min-width: 0; }
+.transition-checks { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+.transition-checks label { display: inline-flex; align-items: center; gap: 7px; color: #405153; cursor: pointer; }
+.transition-other, .transition-field, .transition-fields label, .followup-dialog-body > label, .followup-dialog-body fieldset > label { display: grid; gap: 7px; color: #405153; font-size: .94rem; font-weight: 700; }
+.transition-other { max-width: 520px; margin-top: 14px; }
+.transition-card input:not([type="checkbox"]):not([type="radio"]), .transition-card textarea, .followup-dialog input:not([type="checkbox"]):not([type="radio"]), .followup-dialog textarea { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid #c9d5d5; border-radius: 5px; background: #fff; color: var(--color-text); font: inherit; }
+.transition-card textarea, .followup-dialog textarea { min-height: 100px; resize: vertical; }
+.transition-card input:focus, .transition-card textarea:focus, .followup-dialog input:focus, .followup-dialog textarea:focus { border-color: var(--color-primary); outline: 3px solid #d9eeec; }
+.transition-fields { margin-top: 22px; }
+.transition-full { grid-column: 1 / -1; }
+.cross-stage-content { display: grid; gap: 22px; margin-top: 22px; }
+.transition-card fieldset, .followup-dialog fieldset { min-width: 0; padding: 15px; border: 1px solid #dce8e6; border-radius: 7px; }
+.transition-card legend, .followup-dialog legend { padding: 0 5px; color: #405153; font-weight: 700; }
+.transition-card fieldset .transition-radio { display: flex; margin: 7px 0; }
+.preference-grid { padding: 18px; border: 1px solid #dce8e6; border-radius: 7px; background: #f8fbfb; }
+.transition-service-card { padding: 20px; border: 1px solid #dce8e6; border-radius: 8px; background: #f9fcfc; }
+.transition-service-card h3 { padding-bottom: 12px; border-bottom: 1px solid #e1e9e8; }
+.transition-radios { display: flex; gap: 18px; }
+.transition-radios label { display: inline-flex; align-items: center; gap: 7px; color: #405153; }
+.service-details { display: grid; gap: 18px; margin-top: 18px; padding-top: 17px; border-top: 1px solid #e1e9e8; }
+.followup-list { display: grid; gap: 14px; margin-top: 20px; }
+.followup-list > .button { justify-self: start; }
+.followup-record { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 15px; border-radius: 6px; background: #f7faf9; }
+.followup-record p, .transition-muted { margin: 6px 0 0; color: var(--color-muted); overflow-wrap: anywhere; white-space: pre-wrap; }
+.followup-record > div:last-child { display: flex; flex: 0 0 auto; gap: 8px; }
+.transition-danger { color: #a23a3a; }
+.followup-dialog { width: min(780px, calc(100dvw - 32px)); max-height: calc(100dvh - 40px); padding: 0; border: 1px solid var(--color-border); border-radius: 12px; color: var(--color-text); background: var(--color-surface); box-shadow: 0 20px 80px #0003; }
+.followup-dialog::backdrop { background: #172b36a6; }
+.followup-dialog header { display: flex; align-items: center; justify-content: space-between; padding: 20px 28px; border-bottom: 1px solid var(--color-border); }
+.followup-dialog h2 { margin: 0; font-size: 1.2rem; }
+.followup-dialog-body { padding: 24px 28px 28px; }
+.dialog-full, .followup-dialog-body footer { grid-column: 1 / -1; }
+.followup-dialog-body fieldset { display: grid; gap: 12px; }
+.followup-dialog-body footer, .confirm-followup footer { display: flex; justify-content: flex-end; gap: 12px; }
+.confirm-followup { width: min(440px, calc(100dvw - 32px)); padding: 24px; }
+.confirm-followup p { color: var(--color-muted); }
+@media (max-width: 700px) { .transition-card { padding: 22px 18px; } .transition-basic-grid, .preference-grid, .transition-services, .transition-fields, .followup-dialog-body { grid-template-columns: 1fr; } .transition-full, .dialog-full, .followup-dialog-body footer { grid-column: auto; } .followup-dialog header, .followup-dialog-body { padding: 18px; } .followup-dialog-body footer, .confirm-followup footer { flex-direction: column-reverse; } .followup-dialog-body footer .button, .confirm-followup footer .button { width: 100%; } .followup-record { flex-direction: column; } }

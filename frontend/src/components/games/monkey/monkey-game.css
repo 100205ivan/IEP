@@ -1,0 +1,312 @@
+/* HTML prototype styles, scoped to the React game. */
+.monkey-game { line-height: normal; }
+.monkey-game {
+  font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  color:#263a60;
+  background:#e9f6ff;
+  font-synthesis:none;
+}
+.monkey-game * {
+  box-sizing:border-box;
+}
+.monkey-game {
+  margin:0;
+  background:linear-gradient(135deg,#e4f5ff,#f8edff);
+  min-width:320px;
+}
+.monkey-game .app {
+  min-height:100vh;
+  padding:24px 15px;
+  display:grid;
+  place-items:center;
+}
+.monkey-game .card {
+  width:min(690px,100%);
+  padding:clamp(25px,6vw,48px);
+  background:rgba(255,255,255,.96);
+  border-radius:28px;
+  box-shadow:0 18px 45px #5e66852b;
+  text-align:center;
+}
+.monkey-game h1 {
+  font-size:clamp(1.75rem,5vw,2.35rem);
+  margin:6px 0 12px;
+}
+.monkey-game h2 {
+  font-size:1.15rem;
+  margin:25px 0 12px;
+}
+.monkey-game p {
+  line-height:1.7;
+  color:#596783;
+}
+.monkey-game .mascot {
+  font-size:4.3rem;
+  line-height:1;
+}
+.monkey-game .lead {
+  font-size:1.1rem;
+}
+.monkey-game .rules {
+  display:grid;
+  gap:10px;
+  text-align:left;
+  background:#f1f7ff;
+  border-radius:18px;
+  padding:18px 22px;
+  margin:25px 0;
+}
+.monkey-game .primary, .monkey-game .age, .monkey-game .secondary {
+  border:0;
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+}
+.monkey-game .primary {
+  padding:15px 30px;
+  border-radius:15px;
+  background:linear-gradient(135deg,#6878f5,#9b65e8);
+  box-shadow:0 5px 0 #594fc4;
+  color:white;
+  font-size:1.08rem;
+}
+.monkey-game .primary:active {
+  transform:translateY(3px);
+  box-shadow:0 2px 0 #594fc4;
+}
+.monkey-game .secondary {
+  padding:13px 20px;
+  border:2px solid #cbd5ef;
+  border-radius:14px;
+  background:#fff;
+  color:#52658c;
+}
+.monkey-game .secondary:disabled {
+  opacity:.45;
+  cursor:default;
+}
+.monkey-game .text {
+  border:0;
+  background:transparent;
+  color:#6276a3;
+  font:inherit;
+  font-weight:700;
+  cursor:pointer;
+  margin-top:24px;
+}
+.monkey-game .age-grid {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin:28px 0;
+}
+.monkey-game .age {
+  min-height:76px;
+  border:2px solid #d8e0f7;
+  border-radius:17px;
+  background:#f9fbff;
+  color:#50628a;
+  font-size:1.65rem;
+}
+.monkey-game .age:hover {
+  border-color:#7986ed;
+  background:#eef0ff;
+}
+.monkey-game .age small {
+  font-size:.8rem;
+  margin-left:2px;
+}
+.monkey-game .meta {
+  display:flex;
+  justify-content:space-between;
+  color:#6878a4;
+  font-weight:800;
+}
+.monkey-game .bar {
+  height:9px;
+  background:#eaf0fb;
+  border-radius:99px;
+  overflow:hidden;
+  margin:13px 0 30px;
+}
+.monkey-game .bar i {
+  display:block;
+  height:100%;
+  background:#77cdb0;
+  border-radius:inherit;
+}
+.monkey-game .sequence {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  margin:20px 0 26px;
+}
+.monkey-game .sequence span {
+  background:#fff1bd;
+  color:#876324;
+  border-radius:12px;
+  padding:9px 16px;
+  font-weight:800;
+}
+.monkey-game .grid {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:11px;
+  max-width:490px;
+  margin:24px auto 10px;
+}
+.monkey-game .word {
+  position:relative;
+  min-height:90px;
+  border:2px solid #dae4f8;
+  border-radius:18px;
+  background:#fbfdff;
+  color:#3c5077;
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+}
+.monkey-game .word:hover:not(:disabled) {
+  background:#eff2ff;
+  border-color:#8290f3;
+}
+.monkey-game .word:disabled {
+  opacity:.58;
+  cursor:default;
+}
+.monkey-game .word .emoji {
+  font-size:1.75rem;
+}
+.monkey-game .word b {
+  position:absolute;
+  top:6px;
+  right:8px;
+  width:23px;
+  height:23px;
+  border-radius:50%;
+  background:#7782ef;
+  color:#fff;
+  font-size:.78rem;
+  display:grid;
+  place-items:center;
+}
+.monkey-game .answer-preview {
+  min-height:49px;
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:8px;
+  padding:8px;
+  margin:16px auto;
+  background:#f4f7ff;
+  border-radius:13px;
+  color:#60729a;
+  font-weight:700;
+}
+.monkey-game .answer-preview span {
+  padding:5px 10px;
+  border-radius:9px;
+  background:#e5eaff;
+  color:#4e61be;
+}
+.monkey-game .answer-actions {
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  min-height:48px;
+  margin-top:12px;
+}
+.monkey-game .feedback {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+  margin-top:25px;
+  color:#25795f;
+}
+.monkey-game .feedback strong {
+  flex:0 1 auto;
+}
+.monkey-game .feedback .primary {
+  flex:0 0 auto;
+}
+.monkey-game .listen {
+  min-height:310px;
+  padding-top:62px;
+}
+.monkey-game .sound {
+  font-size:4rem;
+  animation:monkey-game-pulse 1.15s ease-in-out infinite;
+}
+.monkey-game .answer-count {
+  font-weight:700;
+}
+.monkey-game .score-box {
+  background:linear-gradient(135deg,#6878f5,#9b65e8);
+  color:white;
+  border-radius:20px;
+  padding:22px;
+  margin:24px 0;
+}
+.monkey-game .score-box span, .monkey-game .score-box small {
+  display:block;
+}
+.monkey-game .score-box strong {
+  display:block;
+  font-size:3.1rem;
+}
+.monkey-game .levels {
+  display:grid;
+  gap:8px;
+  text-align:left;
+}
+.monkey-game .levels div {
+  display:flex;
+  justify-content:space-between;
+  border-radius:10px;
+  background:#f3f7fe;
+  padding:11px 14px;
+}
+.monkey-game .levels b {
+  color:#586be1;
+}
+.monkey-game .norm {
+  background:#f9f5ff;
+  text-align:left;
+  border-radius:18px;
+  padding:17px 20px;
+  margin:25px 0;
+}
+.monkey-game .norm h2 {
+  margin-top:0;
+}
+.monkey-game .norm p {
+  margin:6px 0;
+}
+.monkey-game .note {
+  color:#9a5d22;
+  font-weight:800;
+}
+.monkey-game .fine {
+  font-size:.78rem;
+}
+@keyframes monkey-game-pulse {50%{transform:scale(1.12);opacity:.7}}
+@media(max-width:440px) {
+  .monkey-game .card {
+    padding:25px 18px;
+    border-radius:22px;
+  }
+  .monkey-game .word {
+    min-height:77px;
+  }
+  .monkey-game .age-grid {
+    grid-template-columns:repeat(3,1fr);
+  }
+}

@@ -1,0 +1,101 @@
+.iep-detail-form { display: grid; gap: 24px; }
+.iep-form-section { padding: 28px 32px 30px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
+.iep-form-section > h3 { margin: 0 0 24px; padding-bottom: 14px; border-bottom: 1px solid #e6eded; font-size: 1.12rem; }
+.iep-form-section h4 { margin: 0 0 14px; color: #405153; font-size: 1rem; }
+.iep-table-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 24px; }
+.iep-table-grid--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.iep-table-grid--four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.field-group { display: grid; gap: 8px; min-width: 0; }
+.field-group--full { grid-column: 1 / -1; }
+.field-group label, .field-group legend { color: #405153; font-size: .94rem; font-weight: 700; }
+.field-group input, .field-group select, .field-group textarea { width: 100%; border: 1px solid #c9d5d5; border-radius: 5px; background: #fff; color: var(--color-text); padding: 10px 12px; }
+.field-group textarea { resize: vertical; }
+.field-group input:focus, .field-group select:focus, .field-group textarea:focus { border-color: var(--color-primary); outline: 3px solid #d9eeec; }
+.inline-check { display: inline-flex; align-items: center; gap: 7px; margin-top: 2px; color: #506164; font-size: .9rem; font-weight: 400 !important; cursor: pointer; }
+.inline-check input, .radio-group input, .checkbox-group input { width: 17px; height: 17px; accent-color: var(--color-primary); }
+.placement-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.assessment-group { margin: 0; padding: 20px; border: 1px solid #d9e4e3; border-radius: 6px; }
+.subsection + .subsection { margin-top: 25px; }
+.radio-group { display: flex; align-items: center; gap: 12px 22px; min-height: 42px; }
+.radio-group label, .checkbox-group label { display: inline-flex; align-items: center; gap: 7px; color: var(--color-text); font-weight: 400; cursor: pointer; }
+.dynamic-table { overflow-x: auto; border: 1px solid #d6e1e0; border-radius: 6px; }
+.dynamic-table-head { background: #f1f6f5; color: #425557; font-size: .88rem; font-weight: 700; }
+.dynamic-table-head span { padding: 11px 10px; }
+.checkbox-group { display: flex; flex-wrap: wrap; gap: 10px 20px; min-height: 42px; }
+.health-stack { display: grid; gap: 24px; }
+.conditional-fields { margin-top: 12px; }
+.medication-row { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)) 64px; min-width: 690px; }
+.medication-entry { border-top: 1px solid #e1e9e8; }
+.medication-cell { padding: 8px; }
+.medication-cell input { width: 100%; min-height: 38px; border: 1px solid #c9d5d5; border-radius: 5px; padding: 7px 9px; }
+.medication-cell--action { display: grid; place-items: center; }
+.button { margin-top: 16px; border-radius: 5px; padding: 9px 14px; font-weight: 700; }
+.button--secondary { border: 1px solid var(--color-primary); background: #fff; color: var(--color-primary-dark); }
+.button--secondary:hover { background: var(--color-primary-soft); }
+.icon-button { border: 0; border-radius: 4px; background: transparent; color: #637275; padding: 7px; font-size: .88rem; }
+.icon-button:hover { background: #f5eaea; color: #a23a3a; }
+.special-condition-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.condition-card { padding: 16px; border: 1px solid #d9e4e3; border-radius: 6px; }
+.condition-card strong { color: #405153; }
+
+/* Kept intentionally close to the approved IEP-test layout. */
+#family-info.iep-detail-form { width: 100%; margin: 0; gap: 28px; }
+#family-info .student-family-form { display: grid; gap: 22px; }
+#family-info .iep-form-section { padding: 26px 28px 28px; border: 1px solid #dbe6e5; border-radius: 10px; box-shadow: none; }
+#family-info .iep-form-section > h3 { display: flex; align-items: center; min-height: 30px; margin: 0 0 20px; padding: 0 0 12px; border-bottom: 1px solid #e4edec; color: #244244; font-size: 1.08rem; }
+#family-info .iep-table-grid { gap: 16px 18px; }
+#family-info .field-group { gap: 6px; }
+#family-info .field-group label, #family-info .field-label { color: #405153; font-size: .91rem; font-weight: 700; }
+#family-info .field-label { display: block; }
+#family-info .field-group input:not([type="radio"]):not([type="checkbox"]), #family-info .field-group select, #family-info .field-group textarea, #family-info .compact-section input:not([type="radio"]):not([type="checkbox"]), #family-info .compact-section select, #family-info .compact-section textarea { min-height: 42px; border: 1px solid #c8d7d5; border-radius: 6px; padding: 9px 11px; }
+#family-info .field-group textarea, #family-info .compact-section textarea { min-height: 100px; }
+#family-info input[readonly], #family-info input:disabled, #family-info select:disabled { background: #eef3f3; color: #697779; cursor: not-allowed; }
+#family-info .radio-group { min-height: 42px; gap: 8px 20px; }
+#family-info .radio-group label, #family-info .checkbox-group label { line-height: 1.4; }
+#family-info .segmented-control { display: inline-flex; align-items: stretch; width: fit-content; min-height: 40px; gap: 0; }
+#family-info .segmented-control label { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 78px; min-height: 40px; margin-left: -1px; padding: 8px 15px; border: 1px solid #c8d7d5; background: #fff; color: #405153; font-weight: 600; white-space: nowrap; cursor: pointer; }
+#family-info .segmented-control label:first-child { margin-left: 0; border-radius: 6px 0 0 6px; }
+#family-info .segmented-control label:last-child { border-radius: 0 6px 6px 0; }
+#family-info .segmented-control input { position: absolute; width: 1px; height: 1px; margin: -1px; opacity: 0; }
+#family-info .segmented-control label:has(input:checked) { z-index: 1; border-color: var(--color-primary); background: var(--color-primary-soft); color: var(--color-primary-dark); }
+#family-info .placement-grid { gap: 18px; }
+#family-info .assessment-group { margin: 0; padding: 20px; border: 1px solid #dce8e6; border-radius: 8px; background: #f7fbfa; }
+#family-info .assessment-group h4 { margin: 0 0 16px; color: #245d5f; font-size: 1rem; }
+#family-info .sub-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+#family-info .sub-card-heading h4, #family-info .sub-card-heading .same-guardian { margin: 0; }
+#family-info .health-stack { gap: 0; border: 1px solid #dce8e6; border-radius: 8px; overflow: hidden; }
+#family-info .compact-section { display: grid; gap: 12px; padding: 18px 20px; background: #fff; }
+#family-info .compact-section + .compact-section { border-top: 1px solid #e3eceb; }
+#family-info .question-row { display: flex; align-items: center; justify-content: flex-start; gap: clamp(24px, 3vw, 52px); }
+#family-info .question-row .radio-group { min-height: auto; }
+#family-info .health-detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 1fr); align-items: end; gap: 14px 20px; }
+#family-info .health-detail-grid .checkbox-group { align-self: center; }
+#family-info .conditional-fields { margin-top: 2px; }
+#family-info .special-condition-grid { gap: 12px; }
+#family-info .condition-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 7px 14px; padding: 14px; border: 1px solid #e0e9e8; border-radius: 7px; background: #f9fcfc; }
+#family-info .condition-card strong { font-size: .93rem; }
+#family-info .condition-card label { color: #405153; font-size: .9rem; font-weight: 700; }
+#family-info .condition-card .radio-group { min-height: 28px; }
+#family-info .condition-card .radio-group label { font-weight: 400; }
+#family-info .condition-card .conditional-fields { grid-column: 1 / -1; }
+#family-info .dynamic-table { border-color: #d5e3e1; }
+#family-info .button { min-height: 38px; margin-top: 12px; }
+#family-info .contact-summary { display: grid; grid-template-columns: minmax(440px, max-content) minmax(0, 1fr); align-items: end; gap: 18px 28px; margin-top: 20px; padding-top: 18px; border-top: 1px solid #e3eceb; }
+#family-info .economic-status label { min-width: auto; padding-inline: 14px; flex: 0 0 auto; overflow-wrap: normal; word-break: keep-all; }
+#family-info .family-basics-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 18px; }
+#family-info .family-basics-grid .compact-section { border: 1px solid #dce8e6; border-radius: 8px; }
+#family-info .family-basics-grid .compact-section + .compact-section { border-top: 1px solid #dce8e6; }
+#family-info .sibling-fields { display: flex; align-items: center; flex-wrap: nowrap; gap: 18px 24px; }
+#family-info .sibling-fields .sibling-item { display: inline-flex; align-items: center; width: auto; gap: 7px; color: #405153; font-size: .91rem; font-weight: 700; white-space: nowrap; }
+#family-info .sibling-fields .sibling-item input[type="number"] { width: 96px; min-width: 0; min-height: 38px; padding: 7px 9px; }
+#family-info .family-support-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); align-items: start; gap: 20px; }
+#family-info .family-support-layout .compact-section { border: 1px solid #dce8e6; border-radius: 8px; background: #f9fcfc; }
+#family-info .support-services { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 11px 18px; min-height: 0; }
+#family-info .support-services label { align-items: flex-start; }
+#family-info .support-services label:nth-child(4), #family-info .support-services label:nth-child(5) { grid-column: span 2; }
+
+@media (max-width: 1180px) { #family-info .iep-table-grid--four { grid-template-columns: repeat(2, minmax(0, 1fr)); } #family-info .family-support-layout, #family-info .contact-summary { grid-template-columns: 1fr; } #family-info .support-services { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 1360px) { #family-info .sibling-fields { display: grid; grid-template-columns: repeat(2, max-content); } }
+@media (max-width: 780px) { #family-info .placement-grid, #family-info .family-basics-grid, #family-info .special-condition-grid, #family-info .health-detail-grid { grid-template-columns: 1fr; } #family-info .question-row { align-items: flex-start; flex-direction: column; gap: 4px; } #family-info .contact-summary .iep-table-grid--three { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { #family-info .iep-form-section { padding: 22px 18px; border-radius: 8px; } #family-info .iep-table-grid, #family-info .iep-table-grid--three, #family-info .iep-table-grid--four { grid-template-columns: 1fr; gap: 14px; } #family-info .field-group--full { grid-column: auto; } #family-info .compact-section, #family-info .assessment-group { padding: 16px; } #family-info .sub-card-heading { align-items: flex-start; flex-direction: column; } #family-info .sibling-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } #family-info .sibling-fields .sibling-item input[type="number"] { width: min(96px, 100%); } #family-info .economic-status { flex-wrap: wrap; } #family-info .support-services, #family-info .support-services label:nth-child(4), #family-info .support-services label:nth-child(5) { grid-column: auto; grid-template-columns: 1fr; } }
+@media (max-width: 420px) { #family-info .sibling-fields { grid-template-columns: 1fr; } }

@@ -20,8 +20,6 @@ export interface InclusiveEducationPlanValue {
   strategyNotes: string
 }
 
-export const initialInclusiveEducationPlan: InclusiveEducationPlanValue = { grade: '', className: '', participation: '', withdrawalSubjects: [], withdrawalOther: '', otherParticipationNotes: '', participationNotes: '', activities: [], activityOther: '', activityNotes: '', strategies: [], strategyOther: '', strategyNotes: '' }
-
 interface InclusiveEducationPlanProps { value: InclusiveEducationPlanValue; onChange: Dispatch<SetStateAction<InclusiveEducationPlanValue>> }
 
 function CheckboxList({ options, selected, onToggle }: { options: string[]; selected: string[]; onToggle: (option: string) => void }) {

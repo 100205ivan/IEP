@@ -27,27 +27,10 @@ const serviceOptions = [
   ['otherSupport', '其他'],
 ] as const
 
-const initialValues: Record<string, string> = {
-  studentName: '', gender: '', birthDate: '', nationalId: '', studentId: '', grade: '', className: '', homeroomTeacher: '', classEntryDate: '', registeredAddress: '', residentialAddress: '',
-  committeeAssessmentDate: '', committeeReassessmentDate: '', committeeDocumentNumber: '', committeeSpecialEducationNumber: '', committeeDisabilityCategory: '', committeeSeverity: '',
-  proofAssessmentDate: '', proofReassessmentDate: '', icfCategory: '', icfOther: '', icfLevel: '', icdDiagnosis: '', diseaseDescription: '', diseaseOther: '',
-  foodRestrictionDescription: '', foodAllergyDescription: '', drugAllergyDescription: '', otherSpecialCondition: '', hospitalName: '', hospitalDepartment: '', hospitalFrequency: '', hospitalDoctor: '',
-  guardianName: '', guardianRelationship: '', guardianPhone: '', guardianAge: '', guardianEducation: '', guardianOccupation: '', caregiverName: '', caregiverRelationship: '', caregiverPhone: '', caregiverAge: '', caregiverEducation: '', caregiverOccupation: '',
-  economicStatus: '', emergencyContact: '', emergencyPhone: '', emergencyRelationship: '', siblingsOlderBrother: '', siblingsYoungerBrother: '', siblingsOlderSister: '', siblingsYoungerSister: '',
-  fatherNationality: '', motherNationality: '', fatherIndigenousGroup: '', motherIndigenousGroup: '', familyDisabilityRelationship: '', familyDisabilityDescription: '', familySupportSituation: '', otherSupportDescription: '',
-  specialDisease: 'none', regularMedication: 'none', foodRestriction: 'none', foodAllergy: 'none', drugAllergy: 'none', hospital: 'none', foreignParent: 'no', indigenousParent: 'no', familyDisability: 'none',
-}
-
 export interface StudentFamilyFormValue {
   values: Record<string, string>
   checks: Record<string, boolean>
   medications: Medication[]
-}
-
-export const initialStudentFamilyFormValue: StudentFamilyFormValue = {
-  values: { ...initialValues },
-  checks: {},
-  medications: [],
 }
 
 export function StudentFamilyForm({ value, onChange }: { value: StudentFamilyFormValue; onChange: Dispatch<SetStateAction<StudentFamilyFormValue>> }) {

@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link } from 'react-router-dom'
 import type { CptResults } from '../../../types/gameAssessment'
 import { CptSession, rateLabel, TOTAL_TRIALS, type CptFrame } from './cptGameLogic'
 import { CPT_NORMS } from './cptNorms'
 import { GameAssessmentImport } from '../GameAssessmentImport'
+import { localDateString } from '../../../utils/localDate'
 import './cpt-game.css'
 
 function Results({ result, age, onRestart, resultId, assessmentDate }: { result: CptResults; age: number; onRestart: () => void; resultId: string; assessmentDate: string }) {
@@ -41,13 +42,14 @@ export function CptGame() {
   const [resultId, setResultId] = useState('')
   const [assessmentDate, setAssessmentDate] = useState('')
   const session = useRef<CptSession | null>(null)
+  const resetSession = useCallback(() => session.current?.reset(), [])
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
       if (event.code === 'Space') { event.preventDefault(); if (!event.repeat) session.current?.respond() }
     }
     document.addEventListener('keydown', keydown)
-    return () => { document.removeEventListener('keydown', keydown); session.current?.reset() }
-  }, [])
+    return () => { document.removeEventListener('keydown', keydown); resetSession() }
+  }, [resetSession])
   const beginPractice = () => {
     session.current?.reset()
     setAge(null); setResult(null); setFeedback(null)
@@ -55,7 +57,7 @@ export function CptGame() {
       onTrial: value => flushSync(() => { setScreen('game'); setFrame(value); setFeedback(null) }),
       onFeedback: (message, type) => flushSync(() => setFeedback({ message, type })),
       onPracticeComplete: () => setScreen('practiceComplete'),
-      onTestComplete: value => { setResultId(crypto.randomUUID()); setAssessmentDate(new Date().toISOString().slice(0, 10)); setResult(value); setScreen('result') },
+      onTestComplete: value => { setResultId(crypto.randomUUID()); setAssessmentDate(localDateString()); setResult(value); setScreen('result') },
     })
     session.current.beginPractice()
   }

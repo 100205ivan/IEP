@@ -11,9 +11,6 @@ const adjustmentGroups = [
 export type AdjustmentKind = typeof adjustmentGroups[number]['id']
 export interface AdjustmentValue { selectedStrategies: string[]; otherStrategy: string; applicableSubjects: string[]; otherSubject: string; description: string }
 export type CurriculumAdjustmentValue = Record<AdjustmentKind, AdjustmentValue>
-const emptyAdjustment = (): AdjustmentValue => ({ selectedStrategies: [], otherStrategy: '', applicableSubjects: [], otherSubject: '', description: '' })
-export const initialCurriculumAdjustment: CurriculumAdjustmentValue = { environment: emptyAdjustment(), content: emptyAdjustment(), process: emptyAdjustment(), assessment: emptyAdjustment() }
-
 function CheckboxList({ options, selected, onToggle }: { options: readonly string[]; selected: string[]; onToggle: (option: string) => void }) { return <div className="adjustment-checkbox-list">{options.map((option) => <label key={option}><input type="checkbox" checked={selected.includes(option)} onChange={() => onToggle(option)} />{option}</label>)}</div> }
 
 function AdjustmentCard({ group, value, onChange }: { group: typeof adjustmentGroups[number]; value: AdjustmentValue; onChange: (next: AdjustmentValue) => void }) {

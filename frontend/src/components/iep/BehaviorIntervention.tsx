@@ -19,16 +19,6 @@ export interface BehaviorInterventionValue {
   outcomeEvaluation: { date: string; methods: ChoiceGroup; result: string; resultOther: string; recommendation: string; recommendationOther: string; notes: string }
 }
 
-export const initialBehaviorIntervention: BehaviorInterventionValue = {
-  needStatus: '暫無需求', planStatus: '', planPeriod: { startDate: '', endDate: '' },
-  behaviorAssessment: { definition: '', time: '', location: '', triggers: '', frequency: '', duration: '' },
-  behaviorFunctions: { selected: [], notes: {} }, interventionGoal: '',
-  antecedentStrategies: { environment: { selected: [], other: '' }, curriculum: { selected: [], other: '' }, interaction: { selected: [], other: '' }, notes: '' },
-  teachingStrategies: { selected: [], other: '', notes: '' }, consequenceStrategies: { increase: { selected: [], other: '' }, reduce: { selected: [], other: '' }, notes: '' },
-  individualFactors: '', administrativeSupports: { selected: [], other: '' }, implementers: { selected: [], other: '' },
-  outcomeEvaluation: { date: '', methods: { selected: [], other: '' }, result: '', resultOther: '', recommendation: '', recommendationOther: '', notes: '' },
-}
-
 const functions = ['獲得內在刺激', '獲得外在刺激', '逃避內在刺激', '逃避外在刺激', '其他']
 const environment = ['提供示範', '預告或提示', '調整座位／活動地點', '調整物理環境', '建立結構化環境', '提供豐富多元環境', '安排同儕支持', '調整班規', '提供學習／溝通輔具', '其他']
 const curriculum = ['調整份量', '調整時間表', '調整完成方式', '調整呈現方式', '調整評量方式', '調整內容', '調整難度', '其他']

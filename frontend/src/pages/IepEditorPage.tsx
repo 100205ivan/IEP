@@ -3,18 +3,19 @@ import { useSearchParams } from 'react-router-dom'
 import { AssessmentSubTabs, type AssessmentSubChapter } from '../components/iep/AssessmentSubTabs'
 import { IepHeader } from '../components/iep/IepHeader'
 import { MainChapterTabs, type MainChapter } from '../components/iep/MainChapterTabs'
-import { StudentFamilyForm, initialStudentFamilyFormValue, type StudentFamilyFormValue } from '../components/iep/StudentFamilyForm'
+import { StudentFamilyForm, type StudentFamilyFormValue } from '../components/iep/StudentFamilyForm'
 import { AbilityAssessment } from '../components/iep/AbilityAssessment'
-import { useAssessmentRecords } from '../context/AssessmentRecordsContext'
+import { useAssessmentRecords } from '../context/useAssessmentRecords'
 import { EducationalNeedsAssessment, type AssessmentDetails, type AssessmentSelections, type StrengthWeaknessSummary } from '../components/iep/EducationalNeedsAssessment'
-import { SpecialEducationSupport, initialSpecialEducationSupport, type SpecialEducationSupportValue } from '../components/iep/SpecialEducationSupport'
-import { InclusiveEducationPlan, initialInclusiveEducationPlan, type InclusiveEducationPlanValue } from '../components/iep/InclusiveEducationPlan'
-import { CurriculumAdjustment, initialCurriculumAdjustment, type CurriculumAdjustmentValue } from '../components/iep/CurriculumAdjustment'
+import { SpecialEducationSupport, type SpecialEducationSupportValue } from '../components/iep/SpecialEducationSupport'
+import { InclusiveEducationPlan, type InclusiveEducationPlanValue } from '../components/iep/InclusiveEducationPlan'
+import { CurriculumAdjustment, type CurriculumAdjustmentValue } from '../components/iep/CurriculumAdjustment'
 import { StudentCoursePlan, type CoursePlanItem } from '../components/iep/StudentCoursePlan'
 import { StudentWeeklySchedule, type WeeklyScheduleEntry } from '../components/iep/StudentWeeklySchedule'
 import { AnnualGoalsPage, LearningStatusPage, SemesterGoalsPage, type GoalDomain, type SemesterGoal } from '../components/iep/GoalsChapter'
-import { BehaviorIntervention, initialBehaviorIntervention, type BehaviorInterventionValue } from '../components/iep/BehaviorIntervention'
-import { TransitionSupport, initialTransitionSupport, type TransitionSupportValue } from '../components/iep/TransitionSupport'
+import { BehaviorIntervention, type BehaviorInterventionValue } from '../components/iep/BehaviorIntervention'
+import { TransitionSupport, type TransitionSupportValue } from '../components/iep/TransitionSupport'
+import { initialBehaviorIntervention, initialCurriculumAdjustment, initialInclusiveEducationPlan, initialSpecialEducationSupport, initialStudentFamilyFormValue, initialTransitionSupport } from '../components/iep/iepInitialValues'
 import { IepMeetingRecords, type IepMeetingRecord } from '../components/iep/IepMeetingRecords'
 
 const mainChapters: readonly MainChapter[] = [
@@ -83,7 +84,7 @@ export function IepEditorPage() {
   const [coursePlanItems, setCoursePlanItems] = useState<CoursePlanItem[]>([])
   const [weeklySchedule, setWeeklySchedule] = useState<WeeklyScheduleEntry[]>([])
   const [assessmentSelections, setAssessmentSelections] = useState<AssessmentSelections>({})
-  const { records: assessmentRecords, setRecords: setAssessmentRecords } = useAssessmentRecords()
+  const { records: assessmentRecords, setRecords: setAssessmentRecords, documentAnalyses, setDocumentAnalyses } = useAssessmentRecords()
   const [assessmentDetails, setAssessmentDetails] = useState<AssessmentDetails>({})
   const [strengthWeaknessSummary, setStrengthWeaknessSummary] = useState<StrengthWeaknessSummary>({ strengths: [], weaknesses: [], strengthNotes: '', weaknessNotes: '', overallNeeds: '' })
   const activeMain = mainChapters.find((chapter) => chapter.id === activeMainChapter)
@@ -101,7 +102,7 @@ export function IepEditorPage() {
               <p>請選擇下方子章節查看填寫區域。</p>
             </div>
             <AssessmentSubTabs chapters={assessmentSubChapters} activeChapter={activeAssessmentChapter} onChange={setActiveAssessmentChapter} />
-            {activeAssessmentChapter === 'family-info' ? <StudentFamilyForm value={studentFamilyForm} onChange={setStudentFamilyForm} /> : activeAssessmentChapter === 'ability-record' ? <AbilityAssessment studentName={studentName} records={assessmentRecords} setRecords={setAssessmentRecords} /> : activeAssessmentChapter === 'education-needs' ? <EducationalNeedsAssessment selected={assessmentSelections} setSelected={setAssessmentSelections} details={assessmentDetails} setDetails={setAssessmentDetails} summary={strengthWeaknessSummary} setSummary={setStrengthWeaknessSummary} /> : <AssessmentPlaceholder activeChapter={activeAssessmentChapter} />}
+            {activeAssessmentChapter === 'family-info' ? <StudentFamilyForm value={studentFamilyForm} onChange={setStudentFamilyForm} /> : activeAssessmentChapter === 'ability-record' ? <AbilityAssessment studentName={studentName} records={assessmentRecords} setRecords={setAssessmentRecords} documentAnalyses={documentAnalyses} setDocumentAnalyses={setDocumentAnalyses} /> : activeAssessmentChapter === 'education-needs' ? <EducationalNeedsAssessment selected={assessmentSelections} setSelected={setAssessmentSelections} details={assessmentDetails} setDetails={setAssessmentDetails} summary={strengthWeaknessSummary} setSummary={setStrengthWeaknessSummary} /> : <AssessmentPlaceholder activeChapter={activeAssessmentChapter} />}
           </section>
         ) : activeMainChapter === 'services' ? (
           <section className="content-panel" id="chapter-services" role="tabpanel" aria-labelledby="chapter-tab-services">
@@ -113,7 +114,7 @@ export function IepEditorPage() {
           <section className="content-panel" id="chapter-goals" role="tabpanel" aria-labelledby="chapter-tab-goals">
             <div className="section-heading"><p className="eyebrow">參</p><h1>學年與學期教育目標</h1><p>規劃學年與學期教育目標、評量方式及目標達成情形。</p></div>
             <AssessmentSubTabs chapters={goalsSubChapters} activeChapter={activeGoalsChapter} onChange={setActiveGoalsChapter} ariaLabel="參、子章節" idPrefix="goals" />
-            {activeGoalsChapter === 'annual' ? <AnnualGoalsPage domains={goalDomains} setDomains={setGoalDomains} semesterGoals={semesterGoals} setSemesterGoals={setSemesterGoals} /> : activeGoalsChapter === 'semester' ? <SemesterGoalsPage domains={goalDomains} goals={semesterGoals} setGoals={setSemesterGoals} goAnnual={() => setActiveGoalsChapter('annual')} /> : <LearningStatusPage domains={goalDomains} goals={semesterGoals} setGoals={setSemesterGoals} learningNotes={learningNotes} setLearningNotes={setLearningNotes} />}
+            {activeGoalsChapter === 'annual' ? <AnnualGoalsPage domains={goalDomains} setDomains={setGoalDomains} setSemesterGoals={setSemesterGoals} /> : activeGoalsChapter === 'semester' ? <SemesterGoalsPage domains={goalDomains} goals={semesterGoals} setGoals={setSemesterGoals} goAnnual={() => setActiveGoalsChapter('annual')} /> : <LearningStatusPage domains={goalDomains} goals={semesterGoals} setGoals={setSemesterGoals} learningNotes={learningNotes} setLearningNotes={setLearningNotes} />}
           </section>
         ) : activeMainChapter === 'intervention' ? (
           <BehaviorIntervention value={behaviorIntervention} onChange={setBehaviorIntervention} />

@@ -20,4 +20,18 @@
 .assessment-document-error { color: #a52626; padding: 12px; background: #fff0f0; border-radius: 6px; }
 .assessment-document-warning { color: #845900; background: #fff8e6; padding: 12px; border-radius: 6px; }
 .assessment-document-confirmed { color: var(--color-primary-dark); }
+.assessment-analysis-result-dialog { max-height: calc(100dvh - 32px); }
+.assessment-analysis-result-dialog .assessment-document-body { overflow-y: auto; max-height: calc(100dvh - 112px); }
+.assessment-analysis-section { margin-top: 24px; }
+.assessment-analysis-section h3, .assessment-analysis-warnings h3 { margin-bottom: 10px; }
+.assessment-analysis-section p { white-space: pre-wrap; }
+.assessment-analysis-domains { display: grid; gap: 12px; }
+.assessment-analysis-domain { padding: 14px; border: 1px solid var(--color-border); border-radius: 8px; }
+.assessment-analysis-domain h4 { margin: 0 0 8px; }
+.assessment-analysis-domain p { margin: 8px 0; }
+.assessment-analysis-domain summary { cursor: pointer; font-weight: 600; }
+.assessment-analysis-domain ul, .assessment-analysis-warnings ul { margin-bottom: 0; padding-left: 20px; }
+.assessment-analysis-domain li { white-space: pre-wrap; }
+.assessment-analysis-warnings { margin-top: 24px; padding: 12px; border-radius: 6px; color: #845900; background: #fff8e6; }
+.assessment-analysis-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; margin-top: 24px; }
 @media (max-width: 520px) { .assessment-document-header, .assessment-document-body { padding: 18px; } .assessment-document-actions { flex-direction: column; } }

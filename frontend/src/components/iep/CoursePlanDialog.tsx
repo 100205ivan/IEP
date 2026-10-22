@@ -10,7 +10,7 @@ export function CoursePlanDialog({ item, onClose, onSave }: { item: CoursePlanIt
   const dialog = useRef<HTMLDialogElement>(null)
   const [draft, setDraft] = useState<CoursePlanDraft>(item ? { ...item, weeklyPeriods: String(item.weeklyPeriods) } : emptyDraft)
   const [error, setError] = useState('')
-  useEffect(() => { dialog.current?.showModal(); return () => dialog.current?.close() }, [])
+  useEffect(() => { const dialogNode = dialog.current; dialogNode?.showModal(); return () => dialogNode?.close() }, [])
   const update = <K extends keyof CoursePlanDraft>(key: K, value: CoursePlanDraft[K]) => setDraft((current) => ({ ...current, [key]: value }))
   const save = () => {
     if (!draft.courseName.trim()) return setError('請填寫課程名稱。')

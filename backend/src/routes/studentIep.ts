@@ -43,7 +43,10 @@ studentIepRouter.delete('/ieps/:iepId', async (request, response, next) => {
   try {
     const data = await deleteIep(request.params.iepId)
     return data ? response.json({ ok: true, data }) : response.status(404).json({ ok: false, error: { code: 'NOT_FOUND', message: '找不到 IEP，可能已被刪除。' } })
-  } catch (error) { next(error) }
+  } catch (error) {
+    if ((error as { code?: string }).code === 'ER_ROW_IS_REFERENCED_2') return response.status(409).json({ ok: false, error: { code: 'IEP_HAS_ASSESSMENTS', message: '此 IEP 尚有評量紀錄，無法直接刪除。' } })
+    next(error)
+  }
 })
 studentIepRouter.put('/ieps/:iepId', async (request, response, next) => {
   if (!validId(request.params.iepId)) return invalidId(response)

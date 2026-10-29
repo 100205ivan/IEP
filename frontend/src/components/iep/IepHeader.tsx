@@ -23,11 +23,13 @@ export function IepHeader({ studentName, schoolYear, semester, saveStatus, onSav
           <label className="school-year-editor">學年度 <input aria-label="學年度" inputMode="numeric" value={schoolYear} onChange={(event) => onSchoolYearChange(event.target.value)} /></label>
           <span>{semester}</span>
         </div>
-        <div className="save-status" role="status">
-          <span className="status-dot" aria-hidden="true" />
-          {statusLabels[saveStatus]}
+        <div className="header-actions">
+          <div className="save-status" role="status">
+            <span className="status-dot" aria-hidden="true" />
+            {statusLabels[saveStatus]}
+          </div>
+          <button className="button button--primary iep-save-button" type="button" onClick={onSave} disabled={disabled || saveStatus === 'saving'}>{saveStatus === 'saving' ? '儲存中…' : '儲存 IEP'}</button>
         </div>
-        <button className="button button--primary" type="button" onClick={onSave} disabled={disabled || saveStatus === 'saving'}>{saveStatus === 'saving' ? '儲存中…' : '儲存 IEP'}</button>
       </div>
     </header>
   )

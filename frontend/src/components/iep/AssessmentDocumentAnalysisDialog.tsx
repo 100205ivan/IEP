@@ -14,7 +14,7 @@ const analysisErrorMessages = {
   UNKNOWN: 'AI 文件分析暫時無法完成，請稍後再試。',
 } as const
 
-export function AssessmentDocumentAnalysisDialog({ studentName, onClose, onConfirmAnalysis }: { studentName: string; onClose: () => void; onConfirmAnalysis: (analysis: DocumentAnalysisResult) => void }) {
+export function AssessmentDocumentAnalysisDialog({ studentName, onClose, onConfirmAnalysis }: { studentName: string; onClose: () => void; onConfirmAnalysis: (analysis: DocumentAnalysisResult) => Promise<void> }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const input = useRef<HTMLInputElement>(null)
   const pending = useRef<AbortController | null>(null)
@@ -25,6 +25,8 @@ export function AssessmentDocumentAnalysisDialog({ studentName, onClose, onConfi
   const [document, setDocument] = useState<AssessmentDocument | null>(null)
   const [reviewed, setReviewed] = useState(false)
   const [analysis, setAnalysis] = useState<DocumentAnalysisResult | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importError, setImportError] = useState('')
   const abortPendingRequest = useCallback(() => pending.current?.abort(), [])
 
   useEffect(() => {
@@ -90,7 +92,14 @@ export function AssessmentDocumentAnalysisDialog({ studentName, onClose, onConfi
       setError(cause instanceof DocumentAnalysisApiError ? analysisErrorMessages[cause.code] : cause instanceof Error ? cause.message : '請先確認去識別化內容。')
     } finally { if (pending.current === controller) pending.current = null }
   }
-  const returnToEdit = () => { setAnalysis(null); setDocument(current => current ? { ...current, confirmedAt: null } : current); setStep('preview') }
+  const returnToEdit = () => { if (importing) return; setImportError(''); setAnalysis(null); setDocument(current => current ? { ...current, confirmedAt: null } : current); setStep('preview') }
+  const importAnalysis = async () => {
+    if (!analysis || importing) return
+    setImporting(true); setImportError('')
+    try { await onConfirmAnalysis(analysis); onClose() }
+    catch (cause) { setImportError(cause instanceof Error ? cause.message : '儲存分析結果失敗，請稍後再試。') }
+    finally { setImporting(false) }
+  }
   const counts = document?.redactions.reduce<Record<string, number>>((result, item) => ({ ...result, [item.type]: (result[item.type] ?? 0) + 1 }), {}) ?? {}
 
   return <dialog className="assessment-document-dialog" ref={dialog} aria-labelledby="assessment-document-title" onCancel={event => { event.preventDefault(); onClose() }}>
@@ -113,6 +122,6 @@ export function AssessmentDocumentAnalysisDialog({ studentName, onClose, onConfi
       {step === 'analyzing' && <section><h3>④ AI 文件分析</h3><p className="assessment-document-confirmed" role="status" aria-live="polite">AI 分析中…</p></section>}
       {error && <p className="assessment-document-error" role="alert">{error}</p>}
     </div>
-    {step === 'analysis-preview' && analysis && <DocumentAnalysisResultDialog analysis={analysis} onClose={returnToEdit} onBackToEdit={returnToEdit} onConfirm={() => onConfirmAnalysis(analysis)} />}
+    {step === 'analysis-preview' && analysis && <DocumentAnalysisResultDialog analysis={analysis} onClose={returnToEdit} onBackToEdit={returnToEdit} onConfirm={() => { void importAnalysis() }} confirming={importing} confirmError={importError} />}
   </dialog>
 }

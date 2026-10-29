@@ -18,7 +18,9 @@
 .brand-subtitle { color: var(--color-muted); font-size: .94rem; }
 .student-summary { display: flex; align-items: center; gap: 18px; color: var(--color-muted); font-size: .94rem; white-space: nowrap; }
 .student-name { color: var(--color-text); font-size: 1.05rem; font-weight: 700; }
-.save-status { justify-self: end; display: flex; align-items: center; gap: 8px; color: var(--color-muted); font-size: .9rem; white-space: nowrap; }
+.header-actions { justify-self: end; display: flex; align-items: center; gap: 14px; white-space: nowrap; }
+.save-status { display: flex; align-items: center; gap: 8px; color: var(--color-muted); font-size: .9rem; }
+.iep-save-button { flex: 0 0 auto; min-height: 38px; padding: 8px 16px; white-space: nowrap; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); }
 
 .main-navigation { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
@@ -67,18 +69,27 @@
   .page-container { width: min(100% - 36px, 1680px); }
   .header-content { grid-template-columns: 1fr auto; min-height: auto; padding: 14px 0; }
   .student-summary { grid-row: 2; grid-column: 1 / -1; justify-content: flex-start; gap: 13px; }
-  .save-status { grid-row: 1; grid-column: 2; }
+  .header-actions { grid-row: 1; grid-column: 2; }
 }
 
 @media (max-width: 560px) {
   .page-container { width: min(100% - 28px, 1680px); }
   .brand { display: block; }
   .brand-subtitle { display: block; margin-top: -3px; }
+  .header-content { gap: 12px; }
+  .header-actions { gap: 10px; }
   .save-status { font-size: .78rem; }
+  .iep-save-button { min-height: 36px; padding: 7px 12px; font-size: .88rem; }
   .student-summary { flex-wrap: wrap; gap: 4px 12px; }
   .main-content { padding-top: 26px; }
   .main-tab { min-height: 56px; padding: 9px 14px; font-size: .88rem; }
   .main-tab::after { right: 14px; left: 14px; }
   .sub-tab { font-size: .88rem; }
   .placeholder-section { padding: 24px; }
+}
+
+@media (max-width: 420px) {
+  .header-content { grid-template-columns: minmax(0, 1fr); }
+  .header-actions { grid-row: 2; grid-column: 1; justify-self: start; }
+  .student-summary { grid-row: 3; }
 }

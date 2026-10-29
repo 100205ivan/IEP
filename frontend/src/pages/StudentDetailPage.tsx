@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { createAnnualIep, deleteStudentIep, getStudent, getStudentIeps } from '../services/studentIepApi'
 import { initialBehaviorIntervention, initialCurriculumAdjustment, initialInclusiveEducationPlan, initialSpecialEducationSupport, initialStudentFamilyFormValue, initialTransitionSupport } from '../components/iep/iepInitialValues'
@@ -33,15 +33,26 @@ export function StudentDetailPage() {
   const [deleteError, setDeleteError] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [deletedYear, setDeletedYear] = useState<number | null>(null)
+  const requestVersion = useRef(0)
 
   const loadStudent = useCallback(() => {
-    if (!studentId) { setError('找不到學生識別碼。'); setLoading(false); return }
+    const version = ++requestVersion.current
     setLoading(true)
     setError('')
-    Promise.all([getStudent(studentId), getStudentIeps(studentId)]).then(([profile, records]) => { setStudent(profile); setIeps(records) }).catch((reason: unknown) => { setError(reason instanceof Error ? reason.message : '無法載入學生資料。') }).finally(() => setLoading(false))
+    if (!studentId) { setError('找不到學生識別碼。'); setLoading(false); return }
+    void Promise.all([getStudent(studentId), getStudentIeps(studentId)]).then(([profile, records]) => { if (requestVersion.current === version) { setStudent(profile); setIeps(records) } }).catch((reason: unknown) => { if (requestVersion.current === version) setError(reason instanceof Error ? reason.message : '無法載入學生資料。') }).finally(() => { if (requestVersion.current === version) setLoading(false) })
   }, [studentId])
 
-  useEffect(() => { loadStudent() }, [loadStudent])
+  useEffect(() => {
+    let active = true
+    const version = ++requestVersion.current
+    if (!studentId) {
+      void Promise.resolve().then(() => { if (active && requestVersion.current === version) { setError('找不到學生識別碼。'); setLoading(false) } })
+      return () => { active = false }
+    }
+    void Promise.all([getStudent(studentId), getStudentIeps(studentId)]).then(([profile, records]) => { if (active && requestVersion.current === version) { setStudent(profile); setIeps(records) } }).catch((reason: unknown) => { if (active && requestVersion.current === version) setError(reason instanceof Error ? reason.message : '無法載入學生資料。') }).finally(() => { if (active && requestVersion.current === version) setLoading(false) })
+    return () => { active = false }
+  }, [studentId])
 
   const sourceIep = useMemo(() => {
     const targetYear = Number(createYear)

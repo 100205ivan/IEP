@@ -19,6 +19,9 @@ export function App() {
       <Route path="/iep/game-assessment" element={<GameAssessmentPage />} />
       <Route path="/iep/game-assessment/monkey" element={<MonkeyGame />} />
       <Route path="/iep/game-assessment/cpt" element={<CptGame />} />
+      <Route path="/students/:studentId/ieps/:iepId/game-assessment" element={<GameAssessmentPage />} />
+      <Route path="/students/:studentId/ieps/:iepId/game-assessment/monkey" element={<MonkeyGame />} />
+      <Route path="/students/:studentId/ieps/:iepId/game-assessment/cpt" element={<CptGame />} />
       <Route path="*" element={<Navigate to="/students" replace />} />
     </Routes></AssessmentRecordsProvider>
   )

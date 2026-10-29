@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AssessmentSubTabs, type AssessmentSubChapter } from '../components/iep/AssessmentSubTabs'
 import { IepHeader } from '../components/iep/IepHeader'
@@ -6,6 +6,7 @@ import { MainChapterTabs, type MainChapter } from '../components/iep/MainChapter
 import { StudentFamilyForm, type StudentFamilyFormValue } from '../components/iep/StudentFamilyForm'
 import { AbilityAssessment } from '../components/iep/AbilityAssessment'
 import { useAssessmentRecords } from '../context/useAssessmentRecords'
+import type { AssessmentScope } from '../context/assessmentRecordsStore'
 import { EducationalNeedsAssessment, type AssessmentDetails, type AssessmentSelections, type StrengthWeaknessSummary } from '../components/iep/EducationalNeedsAssessment'
 import { SpecialEducationSupport, type SpecialEducationSupportValue } from '../components/iep/SpecialEducationSupport'
 import { InclusiveEducationPlan, type InclusiveEducationPlanValue } from '../components/iep/InclusiveEducationPlan'
@@ -93,11 +94,13 @@ export function IepEditorPage() {
   const [coursePlanItems, setCoursePlanItems] = useState<CoursePlanItem[]>([])
   const [weeklySchedule, setWeeklySchedule] = useState<WeeklyScheduleEntry[]>([])
   const [assessmentSelections, setAssessmentSelections] = useState<AssessmentSelections>({})
-  const { records: assessmentRecords, setRecords: setAssessmentRecords, documentAnalyses, setDocumentAnalyses } = useAssessmentRecords()
+  const { manualRecords, transientRecords, documentAnalyses, activeStudentId, activeIepId, resetForIep, isCurrentScope, updateManualRecords, updateTransientRecords, updateDocumentAnalyses, updateScopeInfo } = useAssessmentRecords()
   const [assessmentDetails, setAssessmentDetails] = useState<AssessmentDetails>({})
   const [strengthWeaknessSummary, setStrengthWeaknessSummary] = useState<StrengthWeaknessSummary>({ strengths: [], weaknesses: [], strengthNotes: '', weaknessNotes: '', overallNeeds: '' })
   const studentName = studentFamilyForm.values.studentName || '新學生'
   const activeMain = mainChapters.find((chapter) => chapter.id === activeMainChapter)
+  const assessmentScope = useMemo<AssessmentScope>(() => ({ studentId: studentId ?? null, iepId: iepId ?? null }), [studentId, iepId])
+  const assessmentScopeActive = activeStudentId === assessmentScope.studentId && activeIepId === assessmentScope.iepId
 
   useEffect(() => {
     if (!iepId) return
@@ -129,6 +132,9 @@ export function IepEditorPage() {
     return () => { active = false }
   }, [iepId, studentId])
 
+  useLayoutEffect(() => { resetForIep(assessmentScope) }, [assessmentScope, resetForIep])
+  useEffect(() => { updateScopeInfo(assessmentScope, studentName, academicYear, '年度 IEP') }, [assessmentScope, studentName, academicYear, updateScopeInfo])
+
   useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => { if (saveStatus === 'unsaved' || saveStatus === 'error') { event.preventDefault(); event.returnValue = '' } }
     window.addEventListener('beforeunload', handler)
@@ -152,9 +158,7 @@ export function IepEditorPage() {
   const updateAssessmentSelections = track(setAssessmentSelections)
   const updateAssessmentDetails = track(setAssessmentDetails)
   const updateStrengthWeaknessSummary = track(setStrengthWeaknessSummary)
-  const updateAssessmentRecords = track(setAssessmentRecords)
-  const updateDocumentAnalyses = track(setDocumentAnalyses)
-  const buildContent = (): IepContent => ({ studentFamilyForm, goalDomains, semesterGoals, learningNotes, behaviorIntervention, transitionSupport, meetingRecords, specialEducationSupport, inclusiveEducationPlan, curriculumAdjustment, coursePlanItems, weeklySchedule, assessmentSelections, assessmentDetails, strengthWeaknessSummary, ...(basicInfoReviewNotice ? { basicInfoReviewNotice } : {}) })
+  const buildContent = (): IepContent => ({ studentFamilyForm, goalDomains, semesterGoals, learningNotes, behaviorIntervention, transitionSupport, meetingRecords, specialEducationSupport, inclusiveEducationPlan, curriculumAdjustment, coursePlanItems, weeklySchedule: weeklySchedule.filter((entry) => coursePlanItems.some((course) => course.id === entry.courseId)), assessmentSelections, assessmentDetails, strengthWeaknessSummary, ...(basicInfoReviewNotice ? { basicInfoReviewNotice } : {}) })
   const buildStudent = (): StudentFieldsPayload => ({ name: studentFamilyForm.values.studentName.trim(), gender: studentFamilyForm.values.gender, birthDate: studentFamilyForm.values.birthDate || null, nationalId: studentFamilyForm.values.nationalId || null, studentNumber: studentFamilyForm.values.studentId || '' })
   const updateAcademicYear = (value: string) => { setAcademicYear(value); markUnsaved() }
   const save = async () => {
@@ -185,7 +189,7 @@ export function IepEditorPage() {
               <p>請選擇下方子章節查看填寫區域。</p>
             </div>
             <AssessmentSubTabs chapters={assessmentSubChapters} activeChapter={activeAssessmentChapter} onChange={setActiveAssessmentChapter} />
-            {activeAssessmentChapter === 'family-info' ? <StudentFamilyForm value={studentFamilyForm} onChange={updateStudentFamilyForm} /> : activeAssessmentChapter === 'ability-record' ? <AbilityAssessment studentName={studentName} records={assessmentRecords} setRecords={updateAssessmentRecords} documentAnalyses={documentAnalyses} setDocumentAnalyses={updateDocumentAnalyses} /> : activeAssessmentChapter === 'education-needs' ? <EducationalNeedsAssessment selected={assessmentSelections} setSelected={updateAssessmentSelections} details={assessmentDetails} setDetails={updateAssessmentDetails} summary={strengthWeaknessSummary} setSummary={updateStrengthWeaknessSummary} /> : <AssessmentPlaceholder activeChapter={activeAssessmentChapter} />}
+            {activeAssessmentChapter === 'family-info' ? <StudentFamilyForm value={studentFamilyForm} onChange={updateStudentFamilyForm} /> : activeAssessmentChapter === 'ability-record' ? <AbilityAssessment key={`${assessmentScope.studentId ?? 'new'}:${assessmentScope.iepId ?? 'new'}`} studentName={studentName} scope={assessmentScope} scopeActive={assessmentScopeActive} isCurrentScope={isCurrentScope} manualRecords={manualRecords} updateManualRecords={updateManualRecords} transientRecords={transientRecords} updateTransientRecords={updateTransientRecords} documentAnalyses={documentAnalyses} updateDocumentAnalyses={updateDocumentAnalyses} /> : activeAssessmentChapter === 'education-needs' ? <EducationalNeedsAssessment selected={assessmentSelections} setSelected={updateAssessmentSelections} details={assessmentDetails} setDetails={updateAssessmentDetails} summary={strengthWeaknessSummary} setSummary={updateStrengthWeaknessSummary} /> : <AssessmentPlaceholder activeChapter={activeAssessmentChapter} />}
           </section>
         ) : activeMainChapter === 'services' ? (
           <section className="content-panel" id="chapter-services" role="tabpanel" aria-labelledby="chapter-tab-services">

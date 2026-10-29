@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { ABILITY_DOMAIN_LABELS, ABILITY_DOMAINS, type DocumentAnalysisResult, type StoredDocumentAnalysis } from '../../types/assessmentAnalysis'
 import '../../styles/assessment-document-dialog.css'
 
-export function DocumentAnalysisResultDialog({ analysis, onClose, onBackToEdit, onConfirm }: { analysis: DocumentAnalysisResult | StoredDocumentAnalysis; onClose: () => void; onBackToEdit?: () => void; onConfirm?: () => void }) {
+export function DocumentAnalysisResultDialog({ analysis, onClose, onBackToEdit, onConfirm, confirming = false, confirmError = '' }: { analysis: DocumentAnalysisResult | StoredDocumentAnalysis; onClose: () => void; onBackToEdit?: () => void; onConfirm?: () => void; confirming?: boolean; confirmError?: string }) {
   const dialog = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -27,7 +27,8 @@ export function DocumentAnalysisResultDialog({ analysis, onClose, onBackToEdit, 
         return <article key={domain} className="assessment-analysis-domain"><h4>{ABILITY_DOMAIN_LABELS[domain]}</h4>{domainAnalysis.hasEvidence ? <><p>已整理 {domainAnalysis.evidence.length} 項評量資訊</p><details><summary>查看評量資訊</summary>{domainAnalysis.summary && <p>{domainAnalysis.summary}</p>}<ul>{domainAnalysis.evidence.map(evidence => <li key={evidence.id}>{evidence.content}</li>)}</ul></details></> : <p>文件未提供相關資訊</p>}</article>
       })}</div></section>
       {analysis.warnings.length > 0 && <section className="assessment-analysis-warnings"><h3>需要老師確認</h3><ul>{analysis.warnings.map((warning, index) => <li key={`${index}-${warning}`}>{warning}</li>)}</ul></section>}
-      {onConfirm && <footer className="assessment-analysis-actions"><button className="button button--secondary" type="button" onClick={onBackToEdit ?? onClose}>返回修改</button><button className="button button--primary" type="button" onClick={onConfirm}>確認分析結果</button></footer>}
+      {confirmError && <p className="assessment-document-error" role="alert">{confirmError}</p>}
+      {onConfirm && <footer className="assessment-analysis-actions"><button className="button button--secondary" type="button" disabled={confirming} onClick={onBackToEdit ?? onClose}>返回修改</button><button className="button button--primary" type="button" disabled={confirming} onClick={onConfirm}>{confirming ? '儲存中…' : '確認分析結果'}</button></footer>}
     </div>
   </dialog>
 }

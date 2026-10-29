@@ -54,4 +54,6 @@ export interface DocumentAnalysisResult {
 
 export interface StoredDocumentAnalysis extends DocumentAnalysisResult {
   assessmentRecordId: string
+  analyzedAt?: string
+  createdAt?: string
 }

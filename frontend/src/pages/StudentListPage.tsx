@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listStudents } from '../services/studentIepApi'
 import type { StudentSummary } from '../types/studentIep'
@@ -20,14 +20,21 @@ export function StudentListPage() {
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<StudentSort>('updated')
+  const requestVersion = useRef(0)
 
   const loadStudents = useCallback(() => {
+    const version = ++requestVersion.current
     setLoading(true)
     setError('')
-    listStudents().then(setStudents).catch((reason: unknown) => { setError(reason instanceof Error ? reason.message : '無法載入學生資料。') }).finally(() => setLoading(false))
+    void listStudents().then((records) => { if (requestVersion.current === version) setStudents(records) }).catch((reason: unknown) => { if (requestVersion.current === version) setError(reason instanceof Error ? reason.message : '無法載入學生資料。') }).finally(() => { if (requestVersion.current === version) setLoading(false) })
   }, [])
 
-  useEffect(() => { loadStudents() }, [loadStudents])
+  useEffect(() => {
+    let active = true
+    const version = ++requestVersion.current
+    void listStudents().then((records) => { if (active && requestVersion.current === version) setStudents(records) }).catch((reason: unknown) => { if (active && requestVersion.current === version) setError(reason instanceof Error ? reason.message : '無法載入學生資料。') }).finally(() => { if (active && requestVersion.current === version) setLoading(false) })
+    return () => { active = false }
+  }, [])
 
   const filteredStudents = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('zh-TW')

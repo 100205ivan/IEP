@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import type { MonkeyQuestion, MonkeyQuestionResult, MonkeyResults, MonkeyWord } from '../../../types/gameAssessment'
 import { makePractice, makeQuestions, MONKEY_TIMING, playQuestion, scoreAnswer, summarizeResults, WORD_EMOJI, WORDS, type PracticeQuestion } from './monkeyGameLogic'
 import { describeMonkeyPerformance, MONKEY_NORMS, monkeyPerformanceNote } from './monkeyNorms'
@@ -66,7 +66,7 @@ function TestQuestion({ question, index, onComplete }: { question: MonkeyQuestio
   </section>
 }
 
-function Results({ results, age, onRestart, resultId, assessmentDate }: { results: MonkeyResults; age: number; onRestart: () => void; resultId: string; assessmentDate: string }) {
+function Results({ results, age, onRestart, resultId, assessmentDate, completedAt }: { results: MonkeyResults; age: number; onRestart: () => void; resultId: string; assessmentDate: string; completedAt: string }) {
   const norm = MONKEY_NORMS[age]
   const z = (results.totalScore - norm.mean) / norm.sd
   const note = monkeyPerformanceNote(z)
@@ -75,11 +75,12 @@ function Results({ results, age, onRestart, resultId, assessmentDate }: { result
     <div className="score-box"><span>工作記憶總分</span><strong>{Math.round(results.totalScore * 100)}%</strong><small>（{results.correctPositions} / {results.totalPositions} 個位置）</small></div>
     <h2>各 Level 表現</h2><div className="levels">{results.levelScores.map((value, index) => <div key={index}><span>Level {index + 1}（{index + 2} 個詞）</span><b>{Math.round(value * 100)}%</b></div>)}</div>
     <div className="norm"><h2>同齡比較（{age} 歲）</h2><p>研究平均：{norm.mean.toFixed(2)}{'\u3000'}SD：{norm.sd.toFixed(2)}</p><p>與平均相差：<strong>{z.toFixed(2)} SD</strong></p><p>相對表現：<strong>{describeMonkeyPerformance(z)}</strong></p>{note && <p className="note">{note}</p>}</div>
-    <GameAssessmentImport source="monkey" type="認知遊戲評量" tool="猴子工作記憶遊戲" resultId={resultId} assessmentDate={assessmentDate} summary={`工作記憶總分 ${Math.round(results.totalScore * 100)}%（${results.correctPositions} / ${results.totalPositions} 個位置）；同齡比較：與平均相差 ${z.toFixed(2)} SD，相對表現：${describeMonkeyPerformance(z)}。`} /><button type="button" className="primary" onClick={onRestart}>再玩一次</button><p className="fine">此結果僅供遊戲與研究樣本比較參考。</p>
+    <GameAssessmentImport tool="猴子工作記憶遊戲" result={{ resultId, gameType: 'monkey', assessmentDate, completedAt, age, result: results, summary: `工作記憶總分 ${Math.round(results.totalScore * 100)}%（${results.correctPositions} / ${results.totalPositions} 個位置）；同齡比較：與平均相差 ${z.toFixed(2)} SD，相對表現：${describeMonkeyPerformance(z)}。` }} /><button type="button" className="primary" onClick={onRestart}>再玩一次</button><p className="fine">此結果僅供遊戲與研究樣本比較參考。</p>
   </section>
 }
 
 export function MonkeyGame() {
+  const { studentId, iepId } = useParams()
   const [view, setView] = useState<'home' | 'age' | 'practice' | 'test' | 'results'>('home')
   const [age, setAge] = useState<number | null>(null)
   const [practice, setPractice] = useState<PracticeQuestion[]>([])
@@ -90,9 +91,10 @@ export function MonkeyGame() {
   const [results, setResults] = useState<MonkeyResults | null>(null)
   const [resultId, setResultId] = useState('')
   const [assessmentDate, setAssessmentDate] = useState('')
+  const [completedAt, setCompletedAt] = useState('')
   const restart = () => { setAge(null); setPractice([]); setQuestions([]); setAnswers([]); setResults(null); setView('home') }
   return <div className="monkey-game">
-    <nav className="game-return"><Link to="/iep/game-assessment">← 返回遊戲選擇頁</Link></nav>
+    <nav className="game-return"><Link to={studentId && iepId ? `/students/${studentId}/ieps/${iepId}/game-assessment` : '/iep/game-assessment'}>← 返回遊戲選擇頁</Link></nav>
     <main className="app">
       {view === 'home' && <section className="card"><div className="mascot">🐒</div><h1>猴子工作記憶遊戲</h1><p className="lead">聽一串詞語，再把它們用<strong>相反順序</strong>點回來！</p><div className="rules"><span>👂 仔細聽完詞語</span><span>🔄 從最後一個開始點</span><span>🎯 盡力完成每一題</span></div><button type="button" className="primary" onClick={() => setView('age')}>開始遊戲</button></section>}
       {view === 'age' && <section className="card"><h1>選擇你的年齡</h1><p>這會用來和同齡研究樣本比較結果。</p><div className="age-grid">{[6, 7, 8, 9, 10, 11, 12].map(value => <button type="button" className="age" key={value} onClick={() => { setAge(value); setPracticeIndex(0); setPractice(makePractice()); setView('practice') }}>{value}<small>歲</small></button>)}</div><button type="button" className="text" onClick={() => setView('home')}>← 回首頁</button></section>}
@@ -103,10 +105,10 @@ export function MonkeyGame() {
       {view === 'test' && <TestQuestion key={testIndex} question={questions[testIndex]} index={testIndex} onComplete={answer => {
         const next = [...answers, answer]
         setAnswers(next)
-        if (testIndex === 19) { setResults(summarizeResults(next)); setResultId(crypto.randomUUID()); setAssessmentDate(localDateString()); setView('results') }
+        if (testIndex === 19) { setResults(summarizeResults(next)); setResultId(crypto.randomUUID()); setAssessmentDate(localDateString()); setCompletedAt(new Date().toISOString()); setView('results') }
         else setTestIndex(testIndex + 1)
       }} />}
-      {view === 'results' && results && age !== null && <Results results={results} age={age} resultId={resultId} assessmentDate={assessmentDate} onRestart={restart} />}
+      {view === 'results' && results && age !== null && <Results results={results} age={age} resultId={resultId} assessmentDate={assessmentDate} completedAt={completedAt} onRestart={restart} />}
     </main>
   </div>
 }

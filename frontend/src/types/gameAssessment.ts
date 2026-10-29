@@ -51,3 +51,21 @@ export interface CptResults {
   metrics: CptMetrics
   trials: CptTrial[]
 }
+
+export type GameAssessmentType = 'monkey' | 'cpt'
+export type GameAssessmentResult = MonkeyResults | CptResults
+
+export interface GameAssessmentPayload {
+  resultId: string
+  gameType: GameAssessmentType
+  assessmentDate: string
+  completedAt: string
+  summary: string
+  age: number
+  result: GameAssessmentResult
+}
+
+export interface StoredGameAssessmentResult extends GameAssessmentPayload {
+  assessmentRecordId: string
+  createdAt?: string
+}

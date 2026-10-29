@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import type { CoursePlanItem } from './StudentCoursePlan'
 import { ScheduleCourseDialog } from './ScheduleCourseDialog'
 import { periods, weekdays, type PeriodId, type Weekday } from './weeklyScheduleConstants'
@@ -6,9 +6,12 @@ export interface WeeklyScheduleEntry { day: Weekday; period: PeriodId; courseId:
 
 export function StudentWeeklySchedule({ courses, schedule, setSchedule, onGoToCoursePlan }: { courses: CoursePlanItem[]; schedule: WeeklyScheduleEntry[]; setSchedule: Dispatch<SetStateAction<WeeklyScheduleEntry[]>>; onGoToCoursePlan: () => void }) {
   const [activeSlot, setActiveSlot] = useState<{ day: Weekday; period: PeriodId } | null>(null)
-  useEffect(() => { const ids = new Set(courses.map((course) => course.id)); setSchedule((current) => current.filter((entry) => ids.has(entry.courseId))) }, [courses, setSchedule])
-  const counts = useMemo(() => Object.fromEntries(courses.map((course) => [course.id, schedule.filter((entry) => entry.courseId === course.id).length])), [courses, schedule])
-  const entryFor = (day: Weekday, period: PeriodId) => schedule.find((entry) => entry.day === day && entry.period === period)
+  const validSchedule = useMemo(() => {
+    const ids = new Set(courses.map((course) => course.id))
+    return schedule.filter((entry) => ids.has(entry.courseId))
+  }, [courses, schedule])
+  const counts = useMemo(() => Object.fromEntries(courses.map((course) => [course.id, validSchedule.filter((entry) => entry.courseId === course.id).length])), [courses, validSchedule])
+  const entryFor = (day: Weekday, period: PeriodId) => validSchedule.find((entry) => entry.day === day && entry.period === period)
   const save = (courseId: string) => { if (!activeSlot) return; setSchedule((current) => [...current.filter((entry) => entry.day !== activeSlot.day || entry.period !== activeSlot.period), { ...activeSlot, courseId }]); setActiveSlot(null) }
   const remove = () => { if (!activeSlot) return; setSchedule((current) => current.filter((entry) => entry.day !== activeSlot.day || entry.period !== activeSlot.period)); setActiveSlot(null) }
   if (courses.length === 0) return <section className="weekly-schedule-empty" id="services-weekly-schedule" role="tabpanel" aria-labelledby="services-tab-weekly-schedule"><h2>尚未建立學生課程規劃</h2><p>請先至「四、學生課程規劃表」新增課程，再安排每週課表。</p><button className="button button--primary" type="button" onClick={onGoToCoursePlan}>前往學生課程規劃表</button></section>

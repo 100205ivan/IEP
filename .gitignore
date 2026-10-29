@@ -9,6 +9,9 @@ dist/
 .env.*
 !.env.example
 
+# Local database migration/runtime files
+backend/data/
+
 # Python
 __pycache__/
 *.pyc

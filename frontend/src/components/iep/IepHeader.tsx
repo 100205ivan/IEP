@@ -2,9 +2,15 @@ interface IepHeaderProps {
   studentName: string
   schoolYear: string
   semester: string
+  saveStatus: 'unsaved' | 'saving' | 'saved' | 'error'
+  onSave: () => void
+  onSchoolYearChange: (value: string) => void
+  disabled?: boolean
 }
 
-export function IepHeader({ studentName, schoolYear, semester }: IepHeaderProps) {
+const statusLabels = { unsaved: '尚未儲存', saving: '儲存中', saved: '儲存成功', error: '儲存失敗' }
+
+export function IepHeader({ studentName, schoolYear, semester, saveStatus, onSave, onSchoolYearChange, disabled }: IepHeaderProps) {
   return (
     <header className="site-header">
       <div className="header-content page-container">
@@ -14,13 +20,14 @@ export function IepHeader({ studentName, schoolYear, semester }: IepHeaderProps)
         </div>
         <div className="student-summary" aria-label="目前學生與學期">
           <span className="student-name">{studentName}</span>
-          <span>{schoolYear}學年度</span>
+          <label className="school-year-editor">學年度 <input aria-label="學年度" inputMode="numeric" value={schoolYear} onChange={(event) => onSchoolYearChange(event.target.value)} /></label>
           <span>{semester}</span>
         </div>
         <div className="save-status" role="status">
           <span className="status-dot" aria-hidden="true" />
-          尚未連接儲存功能
+          {statusLabels[saveStatus]}
         </div>
+        <button className="button button--primary" type="button" onClick={onSave} disabled={disabled || saveStatus === 'saving'}>{saveStatus === 'saving' ? '儲存中…' : '儲存 IEP'}</button>
       </div>
     </header>
   )

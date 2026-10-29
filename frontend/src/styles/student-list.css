@@ -1,0 +1,78 @@
+.student-management-header-label { color: var(--color-muted); font-size: .94rem; }
+.student-list-page, .student-detail-page { padding-top: 2rem; padding-bottom: 4rem; }
+.student-list-heading, .student-detail-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 2rem; }
+.student-list-heading h1 { margin: .25rem 0 .5rem; }
+.student-list-heading p, .student-detail-heading p, .student-detail-section-heading p { margin: 0; color: var(--color-muted); }
+.student-list-summary { display: flex; gap: 16px; margin-bottom: 24px; }
+.student-list-summary > div { min-width: 160px; padding: 18px 20px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); }
+.student-list-summary span, .student-list-summary strong { display: block; }
+.student-list-summary span { color: var(--color-muted); font-size: .9rem; }
+.student-list-summary strong { margin-top: 4px; color: var(--color-primary-dark); font-size: 1.65rem; }
+.student-list-tools { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 18px; padding: 18px 20px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); }
+.student-search-field { flex: 1; }
+.student-sort-field { width: 220px; }
+.student-search-field, .student-sort-field { display: grid; gap: 6px; color: var(--color-text); font-weight: 700; }
+.student-list-tools input, .student-list-tools select { width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); color: var(--color-text); font: inherit; }
+.student-list-table-wrap, .student-iep-table-wrap { overflow-x: auto; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; }
+.student-list-table, .student-iep-table { width: 100%; border-collapse: collapse; }
+.student-list-table th, .student-list-table td, .student-iep-table th, .student-iep-table td { padding: 1rem 1.1rem; text-align: left; border-bottom: 1px solid var(--color-border); }
+.student-list-table th, .student-iep-table th { color: var(--color-muted); font-size: .875rem; background: #f5f9f8; }
+.student-list-table tr:last-child td { border-bottom: 0; }
+.student-iep-table tr:last-child td { border-bottom: 0; }
+.student-name-link { color: var(--color-primary-dark); font-weight: 700; text-decoration: none; }
+.student-name-link:hover, .back-link:hover { text-decoration: underline; }
+.student-list-empty, .student-detail-empty { padding: 3rem; text-align: center; background: var(--color-surface); border: 1px dashed var(--color-border); border-radius: 10px; }
+.student-list-empty h2 { margin-top: 0; }
+.student-list-status { color: var(--color-muted); }
+.student-list-error, .student-detail-error { color: #8f2b22; background: #fff5f3; padding: 1rem 1.2rem; border: 1px solid #efc8c2; border-radius: 8px; }
+.student-list-error p { margin: 0 0 12px; }
+.student-detail-error h1 { margin-top: 0; }
+.student-detail-error > div { display: flex; gap: 10px; flex-wrap: wrap; }
+.back-link { display: inline-block; margin-bottom: 1.5rem; color: var(--color-primary-dark); font-weight: 700; text-decoration: none; }
+.student-profile-card, .student-iep-history { margin-bottom: 24px; padding: 24px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); }
+.student-profile-card h2, .student-iep-history h2 { margin-top: 0; }
+.student-profile-card dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 0; }
+.student-profile-card dt { color: var(--color-muted); font-size: .9rem; }
+.student-profile-card dd { margin: 3px 0 0; font-weight: 700; }
+.student-detail-section-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.student-detail-section-heading h2 { margin-bottom: 4px; }
+.student-iep-actions { display: flex; align-items: center; gap: 10px; }
+.student-iep-delete { border: 0; background: transparent; color: #a23a3a; cursor: pointer; }
+.student-iep-delete:hover { color: #7b2424; text-decoration: underline; }
+.student-create-success { padding: 12px 16px; border: 1px solid #b9dcca; border-radius: 8px; background: #f0faf4; color: #21613e; }
+.student-create-success a { margin-left: 8px; color: var(--color-primary-dark); font-weight: 700; }
+.student-delete-success { padding: 12px 16px; border: 1px solid #edd0ca; border-radius: 8px; background: #fff7f5; color: #8f2b22; }
+.student-create-backdrop { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 20px; background: rgb(23 43 54 / 65%); }
+.student-create-dialog { width: min(520px, 100%); padding: 24px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); box-shadow: 0 18px 48px rgb(26 53 56 / 24%); }
+.student-create-dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--color-border); }
+.student-create-dialog-heading h2 { margin: 0; color: var(--color-primary-dark); }
+.student-create-dialog form { display: grid; gap: 16px; padding-top: 20px; }
+.student-create-dialog form > label, .student-create-dialog fieldset { display: grid; gap: 7px; color: var(--color-text); font-weight: 700; }
+.student-create-dialog input[type="text"], .student-create-dialog input[type="number"] { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); color: var(--color-text); font: inherit; }
+.student-create-dialog input[readonly] { background: #eef3f3; }
+.student-create-dialog fieldset { margin: 0; padding: 14px; border: 1px solid var(--color-border); border-radius: 8px; }
+.student-create-dialog legend { padding: 0 5px; }
+.student-create-method { display: flex !important; align-items: center; gap: 8px; font-weight: 400 !important; }
+.student-create-dialog fieldset p { margin: 0; color: var(--color-muted); font-size: .9rem; font-weight: 400; }
+.student-create-error { margin: 0; color: #8f2b22; }
+.student-create-dialog footer { display: flex; justify-content: flex-end; gap: 10px; }
+.student-delete-dialog form > p { margin: 0; color: var(--color-text); }
+.student-delete-dialog form > p + p { color: var(--color-muted); }
+.student-delete-confirm { border: 1px solid #a23a3a; background: #a23a3a; color: #fff; }
+.student-delete-confirm:hover:not(:disabled) { background: #7b2424; }
+.student-delete-confirm:disabled { cursor: not-allowed; opacity: .55; }
+
+@media (max-width: 700px) {
+  .student-list-heading, .student-detail-heading, .student-list-tools { align-items: stretch; flex-direction: column; }
+  .student-list-heading .button, .student-detail-heading .button { align-self: flex-start; }
+  .student-list-tools { gap: 12px; }
+  .student-sort-field { width: auto; }
+  .student-profile-card dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 440px) {
+  .student-list-summary { gap: 8px; }
+  .student-list-summary > div { flex: 1; min-width: 0; padding: 14px; }
+  .student-profile-card dl { grid-template-columns: 1fr; }
+  .student-profile-card, .student-iep-history { padding: 18px; }
+}

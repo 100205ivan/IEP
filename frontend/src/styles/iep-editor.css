@@ -44,6 +44,7 @@
 .main-tab.is-active::after { background: var(--color-primary); }
 
 .main-content { padding-top: 38px; padding-bottom: 64px; }
+.iep-inherited-basic-notice { margin-top: 16px; margin-bottom: 0; padding: 12px 16px; border: 1px solid #c8ddd9; border-radius: 8px; background: var(--color-primary-soft); color: var(--color-primary-dark); }
 .content-panel { min-height: 420px; }
 .section-heading { margin-bottom: 26px; }
 .section-heading h1 { margin: 3px 0 8px; color: #203234; font-size: clamp(1.45rem, 2vw, 1.85rem); line-height: 1.35; }

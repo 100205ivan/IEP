@@ -21,24 +21,6 @@ EyeEP 是以學生個別化教育計畫（IEP）為核心的教學與評量管�
 
 AI 文件分析與摘要需要有效且有可用額度的 Gemini API Key；其他不需要 AI 的功能仍可在沒有 Key 時啟動。
 
-## 組員同步 main
-
-上述已完成功能及 AI 使用說明已整合到共用的 `main`，不必再分別拉取先前的功能分支。請在 Git clone 下來的專案資料夾執行：
-
-~~~powershell
-git fetch origin
-git switch main
-git pull --ff-only origin main
-npm ci --prefix backend
-npm ci --prefix frontend
-~~~
-
-有尚未提交的修改時，先在自己的功能分支完成 commit，再切換 `main`。只有下載 ZIP 的資料夾沒有 Git 紀錄，請依下方「下載與安裝依賴」重新 clone 專案。
-
-每位組員仍需各自設定本機 `backend/.env` 與 MariaDB；GitHub 不包含 API 金鑰、資料庫密碼或學生資料。已有資料庫請先備份，再依「系統啟動順序」啟動 MySQL、重啟 backend 及啟動 frontend。後端會執行尚未套用的 migration，前端須重新啟動以載入新增功能。
-
-新功能仍依下方「GitHub 協作流程」開分支、commit 與建立 Pull Request，確認後再合併回 `main`。
-
 ## AI 使用說明
 
 本次新增的 AI 摘要功能包含：

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { ResultSetHeader, RowDataPacket } from 'mysql2'
 import { pool } from '../config/database.js'
+import { assessmentDateSchema } from '../schemas/assessmentRecord.js'
 import type { DocumentAnalysisFields, GameAssessmentFields, ManualAssessmentFields } from '../schemas/assessmentRecord.js'
 
 type AssessmentRow = RowDataPacket & { id: string; student_id: string; iep_id: string; source: 'manual' | 'document' | 'monkey' | 'cpt'; assessment_date: string; assessment_type: string; other_assessment_type: string; assessment_tool: string; evaluator: string; summary: string; created_at: string; updated_at: string }
@@ -12,7 +13,7 @@ function mapAssessment(row: AssessmentRow) {
 }
 
 function parseJson<T>(value: string | T): T { return typeof value === 'string' ? JSON.parse(value) as T : value }
-function mysqlDate(value: string | null): string { return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : new Date().toISOString().slice(0, 10) }
+function mysqlDate(value: string | null): string { return value && assessmentDateSchema.safeParse(value).success ? value : new Date().toISOString().slice(0, 10) }
 function mapDocumentAnalysis(row: DocumentAnalysisRow) {
   return { id: row.analysis_id, assessmentRecordId: row.assessment_record_id, documentInfo: parseJson<DocumentAnalysisFields['documentInfo']>(row.document_info), overallSummary: row.overall_summary, domains: parseJson<DocumentAnalysisFields['domains']>(row.domains), warnings: parseJson<DocumentAnalysisFields['warnings']>(row.warnings), analyzedAt: row.analyzed_at, createdAt: row.created_at }
 }
@@ -108,8 +109,8 @@ export async function createDocumentAnalysis(iepId: string, analysis: DocumentAn
   } finally { connection.release() }
 }
 
-export async function getDocumentAnalysis(assessmentRecordId: string) {
-  const [rows] = await pool.execute<DocumentAnalysisRow[]>('SELECT a.* FROM assessment_document_analyses a INNER JOIN assessment_records r ON r.id = a.assessment_record_id WHERE a.assessment_record_id = ? AND r.source = ?', [assessmentRecordId, 'document'])
+export async function getDocumentAnalysis(assessmentRecordId: string, iepId: string) {
+  const [rows] = await pool.execute<DocumentAnalysisRow[]>('SELECT a.* FROM assessment_document_analyses a INNER JOIN assessment_records r ON r.id = a.assessment_record_id WHERE a.assessment_record_id = ? AND r.iep_id = ? AND r.source = ?', [assessmentRecordId, iepId, 'document'])
   return rows[0] ? mapDocumentAnalysis(rows[0]) : null
 }
 

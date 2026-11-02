@@ -1,8 +1,11 @@
 import { z } from 'zod'
 import { documentAnalysisResultSchema } from './documentAnalysis.js'
 
+export const assessmentDateSchema = z.iso.date({ error: '請填寫有效的評量日期。' })
+  .refine(value => value >= '1000-01-01', '評量日期須介於西元 1000 至 9999 年。')
+
 const manualFields = z.object({
-  assessmentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '請填寫有效的評量日期。'),
+  assessmentDate: assessmentDateSchema,
   assessmentType: z.string().trim().min(1, '請選擇評量類型。').max(80),
   otherAssessmentType: z.string().trim().max(120).default(''),
   assessmentTool: z.string().trim().min(1, '請填寫評量工具／方式。').max(255),
@@ -33,8 +36,8 @@ const cptResultSchema = z.object({
   trials: z.array(z.object({ trialIndex: z.number().int(), stimulus: z.number().int(), isTarget: z.boolean(), responded: z.boolean(), hit: z.boolean(), omission: z.boolean(), commission: z.boolean(), reactionTime: z.number().finite().nullable(), startTime: z.number().finite() })),
 })
 export const createGameAssessmentSchema = z.discriminatedUnion('gameType', [
-  z.object({ resultId: z.string().uuid(), gameType: z.literal('monkey'), assessmentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '請提供有效的評量日期。'), completedAt: z.string().datetime(), summary: z.string().trim().min(1).max(20_000), age: z.number().int().min(5).max(18), result: monkeyResultSchema }),
-  z.object({ resultId: z.string().uuid(), gameType: z.literal('cpt'), assessmentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '請提供有效的評量日期。'), completedAt: z.string().datetime(), summary: z.string().trim().min(1).max(20_000), age: z.number().int().min(5).max(18), result: cptResultSchema }),
+  z.object({ resultId: z.string().uuid(), gameType: z.literal('monkey'), assessmentDate: assessmentDateSchema, completedAt: z.string().datetime(), summary: z.string().trim().min(1).max(20_000), age: z.number().int().min(5).max(18), result: monkeyResultSchema }),
+  z.object({ resultId: z.string().uuid(), gameType: z.literal('cpt'), assessmentDate: assessmentDateSchema, completedAt: z.string().datetime(), summary: z.string().trim().min(1).max(20_000), age: z.number().int().min(5).max(18), result: cptResultSchema }),
 ])
 export type ManualAssessmentFields = z.infer<typeof manualFields>
 export type DocumentAnalysisFields = z.infer<typeof createDocumentAnalysisSchema>

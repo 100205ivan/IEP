@@ -18,25 +18,36 @@ type ReferenceContextValue = {
 
 const ReferenceContext = createContext<ReferenceContextValue | null>(null)
 
-export function AssessmentReferenceProvider({ scope, scopeActive, isCurrentScope, children }: { scope: AssessmentScope; scopeActive: boolean; isCurrentScope: (scope: AssessmentScope) => boolean; children: ReactNode }) {
+type ReferenceProviderProps = { scope: AssessmentScope; scopeActive: boolean; isCurrentScope: (scope: AssessmentScope) => boolean; children: ReactNode }
+
+export function AssessmentReferenceProvider(props: ReferenceProviderProps) {
+  const { scope, scopeActive } = props
+  // A different student/IEP gets fresh state before any previous references can render.
+  return <ScopedAssessmentReferences key={`${scope.studentId}:${scope.iepId}:${scopeActive}`} {...props} />
+}
+
+function ScopedAssessmentReferences({ scope, scopeActive, isCurrentScope, children }: ReferenceProviderProps) {
   const [records, setRecords] = useState<AssessmentRecord[]>([])
   const [documents, setDocuments] = useState<StoredDocumentAnalysis[]>([])
   const [games, setGames] = useState<StoredGameAssessmentResult[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(Boolean(scope.iepId && scopeActive))
   const [error, setError] = useState('')
   const [retryKey, setRetryKey] = useState(0)
-  const retry = useCallback(() => setRetryKey(value => value + 1), [])
+  const retry = useCallback(() => {
+    setRecords([]); setDocuments([]); setGames([]); setError('')
+    setLoading(Boolean(scope.iepId && scopeActive))
+    setRetryKey(value => value + 1)
+  }, [scope.iepId, scopeActive])
 
   useEffect(() => {
     let active = true
-    setRecords([]); setDocuments([]); setGames([]); setError(''); setLoading(false)
-    if (!scope.iepId || !scopeActive) return () => { active = false }
-    setLoading(true)
-    listPersistedAssessments(scope.iepId).then(async nextRecords => {
+    const iepId = scope.iepId
+    if (!iepId || !scopeActive) return () => { active = false }
+    listPersistedAssessments(iepId).then(async nextRecords => {
       if (!active || !isCurrentScope(scope)) return
       setRecords(nextRecords)
-      const documentResults = await Promise.allSettled(nextRecords.filter(record => record.source === 'document').map(record => getDocumentAnalysis(record.id)))
-      const gameResults = await Promise.allSettled(nextRecords.filter(record => record.source === 'monkey' || record.source === 'cpt').map(record => getGameAssessmentResult(record.id, scope.iepId as string)))
+      const documentResults = await Promise.allSettled(nextRecords.filter(record => record.source === 'document').map(record => getDocumentAnalysis(record.id, iepId)))
+      const gameResults = await Promise.allSettled(nextRecords.filter(record => record.source === 'monkey' || record.source === 'cpt').map(record => getGameAssessmentResult(record.id, iepId)))
       if (!active || !isCurrentScope(scope)) return
       setDocuments(documentResults.flatMap(result => result.status === 'fulfilled' ? [result.value] : []))
       setGames(gameResults.flatMap(result => result.status === 'fulfilled' ? [result.value] : []))

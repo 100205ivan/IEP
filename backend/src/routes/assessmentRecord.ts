@@ -53,8 +53,10 @@ assessmentRecordRouter.post('/ieps/:iepId/game-results', async (request, respons
 })
 assessmentRecordRouter.get('/assessments/:assessmentId/document-analysis', async (request, response, next) => {
   if (!validId(request.params.assessmentId)) return invalidId(response)
+  const iepId = request.query.iepId
+  if (typeof iepId !== 'string' || !validId(iepId)) return invalidRequest(response, '請提供目前 IEP。')
   try {
-    const data = await getDocumentAnalysis(request.params.assessmentId)
+    const data = await getDocumentAnalysis(request.params.assessmentId, iepId)
     return data ? response.json({ ok: true, data }) : response.status(404).json({ ok: false, error: { code: 'NOT_FOUND', message: '找不到文件分析結果。' } })
   } catch (error) { next(error) }
 })

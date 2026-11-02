@@ -284,6 +284,16 @@ npm start
 
 後端另外提供 npm run diagnose:gemini 與 npm run test:gemini-document-analysis。
 
+### 評量紀錄後端整合測試
+
+在 `backend/` 執行 `npm run test:assessments`，可驗證人工評量的新增、讀取、更新與刪除，以及文件分析、Monkey／CPT 結果的保存、重複匯入與跨學生／學年度 IEP 的資料隔離。
+
+測試會依 `.env` 的 MariaDB 連線設定，建立名稱為 `eyeep_assessment_test_<隨機識別碼>` 的獨立資料庫，執行 migration，並於結束後移除；連線帳號需有建立及刪除資料庫的權限。測試不寫入 `DB_NAME` 指定的既有資料庫，也不呼叫 Gemini，文件及遊戲結果使用合成資料。
+
+文件分析詳情 API `GET /api/assessments/:assessmentId/document-analysis` 必須帶入 `iepId` query 參數；沒有提供時回傳 400，不屬於該 IEP 時回傳 404。前端評量紀錄與七大能力向度參考面板均會帶入目前 IEP。
+
+人工與遊戲評量的日期必須是實際存在且可存入 MariaDB 的 `YYYY-MM-DD` 日期，否則回傳 400。文件分析日期若無法作為日期索引，會以匯入當日建立評量索引，並保留分析中的原始日期文字。
+
 ## 常見錯誤
 
 ### MySQL 未啟動

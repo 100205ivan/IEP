@@ -11,6 +11,7 @@
     "build": "tsc -p tsconfig.json",
     "diagnose:gemini": "tsx src/scripts/diagnoseGemini.ts",
     "test:gemini-document-analysis": "tsx src/tests/geminiDocumentAnalysis.integration.ts",
+    "test:assessments": "tsx --test src/tests/assessmentRecords.integration.ts",
     "start": "node dist/server.js"
   },
   "dependencies": {

@@ -26,11 +26,12 @@ export function AbilityAssessment({ studentName, scope, scopeActive, isCurrentSc
   const records = scopeActive ? [...manualRecords, ...transientRecords] : []
 
   useEffect(() => {
-    if (!scope.iepId) return
+    const iepId = scope.iepId
+    if (!iepId) return
     let active = true
-    listPersistedAssessments(scope.iepId).then((records) => {
+    listPersistedAssessments(iepId).then((records) => {
       if (!active || !updateManualRecords(scope, records)) return []
-      return Promise.allSettled(records.filter((record) => record.source === 'document').map((record) => getDocumentAnalysis(record.id)))
+      return Promise.allSettled(records.filter((record) => record.source === 'document').map((record) => getDocumentAnalysis(record.id, iepId)))
     }).then((results) => {
       if (!active || !isCurrentScope(scope)) return
       const analyses = results.filter((result): result is PromiseFulfilledResult<StoredDocumentAnalysis> => result.status === 'fulfilled').map((result) => result.value)
@@ -61,7 +62,8 @@ export function AbilityAssessment({ studentName, scope, scopeActive, isCurrentSc
     if (existing) { setDocumentAnalysis(existing); return }
     setActionError('')
     try {
-      const analysis = await getDocumentAnalysis(record.id)
+      if (!scope.iepId) throw new Error('找不到目前 IEP，無法載入文件分析結果。')
+      const analysis = await getDocumentAnalysis(record.id, scope.iepId)
       if (updateDocumentAnalyses(scope, (current) => current.some((item) => item.assessmentRecordId === analysis.assessmentRecordId) ? current : [...current, analysis])) setDocumentAnalysis(analysis)
     } catch (reason: unknown) { if (isCurrentScope(scope)) setActionError(reason instanceof Error ? reason.message : '無法載入完整文件分析結果。') }
   }

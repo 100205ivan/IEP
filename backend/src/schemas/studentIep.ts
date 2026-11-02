@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { specialEducationSupportSchema } from './specialEducationSupport.js'
 import { inclusiveEducationPlanSchema } from './inclusiveEducationPlan.js'
 import { curriculumAdjustmentSchema, coursePlanItemSchema, weeklyScheduleEntrySchema } from './curriculumPlan.js'
+import { goalDomainSchema, semesterGoalSchema, validateEducationGoalLinks } from './educationGoals.js'
 
 // Validate connected chapters without stripping data belonging to other chapters.
 export const iepContentSchema = z.object({
@@ -10,6 +11,9 @@ export const iepContentSchema = z.object({
   curriculumAdjustment: curriculumAdjustmentSchema.optional(),
   coursePlanItems: z.array(coursePlanItemSchema).optional(),
   weeklySchedule: z.array(weeklyScheduleEntrySchema).optional(),
+  goalDomains: z.array(goalDomainSchema).optional(),
+  semesterGoals: z.array(semesterGoalSchema).optional(),
+  learningNotes: z.string().max(20_000, '學生學習狀況說明不可超過 20,000 字。').optional(),
 }).catchall(z.unknown()).superRefine((content, context) => {
   const courseIds = new Set<string>()
   for (const [index, course] of (content.coursePlanItems ?? []).entries()) {
@@ -23,6 +27,7 @@ export const iepContentSchema = z.object({
     if (occupiedSlots.has(slot)) context.addIssue({ code: 'custom', path: ['weeklySchedule', index], message: '同一天的同一節次只能安排一筆課程。' })
     occupiedSlots.add(slot)
   }
+  validateEducationGoalLinks(content, context)
 })
 
 const nullableString = z.string().trim().nullable().optional()

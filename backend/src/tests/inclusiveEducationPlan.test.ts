@@ -12,7 +12,7 @@ const plan = {
 }
 
 test('all thirteen inclusive education fields survive IEP request validation', () => {
-  const content = { inclusiveEducationPlan: plan, studentFamilyForm: { values: { studentName: '欄位驗證' } }, goalDomains: [{ id: 'existing-goal' }], futureChapter: { keep: true } }
+  const content = { inclusiveEducationPlan: plan, studentFamilyForm: { values: { studentName: '欄位驗證' } }, goalDomains: [], futureChapter: { keep: true } }
   const requests = [
     createStudentIepSchema.parse({ student: { name: '欄位驗證' }, academicYear: 115, content }),
     createAnnualIepSchema.parse({ academicYear: 116, content }),

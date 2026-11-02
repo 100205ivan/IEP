@@ -68,7 +68,7 @@ test('special education support persists through the IEP API', async (t) => {
     administrativeSupport: ['輔具', '無障礙環境', '其他'], administrativeOther: '其他設備',
     transportSupport: ['交通服務', '教育補助', '其他'], transportOther: '其他交通支持', otherSupportNotes: '其他支持說明',
   }
-  const otherChapters = { studentFamilyForm: { values: { studentName: '合成測試學生' }, checks: {}, medications: [] }, goalDomains: [{ id: 'keep-goal', name: '保留原本教育目標' }], futureChapter: { value: '保留未知章節' } }
+  const otherChapters = { studentFamilyForm: { values: { studentName: '合成測試學生' }, checks: {}, medications: [] }, goalDomains: [{ id: 'keep-domain', domainType: '部定／校訂課程領域', domainName: '保留原本教育目標', teacher: '', specialEducationTeacher: '', coreCompetencies: '', learningPerformance: '', learningContent: '', integratedIssues: '', annualGoals: [] }], futureChapter: { value: '保留未知章節' } }
   const studentPayload = { student: { name: '支持服務後端測試學生', gender: '', birthDate: null }, academicYear: 115 }
   const current = await request<Scope>('POST', '/students', { ...studentPayload, content: { ...otherChapters, specialEducationSupport: support } }, 201)
   const read = () => request<SavedIep>('GET', `/ieps/${current.iepId}`)

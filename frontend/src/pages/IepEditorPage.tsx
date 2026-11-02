@@ -21,6 +21,7 @@ import { IepMeetingRecords, type IepMeetingRecord } from '../components/iep/IepM
 import { createStudentWithIep, getStudentIep, updateStudentIep, type StudentFieldsPayload } from '../services/studentIepApi'
 import type { IepContent } from '../types/studentIep'
 import { normalizeCurriculumAdjustment, normalizeCoursePlanItems, normalizeWeeklySchedule } from '../services/curriculumPlanNormalization'
+import { normalizeGoalDomains, normalizeSemesterGoals } from '../services/educationGoalsNormalization'
 
 const mainChapters: readonly MainChapter[] = [
   { id: 'assessment', label: '壹、學生能力現況、家庭狀況及需求評估' },
@@ -112,9 +113,10 @@ export function IepEditorPage() {
       if (studentId && record.studentId !== studentId) throw new Error('此 IEP 不屬於目前學生。')
       setAcademicYear(String(record.academicYear))
       if (content.studentFamilyForm) setStudentFamilyForm(content.studentFamilyForm)
-      if (content.goalDomains) setGoalDomains(content.goalDomains as GoalDomain[])
-      if (content.semesterGoals) setSemesterGoals(content.semesterGoals as SemesterGoal[])
-      if (typeof content.learningNotes === 'string') setLearningNotes(content.learningNotes)
+      const loadedDomains = normalizeGoalDomains(content.goalDomains)
+      setGoalDomains(loadedDomains)
+      setSemesterGoals(normalizeSemesterGoals(content.semesterGoals, loadedDomains))
+      setLearningNotes(typeof content.learningNotes === 'string' ? content.learningNotes : '')
       if (content.behaviorIntervention) setBehaviorIntervention(content.behaviorIntervention as BehaviorInterventionValue)
       if (content.transitionSupport) setTransitionSupport(content.transitionSupport as TransitionSupportValue)
       if (content.meetingRecords) setMeetingRecords(content.meetingRecords as IepMeetingRecord[])

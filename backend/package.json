@@ -15,6 +15,7 @@
     "test:support-services": "tsx --test src/tests/supportServices.integration.ts",
     "test:inclusive-education": "tsx --test src/tests/inclusiveEducationPlan.test.ts",
     "test:curriculum-schedule": "tsx --test src/tests/curriculumSchedule.test.ts",
+    "test:education-goals": "tsx --test src/tests/educationGoals.test.ts",
     "start": "node dist/server.js"
   },
   "dependencies": {

@@ -110,6 +110,15 @@ test('IEP API stores and assembles six chapter tables atomically', async t => {
     assert.equal(rows[0].assessment_details, 'null')
     await request('PUT', `/ieps/${current.iepId}`, { content })
   })
+  await t.test('case-insensitive IEP URLs use the stored ID for chapter writes and responses', async () => {
+    await pool!.execute('DELETE FROM iep_transitions WHERE iep_id = ?', [current.iepId])
+    const saved = await request('PUT', `/ieps/${current.iepId.toUpperCase()}`, { content })
+    assert.equal(saved.id, current.iepId)
+    assert.deepEqual(saved.content, content)
+    const [rows] = await pool!.execute<RowDataPacket[]>('SELECT iep_id FROM iep_transitions WHERE iep_id = ?', [current.iepId])
+    assert.equal(rows[0].iep_id, current.iepId)
+    assert.deepEqual((await read()).content, content)
+  })
   await t.test('a failure in the last table rolls back earlier chapters, year and student changes', async () => {
     const before = await sqlSnapshot()
     await pool!.query("CREATE TRIGGER fail_chapter_write BEFORE UPDATE ON iep_meetings FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Injected chapter write failure'")

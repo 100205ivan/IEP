@@ -78,7 +78,7 @@ export async function createIepForStudent(studentId: string, academicYear: numbe
     await connection.execute('UPDATE students SET updated_at = ? WHERE id = ?', [now, studentId])
     const [savedRows] = await connection.execute<IepRow[]>('SELECT * FROM ieps WHERE id = ?', [iepId])
     const savedContents = await readIepContents(connection, savedRows)
-    const record = mapIep(savedRows[0], savedContents.get(iepId)!)
+    const record = mapIep(savedRows[0], savedContents.get(savedRows[0].id)!)
     await connection.commit()
     return { kind: 'created' as const, record }
   } catch (error) {
@@ -141,16 +141,16 @@ export async function updateIep(iepId: string, content: Record<string, unknown>,
   const connection = await pool.getConnection()
   try {
     await connection.beginTransaction()
-    const [iepRows] = await connection.execute<IepRow[]>('SELECT student_id, academic_year FROM ieps WHERE id = ? FOR UPDATE', [iepId])
+    const [iepRows] = await connection.execute<IepRow[]>('SELECT id, student_id, academic_year FROM ieps WHERE id = ? FOR UPDATE', [iepId])
     const iep = iepRows[0]
     if (!iep) { await connection.rollback(); return null }
     const now = new Date()
     if (student) await connection.execute('UPDATE students SET name = ?, gender = ?, birth_date = ?, national_id = ?, student_number = ?, updated_at = ? WHERE id = ?', [student.name, student.gender, nullableDate(student.birthDate), student.nationalId || null, student.studentNumber, now, iep.student_id])
     await connection.execute('UPDATE ieps SET academic_year = COALESCE(?, academic_year), content = ?, updated_at = ? WHERE id = ?', [academicYear ?? null, JSON.stringify(remainingIepContent(content)), now, iepId])
-    await writeIepChapters(connection, iepId, content, now)
+    await writeIepChapters(connection, iep.id, content, now)
     const [savedRows] = await connection.execute<IepRow[]>('SELECT * FROM ieps WHERE id = ?', [iepId])
     const savedContents = await readIepContents(connection, savedRows)
-    const record = mapIep(savedRows[0], savedContents.get(iepId)!)
+    const record = mapIep(savedRows[0], savedContents.get(savedRows[0].id)!)
     await connection.commit()
     return record
   } catch (error) { await connection.rollback(); throw error } finally { connection.release() }

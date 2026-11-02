@@ -1,5 +1,6 @@
 import { pool } from '../config/database.js'
 import type { RowDataPacket } from 'mysql2'
+import { migrateIepChapterTables } from './migrations/iepChapterMigration.js'
 
 const initialMigration = `
 CREATE TABLE IF NOT EXISTS students (
@@ -168,6 +169,7 @@ export async function runMigrations() {
         throw error
       }
     }
+    await migrateIepChapterTables(connection)
   } finally {
     connection.release()
   }

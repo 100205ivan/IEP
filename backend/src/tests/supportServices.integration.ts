@@ -75,9 +75,8 @@ test('special education support persists through the IEP API', async (t) => {
 
   await t.test('all service groups and all six professional details survive a new HTTP read and SQL read', async () => {
     assert.deepEqual((await read()).content, { ...otherChapters, specialEducationSupport: support })
-    const [rows] = await pool!.execute<RowDataPacket[]>('SELECT content FROM ieps WHERE id = ?', [current.iepId])
-    const content = typeof rows[0].content === 'string' ? JSON.parse(rows[0].content) : rows[0].content
-    assert.deepEqual(content.specialEducationSupport, support)
+    const [rows] = await pool!.execute<RowDataPacket[]>('SELECT special_education_support FROM iep_services WHERE iep_id = ?', [current.iepId])
+    assert.deepEqual(JSON.parse(rows[0].special_education_support), support)
   })
   await t.test('edits and clearing selections persist while other chapters remain intact', async () => {
     const nextSupport = { ...support, specialNotes: '修改後的服務說明', staffHours: '0', professional: [], professionalDetails: {}, familySupport: [], familyOther: '', familyNotes: '' }

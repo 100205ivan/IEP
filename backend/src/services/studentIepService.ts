@@ -2,14 +2,15 @@ import { randomUUID } from 'node:crypto'
 import type { ResultSetHeader, RowDataPacket } from 'mysql2'
 import { pool } from '../config/database.js'
 import type { StudentFields } from '../schemas/studentIep.js'
+import { remainingIepContent } from '../db/iepChapterTables.js'
+import { readIepContents, writeIepChapters } from './iepChapterStorage.js'
 
 type StudentRow = RowDataPacket & { id: string; name: string; gender: string; birth_date: string | null; national_id: string | null; student_number: string; created_at: string; updated_at: string }
 type IepRow = RowDataPacket & { id: string; student_id: string; academic_year: number; content: string | Record<string, unknown>; created_at: string; updated_at: string }
 
 function nullableDate(value: string | null | undefined) { return value || null }
-function parseContent(value: IepRow['content']): Record<string, unknown> { return typeof value === 'string' ? JSON.parse(value) as Record<string, unknown> : value }
 function mapStudent(row: StudentRow) { return { id: row.id, name: row.name, gender: row.gender, birthDate: row.birth_date, nationalId: row.national_id ? '[已設定]' : null, studentNumber: row.student_number, createdAt: row.created_at, updatedAt: row.updated_at } }
-function mapIep(row: IepRow) { return { id: row.id, studentId: row.student_id, academicYear: row.academic_year, content: parseContent(row.content), createdAt: row.created_at, updatedAt: row.updated_at } }
+function mapIep(row: IepRow, content: Record<string, unknown>) { return { id: row.id, studentId: row.student_id, academicYear: row.academic_year, content, createdAt: row.created_at, updatedAt: row.updated_at } }
 function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value) }
 function cloneJson<T>(value: T): T { return JSON.parse(JSON.stringify(value)) as T }
 function copyBasicStudentFamily(sourceContent: Record<string, unknown>, student: StudentRow) {
@@ -34,7 +35,8 @@ export async function createStudentWithIep(student: StudentFields, academicYear:
     await connection.beginTransaction()
     const now = new Date()
     await connection.execute<ResultSetHeader>('INSERT INTO students (id, name, gender, birth_date, national_id, student_number, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [studentId, student.name, student.gender, nullableDate(student.birthDate), student.nationalId || null, student.studentNumber, now, now])
-    await connection.execute<ResultSetHeader>('INSERT INTO ieps (id, student_id, academic_year, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)', [iepId, studentId, academicYear, JSON.stringify(content), now, now])
+    await connection.execute<ResultSetHeader>('INSERT INTO ieps (id, student_id, academic_year, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)', [iepId, studentId, academicYear, JSON.stringify(remainingIepContent(content)), now, now])
+    await writeIepChapters(connection, iepId, content, now)
     await connection.commit()
     return { studentId, iepId }
   } catch (error) {
@@ -60,7 +62,8 @@ export async function createIepForStudent(studentId: string, academicYear: numbe
       const source = sourceRows[0]
       if (!source) { await connection.rollback(); return { kind: 'source_not_found' as const } }
       if (source.academic_year >= academicYear) { await connection.rollback(); return { kind: 'source_not_earlier' as const, sourceAcademicYear: source.academic_year } }
-      const basicStudentFamily = copyBasicStudentFamily(parseContent(source.content), studentRows[0])
+      const sourceContents = await readIepContents(connection, [source])
+      const basicStudentFamily = copyBasicStudentFamily(sourceContents.get(source.id)!, studentRows[0])
       if (!basicStudentFamily) { await connection.rollback(); return { kind: 'source_invalid' as const } }
       inheritedFromAcademicYear = source.academic_year
       newContent = {
@@ -70,10 +73,13 @@ export async function createIepForStudent(studentId: string, academicYear: numbe
       }
     }
     const now = new Date()
-    await connection.execute<ResultSetHeader>('INSERT INTO ieps (id, student_id, academic_year, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)', [iepId, studentId, academicYear, JSON.stringify(newContent), now, now])
+    await connection.execute<ResultSetHeader>('INSERT INTO ieps (id, student_id, academic_year, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)', [iepId, studentId, academicYear, JSON.stringify(remainingIepContent(newContent)), now, now])
+    await writeIepChapters(connection, iepId, newContent, now)
     await connection.execute('UPDATE students SET updated_at = ? WHERE id = ?', [now, studentId])
+    const [savedRows] = await connection.execute<IepRow[]>('SELECT * FROM ieps WHERE id = ?', [iepId])
+    const savedContents = await readIepContents(connection, savedRows)
+    const record = mapIep(savedRows[0], savedContents.get(iepId)!)
     await connection.commit()
-    const record = await getIep(iepId)
     return { kind: 'created' as const, record }
   } catch (error) {
     await connection.rollback()
@@ -92,14 +98,26 @@ export async function getStudent(studentId: string) {
   return rows[0] ? mapStudent(rows[0]) : null
 }
 
-export async function getStudentIeps(studentId: string) {
-  const [rows] = await pool.execute<IepRow[]>('SELECT * FROM ieps WHERE student_id = ? ORDER BY academic_year DESC', [studentId])
-  return rows.map(mapIep)
+async function readIeps(sql: string, parameters: string[]) {
+  const connection = await pool.getConnection()
+  try {
+    await connection.beginTransaction()
+    // Writers lock the parent before changing chapters. Holding shared parent
+    // locks keeps each response consistent across all six chapter queries.
+    const [rows] = await connection.execute<IepRow[]>(`${sql} LOCK IN SHARE MODE`, parameters)
+    const contents = await readIepContents(connection, rows)
+    const records = rows.map(row => mapIep(row, contents.get(row.id)!))
+    await connection.commit()
+    return records
+  } catch (error) { await connection.rollback(); throw error } finally { connection.release() }
+}
+
+export function getStudentIeps(studentId: string) {
+  return readIeps('SELECT * FROM ieps WHERE student_id = ? ORDER BY academic_year DESC', [studentId])
 }
 
 export async function getIep(iepId: string) {
-  const [rows] = await pool.execute<IepRow[]>('SELECT * FROM ieps WHERE id = ?', [iepId])
-  return rows[0] ? mapIep(rows[0]) : null
+  return (await readIeps('SELECT * FROM ieps WHERE id = ?', [iepId]))[0] ?? null
 }
 
 export async function deleteIep(iepId: string) {
@@ -128,8 +146,12 @@ export async function updateIep(iepId: string, content: Record<string, unknown>,
     if (!iep) { await connection.rollback(); return null }
     const now = new Date()
     if (student) await connection.execute('UPDATE students SET name = ?, gender = ?, birth_date = ?, national_id = ?, student_number = ?, updated_at = ? WHERE id = ?', [student.name, student.gender, nullableDate(student.birthDate), student.nationalId || null, student.studentNumber, now, iep.student_id])
-    await connection.execute('UPDATE ieps SET academic_year = COALESCE(?, academic_year), content = ?, updated_at = ? WHERE id = ?', [academicYear ?? null, JSON.stringify(content), now, iepId])
+    await connection.execute('UPDATE ieps SET academic_year = COALESCE(?, academic_year), content = ?, updated_at = ? WHERE id = ?', [academicYear ?? null, JSON.stringify(remainingIepContent(content)), now, iepId])
+    await writeIepChapters(connection, iepId, content, now)
+    const [savedRows] = await connection.execute<IepRow[]>('SELECT * FROM ieps WHERE id = ?', [iepId])
+    const savedContents = await readIepContents(connection, savedRows)
+    const record = mapIep(savedRows[0], savedContents.get(iepId)!)
     await connection.commit()
-    return getIep(iepId)
+    return record
   } catch (error) { await connection.rollback(); throw error } finally { connection.release() }
 }

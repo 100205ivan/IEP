@@ -6,6 +6,7 @@ import { studentIepRouter } from './routes/studentIep.js'
 import { iepPdfExportRouter } from './routes/iepPdfExport.js'
 import { runMigrations } from './db/migrate.js'
 import { iepAttachmentsRouter } from './routes/iepAttachments.js'
+import { educationSummaryRouter } from './routes/educationSummary.js'
 
 const port = 3001
 const app = express()
@@ -14,6 +15,7 @@ app.use('/api', iepAttachmentsRouter)
 app.use(express.json({ limit: '512kb' }))
 app.get('/api/health', (_request, response) => response.status(200).json({ ok: true }))
 app.use('/api/assessment-document', assessmentDocumentRouter)
+app.use('/api/education-summary', educationSummaryRouter)
 app.use('/api', assessmentRecordRouter)
 app.use('/api', studentIepRouter)
 app.use('/api', iepPdfExportRouter)

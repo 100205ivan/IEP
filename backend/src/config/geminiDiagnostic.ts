@@ -4,7 +4,7 @@ export type GeminiDiagnostic = {
   model: string
   errorName: string
   httpStatus: number | null
-  reason: 'MISSING_API_KEY' | 'TIMEOUT' | 'BAD_REQUEST' | 'AUTHENTICATION_FAILED' | 'PERMISSION_DENIED' | 'MODEL_NOT_FOUND' | 'RATE_LIMITED' | 'UPSTREAM_ERROR' | 'SDK_OR_NETWORK_ERROR'
+  reason: 'MISSING_API_KEY' | 'TIMEOUT' | 'BAD_REQUEST' | 'AUTHENTICATION_FAILED' | 'PAYMENT_REQUIRED' | 'PERMISSION_DENIED' | 'MODEL_NOT_FOUND' | 'RATE_LIMITED' | 'UPSTREAM_ERROR' | 'SDK_OR_NETWORK_ERROR'
 }
 
 export function safeGeminiDiagnostic(error: unknown, model = GEMINI_DOCUMENT_ANALYSIS_MODEL): GeminiDiagnostic {
@@ -14,6 +14,7 @@ export function safeGeminiDiagnostic(error: unknown, model = GEMINI_DOCUMENT_ANA
   const errorName = error instanceof Error && error.name ? error.name : 'UnknownError'
   const reason = httpStatus === 400 ? 'BAD_REQUEST'
     : httpStatus === 401 ? 'AUTHENTICATION_FAILED'
+      : httpStatus === 402 ? 'PAYMENT_REQUIRED'
       : httpStatus === 403 ? 'PERMISSION_DENIED'
         : httpStatus === 404 ? 'MODEL_NOT_FOUND'
           : httpStatus === 429 ? 'RATE_LIMITED'

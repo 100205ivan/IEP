@@ -1,22 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { AssessmentScope } from '../../context/assessmentRecordsStore'
+import { AssessmentReferencesContext, useAssessmentReferences } from '../../context/assessmentReferencesContext'
 import { getDocumentAnalysis, getGameAssessmentResult, listPersistedAssessments } from '../../services/assessmentRecordsApi'
 import type { AssessmentRecord } from '../../types/assessmentRecord'
 import { ABILITY_DOMAIN_LABELS, type AbilityDomain, type StoredDocumentAnalysis } from '../../types/assessmentAnalysis'
 import type { StoredGameAssessmentResult } from '../../types/gameAssessment'
 import { DocumentAnalysisResultDialog } from './DocumentAnalysisResultDialog'
 import { GameAssessmentResultDialog } from './GameAssessmentResultDialog'
-
-type ReferenceContextValue = {
-  records: AssessmentRecord[]
-  documents: StoredDocumentAnalysis[]
-  games: StoredGameAssessmentResult[]
-  loading: boolean
-  error: string
-  retry: () => void
-}
-
-const ReferenceContext = createContext<ReferenceContextValue | null>(null)
 
 type ReferenceProviderProps = { scope: AssessmentScope; scopeActive: boolean; isCurrentScope: (scope: AssessmentScope) => boolean; children: ReactNode }
 
@@ -59,13 +49,7 @@ function ScopedAssessmentReferences({ scope, scopeActive, isCurrentScope, childr
   }, [isCurrentScope, retryKey, scope, scopeActive])
 
   const value = useMemo(() => ({ records, documents, games, loading, error, retry }), [documents, error, games, loading, records, retry])
-  return <ReferenceContext.Provider value={value}>{children}</ReferenceContext.Provider>
-}
-
-function useReferences() {
-  const value = useContext(ReferenceContext)
-  if (!value) throw new Error('AssessmentReferencePanel must be rendered inside AssessmentReferenceProvider')
-  return value
+  return <AssessmentReferencesContext.Provider value={value}>{children}</AssessmentReferencesContext.Provider>
 }
 
 const documentDomainMap: Record<AbilityDomain, AbilityDomain> = {
@@ -73,7 +57,7 @@ const documentDomainMap: Record<AbilityDomain, AbilityDomain> = {
 }
 
 export function AssessmentReferencePanel({ domain }: { domain: AbilityDomain }) {
-  const { documents, games, loading, error, retry } = useReferences()
+  const { documents, games, loading, error, retry } = useAssessmentReferences()
   const [documentToView, setDocumentToView] = useState<StoredDocumentAnalysis | null>(null)
   const [gameToView, setGameToView] = useState<StoredGameAssessmentResult | null>(null)
   const domainDocuments = documents.filter(document => document.domains[documentDomainMap[domain]]?.hasEvidence)
@@ -104,7 +88,7 @@ function GameReferenceItem({ game, onView }: { game: StoredGameAssessmentResult;
 }
 
 export function OtherManualAssessmentReferences() {
-  const { records } = useReferences()
+  const { records } = useAssessmentReferences()
   const manualRecords = records.filter(record => record.source === 'manual')
   return <section className="assessment-reference assessment-reference-manual"><h5>其他人工評量（未標註能力向度）</h5>{manualRecords.length === 0 ? <p className="assessment-reference-muted">目前沒有未標註向度的人工評量。</p> : manualRecords.map(record => <details className="assessment-reference-manual-item" key={record.id}><summary>{record.assessmentDate}・{record.assessmentType || '人工評量'}・{record.assessmentTool}</summary><dl><div><dt>評量者</dt><dd>{record.evaluator}</dd></div><div><dt>摘要</dt><dd>{record.summary}</dd></div></dl></details>)}</section>
 }

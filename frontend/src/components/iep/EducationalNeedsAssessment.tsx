@@ -3,15 +3,17 @@ import type { AssessmentScope } from '../../context/assessmentRecordsStore'
 import { AssessmentReferencePanel, AssessmentReferenceProvider, OtherManualAssessmentReferences } from './AssessmentReferencePanel'
 import type { AbilityDomain } from '../../types/assessmentAnalysis'
 import { SubskillImpactFields } from './ReferenceFormFields'
+import { EducationSummaryAssistant } from './EducationSummaryAssistant'
+import type { KnownAssessmentIdentifiers } from '../../types/assessmentDocument'
 
 export type AssessmentSelections = Record<string, string[]>
 export type AssessmentDetails = Record<string, string>
 export interface StrengthWeaknessSummary { strengths: string[]; weaknesses: string[]; strengthNotes: string; weaknessNotes: string; overallNeeds: string }
 type Setter<T> = Dispatch<SetStateAction<T>>
-interface Props { selected: AssessmentSelections; setSelected: Setter<AssessmentSelections>; details: AssessmentDetails; setDetails: Setter<AssessmentDetails>; summary: StrengthWeaknessSummary; setSummary: Setter<StrengthWeaknessSummary>; scope: AssessmentScope; scopeActive: boolean; isCurrentScope: (scope: AssessmentScope) => boolean }
+interface Props { selected: AssessmentSelections; setSelected: Setter<AssessmentSelections>; details: AssessmentDetails; setDetails: Setter<AssessmentDetails>; summary: StrengthWeaknessSummary; setSummary: Setter<StrengthWeaknessSummary>; scope: AssessmentScope; scopeActive: boolean; isCurrentScope: (scope: AssessmentScope) => boolean; identifiers: KnownAssessmentIdentifiers }
 const summaryItems = ['健康／感官相關', '動作能力', '生活自理能力', '認知能力', '溝通能力', '情緒與社會行為', '學業能力', '家庭支持功能', '其他特殊才能／狀況']
 
-export function EducationalNeedsAssessment({ selected, setSelected, details, setDetails, summary, setSummary, scope, scopeActive, isCurrentScope }: Props) {
+export function EducationalNeedsAssessment({ selected, setSelected, details, setDetails, summary, setSummary, scope, scopeActive, isCurrentScope, identifiers }: Props) {
   const choose = (key: string, value: string) => setSelected((c) => ({ ...c, [key]: [value] }))
   const toggle = (key: string, value: string) => setSelected((c) => { const v = c[key] ?? []; return { ...c, [key]: v.includes(value) ? v.filter((x) => x !== value) : [...v.filter((x) => x !== 'peer-level'), value] } })
   const text = (key: string, value: string) => setDetails((c) => ({ ...c, [key]: value }))
@@ -28,7 +30,7 @@ export function EducationalNeedsAssessment({ selected, setSelected, details, set
       <Domain id="academic" title="7. 學業學習能力現況" referenceDomain="academicLearning" {...shared}><Peer id="reading" title="閱讀能力" options={['閱讀遲緩','跳行跳字','無法閱讀']} {...shared}/><Peer id="writing" title="書寫表達" options={['造句困難','造詞困難','筆畫缺漏','字形顛倒','抄寫困難']} {...shared}/><Peer id="math" title="算術能力" options={['推理能力差','文字理解能力差','運算困難','基本四則運算差']} {...shared}/><Peer id="learningBehavior" title="學習行為" options={['動機強烈','缺乏動機','主動認真','被動馬虎','積極發言','常有不當發言','注意力集中','坐立不安','反應適當','反應緩慢']} {...shared}/></Domain>
     </section>
     <OtherManualAssessmentReferences />
-    <section className="ability-card strength-weakness-section"><h3>（二）學生現況能力優弱勢分析</h3><div className="strength-weakness-grid">{(['strengths','weaknesses'] as const).map((key) => <section className="strength-weakness-panel" key={key}><h4>{key === 'strengths' ? '優勢能力' : '弱勢能力'}</h4><Choices id={key} options={summaryItems} selected={{[key]:summary[key]}} toggle={(_, v) => setSummary((c) => ({...c,[key]:c[key].includes(v)?c[key].filter((x) => x !== v):[...c[key],v]}))}/><label>補充說明<textarea value={key === 'strengths' ? summary.strengthNotes : summary.weaknessNotes} onChange={(e) => setSummary((c) => ({...c,[key === 'strengths' ? 'strengthNotes':'weaknessNotes']:e.target.value}))}/></label></section>)}</div><label className="overall-needs">整體需求摘要<textarea value={summary.overallNeeds} onChange={(e) => setSummary((c) => ({...c,overallNeeds:e.target.value}))}/></label><button className="button button--secondary" type="button" disabled title="尚未開放：AI 功能尚未串接">AI 協助產生摘要（尚未開放）</button></section>
+    <section className="ability-card strength-weakness-section"><h3>（二）學生現況能力優弱勢分析</h3><div className="strength-weakness-grid">{(['strengths','weaknesses'] as const).map((key) => <section className="strength-weakness-panel" key={key}><h4>{key === 'strengths' ? '優勢能力' : '弱勢能力'}</h4><Choices id={key} options={summaryItems} selected={{[key]:summary[key]}} toggle={(_, v) => setSummary((c) => ({...c,[key]:c[key].includes(v)?c[key].filter((x) => x !== v):[...c[key],v]}))}/><label>補充說明<textarea value={key === 'strengths' ? summary.strengthNotes : summary.weaknessNotes} onChange={(e) => setSummary((c) => ({...c,[key === 'strengths' ? 'strengthNotes':'weaknessNotes']:e.target.value}))}/></label></section>)}</div><label className="overall-needs">整體需求摘要<textarea value={summary.overallNeeds} onChange={(e) => setSummary((c) => ({...c,overallNeeds:e.target.value}))}/></label><EducationSummaryAssistant selected={selected} details={details} summary={summary} setSummary={setSummary} scope={scope} scopeActive={scopeActive} isCurrentScope={isCurrentScope} identifiers={identifiers} /></section>
   </section></AssessmentReferenceProvider>
 }
 type Shared = { selected: AssessmentSelections; details: AssessmentDetails; choose: (k:string,v:string)=>void; toggle: (k:string,v:string)=>void; text: (k:string,v:string)=>void }

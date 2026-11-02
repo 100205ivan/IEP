@@ -26,6 +26,7 @@ import { normalizeBehaviorIntervention, normalizeTransitionSupport } from '../se
 import { normalizeMeetingRecords } from '../services/meetingRecordsNormalization'
 import { IepPdfExport } from '../components/iep/IepPdfExport'
 import { initialIepPdfOptions, normalizeIepPdfOptions, type IepPdfOptions } from '../models/iepPdfOptions'
+import { summaryIdentifiers } from '../services/educationSummaryInput'
 
 const mainChapters: readonly MainChapter[] = [
   { id: 'assessment', label: '壹、學生能力現況、家庭狀況及需求評估' },
@@ -201,7 +202,7 @@ export function IepEditorPage() {
               <p>請選擇下方子章節查看填寫區域。</p>
             </div>
             <AssessmentSubTabs chapters={assessmentSubChapters} activeChapter={activeAssessmentChapter} onChange={setActiveAssessmentChapter} />
-            {activeAssessmentChapter === 'family-info' ? <StudentFamilyForm value={studentFamilyForm} onChange={updateStudentFamilyForm} /> : activeAssessmentChapter === 'ability-record' ? <AbilityAssessment key={`${assessmentScope.studentId ?? 'new'}:${assessmentScope.iepId ?? 'new'}`} studentName={studentName} scope={assessmentScope} scopeActive={assessmentScopeActive} isCurrentScope={isCurrentScope} manualRecords={manualRecords} updateManualRecords={updateManualRecords} transientRecords={transientRecords} updateTransientRecords={updateTransientRecords} documentAnalyses={documentAnalyses} updateDocumentAnalyses={updateDocumentAnalyses} /> : activeAssessmentChapter === 'education-needs' ? <EducationalNeedsAssessment selected={assessmentSelections} setSelected={updateAssessmentSelections} details={assessmentDetails} setDetails={updateAssessmentDetails} summary={strengthWeaknessSummary} setSummary={updateStrengthWeaknessSummary} scope={assessmentScope} scopeActive={assessmentScopeActive} isCurrentScope={isCurrentScope} /> : <AssessmentPlaceholder activeChapter={activeAssessmentChapter} />}
+            {activeAssessmentChapter === 'family-info' ? <StudentFamilyForm value={studentFamilyForm} onChange={updateStudentFamilyForm} /> : activeAssessmentChapter === 'ability-record' ? <AbilityAssessment key={`${assessmentScope.studentId ?? 'new'}:${assessmentScope.iepId ?? 'new'}`} studentName={studentName} scope={assessmentScope} scopeActive={assessmentScopeActive} isCurrentScope={isCurrentScope} manualRecords={manualRecords} updateManualRecords={updateManualRecords} transientRecords={transientRecords} updateTransientRecords={updateTransientRecords} documentAnalyses={documentAnalyses} updateDocumentAnalyses={updateDocumentAnalyses} /> : activeAssessmentChapter === 'education-needs' ? <EducationalNeedsAssessment identifiers={summaryIdentifiers(studentFamilyForm.values, pdfExportOptions.schoolName)} selected={assessmentSelections} setSelected={updateAssessmentSelections} details={assessmentDetails} setDetails={updateAssessmentDetails} summary={strengthWeaknessSummary} setSummary={updateStrengthWeaknessSummary} scope={assessmentScope} scopeActive={assessmentScopeActive} isCurrentScope={isCurrentScope} /> : <AssessmentPlaceholder activeChapter={activeAssessmentChapter} />}
           </section>
         ) : activeMainChapter === 'services' ? (
           <section className="content-panel" id="chapter-services" role="tabpanel" aria-labelledby="chapter-tab-services">

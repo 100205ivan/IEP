@@ -42,27 +42,31 @@ function withTimeout<T>(promise: Promise<T>): Promise<T> {
   })
 }
 
-export async function analyzeDeidentifiedDocument(deidentifiedText: string): Promise<DocumentAnalysisResult> {
-  const apiKey = process.env.GEMINI_API_KEY
+export async function requestStructuredGemini(contents: string, responseJsonSchema: Record<string, unknown>, systemInstruction?: string): Promise<string | undefined> {
+  const apiKey = process.env.GEMINI_API_KEY?.trim()
   if (!apiKey) throw new GeminiRequestError({ model: GEMINI_DOCUMENT_ANALYSIS_MODEL, errorName: 'ConfigurationError', httpStatus: null, reason: 'MISSING_API_KEY' })
 
   const client = new GoogleGenAI({ apiKey })
-  let text: string | undefined
   try {
     const response = await withTimeout(client.models.generateContent({
       model: GEMINI_DOCUMENT_ANALYSIS_MODEL,
-      contents: `${documentAnalysisPrompt}${deidentifiedText}\n--- END DOCUMENT ---`,
+      contents,
       config: {
         responseMimeType: 'application/json',
-        responseJsonSchema: geminiDocumentAnalysisJsonSchema,
+        responseJsonSchema,
+        systemInstruction,
+        httpOptions: { timeout: GEMINI_DOCUMENT_ANALYSIS_TIMEOUT_MS },
       },
     }))
-    text = response.text
+    return response.text
   } catch (error) {
     if (error instanceof GeminiRequestError) throw error
     throw new GeminiRequestError(safeGeminiDiagnostic(error))
   }
+}
 
+export async function analyzeDeidentifiedDocument(deidentifiedText: string): Promise<DocumentAnalysisResult> {
+  const text = await requestStructuredGemini(`${documentAnalysisPrompt}${deidentifiedText}\n--- END DOCUMENT ---`, geminiDocumentAnalysisJsonSchema)
   try {
     if (!text) throw new Error('Gemini returned no text.')
     const parsed = JSON.parse(text)

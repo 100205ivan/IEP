@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test:iep-pdf": "tsx --test src/tests/iepPdfExport.test.ts",
+    "test:education-summary": "tsx --test src/tests/educationSummary.test.ts",
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "diagnose:gemini": "tsx src/scripts/diagnoseGemini.ts",

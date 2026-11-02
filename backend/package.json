@@ -20,6 +20,7 @@
     "test:iep-meetings": "tsx --test src/tests/iepMeetingRecords.test.ts",
     "test:chapter-migration": "tsx --test src/tests/iepChapterContent.test.ts src/tests/iepChapterMigration.test.ts",
     "test:chapter-storage": "tsx --test src/tests/iepChapterStorage.integration.ts",
+    "test:unused-columns": "tsx --test src/tests/unusedColumnMigration.test.ts",
     "start": "node dist/server.js"
   },
   "dependencies": {

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import type { PoolConnection, RowDataPacket } from 'mysql2/promise'
-import { chapterTableSql, iepChapterTables, remainingIepContent } from '../iepChapterTables.js'
-import { parseIepContent, writeIepChapters } from '../../services/iepChapterStorage.js'
+import { chapterJsonValue, chapterTableSql, iepChapterTables, remainingIepContent } from '../iepChapterTables.js'
+import { parseIepContent } from '../../services/iepChapterStorage.js'
 
 export const iepChapterMigrationVersion = '006_iep_chapter_tables'
 
@@ -25,7 +25,15 @@ export async function migrateIepChapterTables(connection: PoolConnection) {
       const [rows] = await connection.query<(RowDataPacket & { id: string; content: string; created_at: string; updated_at: string })[]>('SELECT id, content, created_at, updated_at FROM ieps FOR UPDATE')
       for (const row of rows) {
         const content = parseIepContent(row.content)
-        await writeIepChapters(connection, row.id, content, row.created_at, row.updated_at)
+        // Keep 006 independent of the current writer: it must construct the
+        // historical timestamp columns before migration 007 removes them.
+        for (const chapter of iepChapterTables) {
+          const columns = chapter.fields.map(([, column]) => column)
+          await connection.execute(
+            `INSERT INTO ${chapter.table} (iep_id, ${columns.join(', ')}, created_at, updated_at) VALUES (${Array(columns.length + 3).fill('?').join(', ')})`,
+            [row.id, ...chapter.fields.map(([key]) => chapterJsonValue(content, key)), row.created_at, row.updated_at],
+          )
+        }
         await connection.execute('UPDATE ieps SET content = ? WHERE id = ?', [JSON.stringify(remainingIepContent(content)), row.id])
       }
       await connection.execute('INSERT INTO schema_migrations (version, applied_at) VALUES (?, CURRENT_TIMESTAMP(3))', [iepChapterMigrationVersion])

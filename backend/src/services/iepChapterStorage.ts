@@ -8,14 +8,14 @@ export function parseIepContent(value: IepContentRow['content']): Record<string,
 }
 
 // The caller owns the transaction, covering the parent IEP and every chapter.
-export async function writeIepChapters(connection: PoolConnection, iepId: string, content: Record<string, unknown>, createdAt: Date | string, updatedAt: Date | string = createdAt) {
+export async function writeIepChapters(connection: PoolConnection, iepId: string, content: Record<string, unknown>) {
   for (const chapter of iepChapterTables) {
     const columns = chapter.fields.map(([, column]) => column)
     await connection.execute(
-      `INSERT INTO ${chapter.table} (iep_id, ${columns.join(', ')}, created_at, updated_at)
-       VALUES (${Array(columns.length + 3).fill('?').join(', ')})
-       ON DUPLICATE KEY UPDATE ${columns.map(column => `${column} = VALUES(${column})`).join(', ')}, updated_at = VALUES(updated_at)`,
-      [iepId, ...chapter.fields.map(([key]) => chapterJsonValue(content, key)), createdAt, updatedAt],
+      `INSERT INTO ${chapter.table} (iep_id, ${columns.join(', ')})
+       VALUES (${Array(columns.length + 1).fill('?').join(', ')})
+       ON DUPLICATE KEY UPDATE ${columns.map(column => `${column} = VALUES(${column})`).join(', ')}`,
+      [iepId, ...chapter.fields.map(([key]) => chapterJsonValue(content, key))],
     )
   }
 }

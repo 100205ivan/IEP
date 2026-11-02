@@ -36,7 +36,7 @@ export async function createStudentWithIep(student: StudentFields, academicYear:
     const now = new Date()
     await connection.execute<ResultSetHeader>('INSERT INTO students (id, name, gender, birth_date, national_id, student_number, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [studentId, student.name, student.gender, nullableDate(student.birthDate), student.nationalId || null, student.studentNumber, now, now])
     await connection.execute<ResultSetHeader>('INSERT INTO ieps (id, student_id, academic_year, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)', [iepId, studentId, academicYear, JSON.stringify(remainingIepContent(content)), now, now])
-    await writeIepChapters(connection, iepId, content, now)
+    await writeIepChapters(connection, iepId, content)
     await connection.commit()
     return { studentId, iepId }
   } catch (error) {
@@ -74,7 +74,7 @@ export async function createIepForStudent(studentId: string, academicYear: numbe
     }
     const now = new Date()
     await connection.execute<ResultSetHeader>('INSERT INTO ieps (id, student_id, academic_year, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)', [iepId, studentId, academicYear, JSON.stringify(remainingIepContent(newContent)), now, now])
-    await writeIepChapters(connection, iepId, newContent, now)
+    await writeIepChapters(connection, iepId, newContent)
     await connection.execute('UPDATE students SET updated_at = ? WHERE id = ?', [now, studentId])
     const [savedRows] = await connection.execute<IepRow[]>('SELECT * FROM ieps WHERE id = ?', [iepId])
     const savedContents = await readIepContents(connection, savedRows)
@@ -147,7 +147,7 @@ export async function updateIep(iepId: string, content: Record<string, unknown>,
     const now = new Date()
     if (student) await connection.execute('UPDATE students SET name = ?, gender = ?, birth_date = ?, national_id = ?, student_number = ?, updated_at = ? WHERE id = ?', [student.name, student.gender, nullableDate(student.birthDate), student.nationalId || null, student.studentNumber, now, iep.student_id])
     await connection.execute('UPDATE ieps SET academic_year = COALESCE(?, academic_year), content = ?, updated_at = ? WHERE id = ?', [academicYear ?? null, JSON.stringify(remainingIepContent(content)), now, iepId])
-    await writeIepChapters(connection, iep.id, content, now)
+    await writeIepChapters(connection, iep.id, content)
     const [savedRows] = await connection.execute<IepRow[]>('SELECT * FROM ieps WHERE id = ?', [iepId])
     const savedContents = await readIepContents(connection, savedRows)
     const record = mapIep(savedRows[0], savedContents.get(savedRows[0].id)!)

@@ -6,7 +6,7 @@ import { createConnection, createPool, type RowDataPacket } from 'mysql2/promise
 import '../config/environment.js'
 import { chapterJsonValue, iepChapterTables, remainingIepContent } from '../db/iepChapterTables.js'
 import { iepChapterMigrationVersion, migrateIepChapterTables } from '../db/migrations/iepChapterMigration.js'
-import { readIepContents, writeIepChapters } from '../services/iepChapterStorage.js'
+import { readIepContents } from '../services/iepChapterStorage.js'
 
 test('chapter migration preserves legacy IEPs and is retryable without touching the configured database', async t => {
   const databaseName = `eyeep_chapter_migration_test_${randomUUID().replaceAll('-', '')}`
@@ -40,6 +40,11 @@ test('chapter migration preserves legacy IEPs and is retryable without touching 
     const [rows] = await connection.query<(RowDataPacket & { id: string; content: string })[]>('SELECT id, content FROM ieps')
     return readIepContents(connection, rows)
   }
+  const updateLegacyChapters = async (content: Record<string, unknown>) => {
+    for (const chapter of iepChapterTables) {
+      await connection.execute(`UPDATE ${chapter.table} SET ${chapter.fields.map(([, column]) => `${column} = ?`).join(', ')} WHERE iep_id = ?`, [...chapter.fields.map(([key]) => chapterJsonValue(content, key)), iepId])
+    }
+  }
 
   await t.test('all chapter fields move losslessly and metadata stays on the parent', async () => {
     await migrateIepChapterTables(connection)
@@ -59,16 +64,16 @@ test('chapter migration preserves legacy IEPs and is retryable without touching 
   })
   await t.test('re-running migration never overwrites current chapter data', async () => {
     const updated = { ...original, learningNotes: '搬移後修改' }
-    await writeIepChapters(connection, iepId, updated, timestamp)
+    await updateLegacyChapters(updated)
     await migrateIepChapterTables(connection)
     assert.deepEqual((await read()).get(iepId), updated)
-    await writeIepChapters(connection, iepId, original, timestamp)
+    await updateLegacyChapters(original)
   })
   await t.test('clearing fields distinguishes absent properties, JSON null and empty arrays', async () => {
     const changed = { learningNotes: '', studentFamilyForm: null, meetingRecords: [], futureChapter: { keep: true } }
     await connection.beginTransaction()
     try {
-      await writeIepChapters(connection, iepId, changed, timestamp)
+      await updateLegacyChapters(changed)
       await connection.execute('UPDATE ieps SET content = ? WHERE id = ?', [JSON.stringify(remainingIepContent(changed)), iepId])
       assert.deepEqual((await read()).get(iepId), changed)
     } finally { await connection.rollback() }

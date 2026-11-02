@@ -1,6 +1,7 @@
 import { pool } from '../config/database.js'
 import type { RowDataPacket } from 'mysql2'
 import { migrateIepChapterTables } from './migrations/iepChapterMigration.js'
+import { removeUnusedColumns } from './migrations/unusedColumnMigration.js'
 
 const initialMigration = `
 CREATE TABLE IF NOT EXISTS students (
@@ -170,6 +171,7 @@ export async function runMigrations() {
       }
     }
     await migrateIepChapterTables(connection)
+    await removeUnusedColumns(connection)
   } finally {
     connection.release()
   }

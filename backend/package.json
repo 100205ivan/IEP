@@ -13,6 +13,7 @@
     "test:gemini-document-analysis": "tsx src/tests/geminiDocumentAnalysis.integration.ts",
     "test:assessments": "tsx --test src/tests/assessmentRecords.integration.ts",
     "test:support-services": "tsx --test src/tests/supportServices.integration.ts",
+    "test:inclusive-education": "tsx --test src/tests/inclusiveEducationPlan.test.ts",
     "start": "node dist/server.js"
   },
   "dependencies": {

@@ -16,7 +16,7 @@ import { StudentWeeklySchedule, type WeeklyScheduleEntry } from '../components/i
 import { AnnualGoalsPage, LearningStatusPage, SemesterGoalsPage, type GoalDomain, type SemesterGoal } from '../components/iep/GoalsChapter'
 import { BehaviorIntervention, type BehaviorInterventionValue } from '../components/iep/BehaviorIntervention'
 import { TransitionSupport, type TransitionSupportValue } from '../components/iep/TransitionSupport'
-import { initialBehaviorIntervention, initialCurriculumAdjustment, initialInclusiveEducationPlan, initialSpecialEducationSupport, initialStudentFamilyFormValue, initialTransitionSupport, normalizeSpecialEducationSupport } from '../components/iep/iepInitialValues'
+import { initialBehaviorIntervention, initialCurriculumAdjustment, initialInclusiveEducationPlan, initialSpecialEducationSupport, initialStudentFamilyFormValue, initialTransitionSupport, normalizeSpecialEducationSupport, normalizeInclusiveEducationPlan } from '../components/iep/iepInitialValues'
 import { IepMeetingRecords, type IepMeetingRecord } from '../components/iep/IepMeetingRecords'
 import { createStudentWithIep, getStudentIep, updateStudentIep, type StudentFieldsPayload } from '../services/studentIepApi'
 import type { IepContent } from '../types/studentIep'
@@ -118,7 +118,7 @@ export function IepEditorPage() {
       if (content.transitionSupport) setTransitionSupport(content.transitionSupport as TransitionSupportValue)
       if (content.meetingRecords) setMeetingRecords(content.meetingRecords as IepMeetingRecord[])
       setSpecialEducationSupport(normalizeSpecialEducationSupport(content.specialEducationSupport))
-      if (content.inclusiveEducationPlan) setInclusiveEducationPlan(content.inclusiveEducationPlan as InclusiveEducationPlanValue)
+      setInclusiveEducationPlan(normalizeInclusiveEducationPlan(content.inclusiveEducationPlan))
       if (content.curriculumAdjustment) setCurriculumAdjustment(content.curriculumAdjustment as CurriculumAdjustmentValue)
       if (content.coursePlanItems) setCoursePlanItems(content.coursePlanItems as CoursePlanItem[])
       if (content.weeklySchedule) setWeeklySchedule(content.weeklySchedule as WeeklyScheduleEntry[])

@@ -1,9 +1,11 @@
 import type { StudentFamilyFormValue } from '../components/iep/StudentFamilyForm'
 import type { SpecialEducationSupportValue } from '../components/iep/SpecialEducationSupport'
+import type { InclusiveEducationPlanValue } from '../components/iep/InclusiveEducationPlan'
 
 export interface IepContent {
   studentFamilyForm: StudentFamilyFormValue
   specialEducationSupport?: SpecialEducationSupportValue
+  inclusiveEducationPlan?: InclusiveEducationPlanValue
   basicInfoReviewNotice?: {
     inheritedFromAcademicYear: number
     requiresReview: true

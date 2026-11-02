@@ -43,8 +43,3 @@ export const specialEducationSupportSchema = z.object({
     }
   }
 })
-
-// Keep other chapters and future fields intact when validating this section.
-export const iepContentSchema = z.object({
-  specialEducationSupport: specialEducationSupportSchema.optional(),
-}).catchall(z.unknown())

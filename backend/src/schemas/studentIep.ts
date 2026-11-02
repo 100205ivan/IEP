@@ -1,5 +1,12 @@
 import { z } from 'zod'
-import { iepContentSchema } from './specialEducationSupport.js'
+import { specialEducationSupportSchema } from './specialEducationSupport.js'
+import { inclusiveEducationPlanSchema } from './inclusiveEducationPlan.js'
+
+// Validate connected chapters without stripping data belonging to other chapters.
+export const iepContentSchema = z.object({
+  specialEducationSupport: specialEducationSupportSchema.optional(),
+  inclusiveEducationPlan: inclusiveEducationPlanSchema.optional(),
+}).catchall(z.unknown())
 
 const nullableString = z.string().trim().nullable().optional()
 

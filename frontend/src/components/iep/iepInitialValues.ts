@@ -27,6 +27,20 @@ export const initialInclusiveEducationPlan: InclusiveEducationPlanValue = {
   grade: '', className: '', participation: '', withdrawalSubjects: [], withdrawalOther: '', otherParticipationNotes: '', participationNotes: '', activities: [], activityOther: '', activityNotes: '', strategies: [], strategyOther: '', strategyNotes: '',
 }
 
+export function normalizeInclusiveEducationPlan(value: unknown): InclusiveEducationPlanValue {
+  const plan: Record<string, unknown> = typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : {}
+  const text = (key: string): string => typeof plan[key] === 'string' ? plan[key] : ''
+  const choices = (key: string): string[] => Array.isArray(plan[key]) ? plan[key].filter((item): item is string => typeof item === 'string') : []
+  return {
+    ...plan,
+    grade: text('grade'), className: text('className'), participation: text('participation'),
+    withdrawalSubjects: choices('withdrawalSubjects'), withdrawalOther: text('withdrawalOther'),
+    otherParticipationNotes: text('otherParticipationNotes'), participationNotes: text('participationNotes'),
+    activities: choices('activities'), activityOther: text('activityOther'), activityNotes: text('activityNotes'),
+    strategies: choices('strategies'), strategyOther: text('strategyOther'), strategyNotes: text('strategyNotes'),
+  }
+}
+
 export const initialSpecialEducationSupport: SpecialEducationSupportValue = {
   specialEducation: [], specialOther: '', specialFrequency: '請選擇', specialFrequencyOther: '', specialNotes: '', professional: [], professionalDetails: {}, familySupport: [], familyOther: '', familyNotes: '', staffSupport: [], staffHours: '', staffOther: '', administrativeSupport: [], administrativeOther: '', transportSupport: [], transportOther: '', otherSupportNotes: '',
 }

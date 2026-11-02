@@ -304,6 +304,14 @@ npm start
 
 在 `backend/` 執行 `npm run test:support-services` 可驗證全欄位保存、修改／清空、不同學生與學年度、部分舊資料的預設值，以及驗證失敗時不覆寫資料。測試使用獨立的 `eyeep_support_test_<隨機識別碼>` 資料庫並於結束後移除，MariaDB 帳號需有建立及刪除資料庫的權限。
 
+### 融合教育規劃的儲存
+
+「貳 → 二、融合教育規劃」使用頁面上方的「儲存 IEP」，將年級、班級、參與方式、抽離課程、活動與支持策略等 13 個欄位保存至 `ieps.content.inclusiveEducationPlan`。沿用既有 IEP API，不需新增資料表或 migration。
+
+後端驗證選項、欄位型別與文字長度，允許空白草稿，並保留隱藏欄位及未來欄位。取消勾選或清空後需再按「儲存 IEP」才會更新。前端讀取缺少本章或部分欄位的舊資料時會補上預設值。
+
+在 `backend/` 執行 `npm run test:inclusive-education` 可測試 schema 與前端預設值處理；此指令不連線資料庫，也不建立學生資料。實際 API／資料庫測試使用本機指定的學生 IEP。
+
 ### MySQL 未啟動
 
 若出現連線失敗或 ECONNREFUSED，請啟動 XAMPP MySQL，並確認 DB_PORT 與 XAMPP 實際 port 相同。

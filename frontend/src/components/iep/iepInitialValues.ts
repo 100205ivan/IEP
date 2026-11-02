@@ -1,7 +1,7 @@
 import type { BehaviorInterventionValue } from './BehaviorIntervention'
 import type { CurriculumAdjustmentValue } from './CurriculumAdjustment'
 import type { InclusiveEducationPlanValue } from './InclusiveEducationPlan'
-import type { SpecialEducationSupportValue } from './SpecialEducationSupport'
+import type { ProfessionalServiceDetail, SpecialEducationSupportValue } from './SpecialEducationSupport'
 import type { StudentFamilyFormValue } from './StudentFamilyForm'
 import type { TransitionSupportValue } from './TransitionSupport'
 
@@ -29,6 +29,20 @@ export const initialInclusiveEducationPlan: InclusiveEducationPlanValue = {
 
 export const initialSpecialEducationSupport: SpecialEducationSupportValue = {
   specialEducation: [], specialOther: '', specialFrequency: '請選擇', specialFrequencyOther: '', specialNotes: '', professional: [], professionalDetails: {}, familySupport: [], familyOther: '', familyNotes: '', staffSupport: [], staffHours: '', staffOther: '', administrativeSupport: [], administrativeOther: '', transportSupport: [], transportOther: '', otherSupportNotes: '',
+}
+
+export const createProfessionalServiceDetail = (): ProfessionalServiceDetail => ({
+  provider: '', frequency: '請選擇', otherFrequency: '', startDate: '', endDate: '', notes: '', serviceName: '',
+})
+
+export function normalizeSpecialEducationSupport(value?: Partial<SpecialEducationSupportValue>): SpecialEducationSupportValue {
+  return {
+    ...initialSpecialEducationSupport,
+    ...value,
+    professionalDetails: Object.fromEntries(Object.entries(value?.professionalDetails ?? {}).map(([service, detail]) => [
+      service, { ...createProfessionalServiceDetail(), ...detail },
+    ])),
+  }
 }
 
 const initialStudentFamilyValues: Record<string, string> = {

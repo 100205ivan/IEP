@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { iepContentSchema } from './specialEducationSupport.js'
 
 const nullableString = z.string().trim().nullable().optional()
 
@@ -13,20 +14,20 @@ export const studentFieldsSchema = z.object({
 export const createStudentIepSchema = z.object({
   student: studentFieldsSchema,
   academicYear: z.number().int().min(1).max(999),
-  content: z.record(z.string(), z.unknown()).default({}),
+  content: iepContentSchema.default({}),
 })
 
 export const createAnnualIepSchema = z.object({
   academicYear: z.number().int().min(1, '請輸入有效的學年度。').max(999, '請輸入有效的學年度。'),
   mode: z.enum(['blank', 'copy-basic']).default('blank'),
   copyFromIepId: z.string().uuid().optional(),
-  content: z.record(z.string(), z.unknown()).default({}),
+  content: iepContentSchema.default({}),
 })
 
 export const updateIepSchema = z.object({
   student: studentFieldsSchema.optional(),
   academicYear: z.number().int().min(1).max(999).optional(),
-  content: z.record(z.string(), z.unknown()),
+  content: iepContentSchema,
 })
 
 export const deleteIepSchema = z.object({

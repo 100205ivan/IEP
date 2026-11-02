@@ -18,6 +18,7 @@
     "test:education-goals": "tsx --test src/tests/educationGoals.test.ts",
     "test:behavior-transition": "tsx --test src/tests/behaviorTransition.test.ts",
     "test:iep-meetings": "tsx --test src/tests/iepMeetingRecords.test.ts",
+    "test:chapter-migration": "tsx --test src/tests/iepChapterContent.test.ts src/tests/iepChapterMigration.test.ts",
     "start": "node dist/server.js"
   },
   "dependencies": {

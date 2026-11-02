@@ -70,12 +70,13 @@ function Results({ results, age, onRestart, resultId, assessmentDate, completedA
   const norm = MONKEY_NORMS[age]
   const z = (results.totalScore - norm.mean) / norm.sd
   const note = monkeyPerformanceNote(z)
+  const summary = `工作記憶總分 ${Math.round(results.totalScore * 100)}%（${results.correctPositions} / ${results.totalPositions} 個位置）；同齡比較：與平均相差 ${z.toFixed(2)} SD，相對表現：${describeMonkeyPerformance(z)}。`
   return <section className="card">
     <div className="mascot">🏆</div><h1>完成測驗！</h1><p>以下是與同齡研究樣本相比的工作記憶表現。</p>
     <div className="score-box"><span>工作記憶總分</span><strong>{Math.round(results.totalScore * 100)}%</strong><small>（{results.correctPositions} / {results.totalPositions} 個位置）</small></div>
     <h2>各 Level 表現</h2><div className="levels">{results.levelScores.map((value, index) => <div key={index}><span>Level {index + 1}（{index + 2} 個詞）</span><b>{Math.round(value * 100)}%</b></div>)}</div>
     <div className="norm"><h2>同齡比較（{age} 歲）</h2><p>研究平均：{norm.mean.toFixed(2)}{'\u3000'}SD：{norm.sd.toFixed(2)}</p><p>與平均相差：<strong>{z.toFixed(2)} SD</strong></p><p>相對表現：<strong>{describeMonkeyPerformance(z)}</strong></p>{note && <p className="note">{note}</p>}</div>
-    <GameAssessmentImport tool="猴子工作記憶遊戲" result={{ resultId, gameType: 'monkey', assessmentDate, completedAt, age, result: results, summary: `工作記憶總分 ${Math.round(results.totalScore * 100)}%（${results.correctPositions} / ${results.totalPositions} 個位置）；同齡比較：與平均相差 ${z.toFixed(2)} SD，相對表現：${describeMonkeyPerformance(z)}。` }} /><button type="button" className="primary" onClick={onRestart}>再玩一次</button><p className="fine">此結果僅供遊戲與研究樣本比較參考。</p>
+    <GameAssessmentImport tool="猴子工作記憶遊戲" result={{ resultId, gameType: 'monkey', assessmentDate, completedAt, age, result: results, summary }} /><button type="button" className="primary" onClick={onRestart}>再玩一次</button><p className="fine">此結果僅供遊戲與研究樣本比較參考。</p>
   </section>
 }
 

@@ -19,6 +19,7 @@ function Results({ result, age, onRestart, resultId, assessmentDate, completedAt
     ['反應時間 SD', hasHits ? `${Math.round(m.reactionTimeSD)} ms` : '—'],
     ['測驗時間', `${Math.floor(result.durationMs / 60000)} 分 ${Math.round((result.durationMs % 60000) / 1000)} 秒`],
   ]
+  const summary = `Hit ${Math.round(m.hitRate * 100)}%；Omission ${m.omissionCount} 次；Commission ${m.commissionCount} 次；RT ${hasHits ? Math.round(m.meanReactionTime) + ' ms' : '無 Hit'}；RTV ${hasHits ? Math.round(m.reactionTimeSD) + ' ms' : '—'}。`
   return <section className="card results">
     <div className="badge">✦ 完成挑戰</div><h2>持續注意力測驗結果</h2><p className="muted">{age} 歲・共 {TOTAL_TRIALS} 題</p>
     <div className="metric-grid">{metrics.map(([label, value]) => <div className="metric" key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
@@ -29,7 +30,7 @@ function Results({ result, age, onRestart, resultId, assessmentDate, completedAt
       <p>{hasHits ? `反應時間：比同齡平均${m.meanReactionTime >= n.rt.mean ? '慢' : '快'} ${Math.abs((m.meanReactionTime - n.rt.mean) / n.rt.sd).toFixed(1)} SD` : '反應時間：沒有正確 Hit，無法計算。'}</p>
     </div>
     <p className="note">這是 100 題遊戲原型，僅供注意力練習與研究參考，不作任何診斷用途。</p>
-    <GameAssessmentImport tool="數字注意力挑戰（CPT）" result={{ resultId, gameType: 'cpt', assessmentDate, completedAt, age, result, summary: `Hit ${Math.round(m.hitRate * 100)}%；Omission ${m.omissionCount} 次；Commission ${m.commissionCount} 次；RT ${hasHits ? Math.round(m.meanReactionTime) + ' ms' : '無 Hit'}；RTV ${hasHits ? Math.round(m.reactionTimeSD) + ' ms' : '—'}。` }} /><button type="button" className="primary-btn" onClick={onRestart}>再玩一次</button>
+    <GameAssessmentImport tool="數字注意力挑戰（CPT）" result={{ resultId, gameType: 'cpt', assessmentDate, completedAt, age, result, summary }} /><button type="button" className="primary-btn" onClick={onRestart}>再玩一次</button>
   </section>
 }
 

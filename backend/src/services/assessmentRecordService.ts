@@ -5,7 +5,7 @@ import type { DocumentAnalysisFields, GameAssessmentFields, ManualAssessmentFiel
 
 type AssessmentRow = RowDataPacket & { id: string; student_id: string; iep_id: string; source: 'manual' | 'document' | 'monkey' | 'cpt'; assessment_date: string; assessment_type: string; other_assessment_type: string; assessment_tool: string; evaluator: string; summary: string; created_at: string; updated_at: string }
 type DocumentAnalysisRow = RowDataPacket & { assessment_record_id: string; analysis_id: string; document_info: string | DocumentAnalysisFields['documentInfo']; overall_summary: string; domains: string | DocumentAnalysisFields['domains']; warnings: string | DocumentAnalysisFields['warnings']; analyzed_at: string; created_at: string }
-type GameAssessmentResultRow = RowDataPacket & { assessment_record_id: string; result_id: string; game_type: 'monkey' | 'cpt'; assessment_date: string; completed_at: string; result_summary: string; result_data: string | { age: number; result: GameAssessmentFields['result'] }; created_at: string }
+type GameAssessmentResultRow = RowDataPacket & { id: string; assessment_record_id: string; result_id: string; game_type: 'monkey' | 'cpt'; assessment_date: string; played_at: string; result_summary: string; result_payload: string | { age: number; result: GameAssessmentFields['result'] }; created_at: string; updated_at: string }
 
 function mapAssessment(row: AssessmentRow) {
   return { id: row.id, studentId: row.student_id, iepId: row.iep_id, source: row.source, assessmentDate: row.assessment_date, assessmentType: row.assessment_type, otherAssessmentType: row.other_assessment_type, assessmentTool: row.assessment_tool, evaluator: row.evaluator, summary: row.summary, createdAt: row.created_at, updatedAt: row.updated_at }
@@ -17,8 +17,8 @@ function mapDocumentAnalysis(row: DocumentAnalysisRow) {
   return { id: row.analysis_id, assessmentRecordId: row.assessment_record_id, documentInfo: parseJson<DocumentAnalysisFields['documentInfo']>(row.document_info), overallSummary: row.overall_summary, domains: parseJson<DocumentAnalysisFields['domains']>(row.domains), warnings: parseJson<DocumentAnalysisFields['warnings']>(row.warnings), analyzedAt: row.analyzed_at, createdAt: row.created_at }
 }
 function mapGameAssessmentResult(row: GameAssessmentResultRow) {
-  const data = parseJson<{ age: number; result: GameAssessmentFields['result'] }>(row.result_data)
-  return { id: row.result_id, assessmentRecordId: row.assessment_record_id, gameType: row.game_type, assessmentDate: mysqlDate(row.assessment_date), completedAt: row.completed_at, summary: row.result_summary, age: data.age, result: data.result, createdAt: row.created_at }
+  const data = parseJson<{ age: number; result: GameAssessmentFields['result'] }>(row.result_payload)
+  return { id: row.result_id, resultId: row.result_id, assessmentRecordId: row.assessment_record_id, gameType: row.game_type, assessmentDate: mysqlDate(row.assessment_date), completedAt: row.played_at, summary: row.result_summary, age: data.age, result: data.result, createdAt: row.created_at }
 }
 
 export async function listPersistedAssessments(iepId: string) {
@@ -147,10 +147,10 @@ export async function createGameAssessment(iepId: string, game: GameAssessmentFi
     const now = new Date()
     const isMonkey = game.gameType === 'monkey'
     await connection.execute<ResultSetHeader>('INSERT INTO assessment_records (id, student_id, iep_id, source, assessment_date, assessment_type, other_assessment_type, assessment_tool, evaluator, summary, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [assessmentRecordId, iep.student_id, iepId, game.gameType, game.assessmentDate, isMonkey ? '認知遊戲評量' : '注意力遊戲評量', '', isMonkey ? '猴子工作記憶遊戲' : '數字注意力挑戰（CPT）', 'EyeEP 遊戲評量', game.summary, now, now])
-    await connection.execute<ResultSetHeader>('INSERT INTO game_assessment_results (assessment_record_id, result_id, game_type, assessment_date, completed_at, result_summary, result_data, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [assessmentRecordId, game.resultId, game.gameType, game.assessmentDate, new Date(game.completedAt), game.summary, JSON.stringify({ age: game.age, result: game.result }), now])
+    await connection.execute<ResultSetHeader>('INSERT INTO game_assessment_results (id, assessment_record_id, result_id, game_type, result_summary, result_payload, played_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [randomUUID(), assessmentRecordId, game.resultId, game.gameType, game.summary, JSON.stringify({ age: game.age, result: game.result }), new Date(game.completedAt), now, now])
     await connection.commit()
     const [recordRows] = await pool.execute<AssessmentRow[]>('SELECT * FROM assessment_records WHERE id = ?', [assessmentRecordId])
-    const [resultRows] = await pool.execute<GameAssessmentResultRow[]>('SELECT * FROM game_assessment_results WHERE assessment_record_id = ?', [assessmentRecordId])
+    const [resultRows] = await pool.execute<GameAssessmentResultRow[]>('SELECT g.*, r.assessment_date FROM game_assessment_results g INNER JOIN assessment_records r ON r.id = g.assessment_record_id WHERE g.assessment_record_id = ?', [assessmentRecordId])
     return { kind: 'created' as const, record: mapAssessment(recordRows[0]), result: mapGameAssessmentResult(resultRows[0]) }
   } catch (error) {
     await connection.rollback()
@@ -159,7 +159,7 @@ export async function createGameAssessment(iepId: string, game: GameAssessmentFi
 }
 
 export async function getGameAssessmentResult(assessmentRecordId: string, iepId: string) {
-  const [rows] = await pool.execute<GameAssessmentResultRow[]>('SELECT g.* FROM game_assessment_results g INNER JOIN assessment_records r ON r.id = g.assessment_record_id WHERE g.assessment_record_id = ? AND r.iep_id = ? AND r.source IN (?, ?)', [assessmentRecordId, iepId, 'monkey', 'cpt'])
+  const [rows] = await pool.execute<GameAssessmentResultRow[]>('SELECT g.*, r.assessment_date FROM game_assessment_results g INNER JOIN assessment_records r ON r.id = g.assessment_record_id WHERE g.assessment_record_id = ? AND r.iep_id = ? AND r.source IN (?, ?)', [assessmentRecordId, iepId, 'monkey', 'cpt'])
   return rows[0] ? mapGameAssessmentResult(rows[0]) : null
 }
 

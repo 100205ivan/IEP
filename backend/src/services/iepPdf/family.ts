@@ -1,7 +1,7 @@
 import type { IepPdfRequest } from '../../schemas/iepPdfExport.js'
 import { IepPdfDocument } from './layout.js'
 import { date, lines, object, records, text } from './format.js'
-import { referenceOptions } from '../../schemas/referenceForms.js'
+import { drawTeam } from './team.js'
 
 export async function drawFamily(pdf: IepPdfDocument, input: IepPdfRequest) {
   const family = object(input.content.studentFamilyForm), values = object(family.values), checks = object(family.checks)
@@ -21,13 +21,7 @@ export async function drawFamily(pdf: IepPdfDocument, input: IepPdfRequest) {
   const initialMeeting = input.content.meetingRecords?.find(meeting => meeting.meetingType === '期初會議')
   const dates = [options.draftedDate || initialMeeting?.date || '', options.committeeApprovalDate, options.curriculumApprovalDate, options.newStudentReviewDate, options.firstReviewDate, options.secondReviewDate]
   dates.forEach((value, index) => { if (value) cover.field([index === 0 ? 137 : index < 3 ? 207 : index === 3 ? 183 : 137, 270 + index * 27.3, 210, 19], date(value), '封面會議日期', { size: 12 }) })
-  const teamTops = [475.7, 491.8, 507.9, 524.1, 540.2, 557.7, 575.2, 591.3, 607.5, 623.6, 639.7, 656.8]
-  referenceOptions.teamRoles.forEach((role, index) => {
-    const members = (options.teamMembers ?? []).filter(member => member.role === role && member.name.trim())
-    const left = index < 12 || index === 24, row = index < 24 ? index % 12 : 12
-    cover.field([left ? 150 : 399, row === 12 ? 674.4 : teamTops[row], left ? 47 : 60, 15], members.map(member => member.name).join('、'), role + '姓名', { size: 9, min: 7 })
-    for (const member of members) if (member.title) cover.supplement('團隊成員', `${role}：${member.name}（${member.title}）`)
-  })
+  drawTeam(cover, options.teamMembers ?? [])
   const p = await pdf.page(2, '壹、一、學生基本資料及家庭狀況')
   const put = (box: readonly [number, number, number, number], key: string, label: string, isDate = false) => p.field(box, isDate ? date(v(key)) : v(key), label, { size: 10.5 })
   put([94, 99, 46, 32], 'studentName', '姓名')

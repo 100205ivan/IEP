@@ -46,6 +46,7 @@ test('inactive new support groups and execution/transition drafts never leak int
 async function exportedText(bytes: Uint8Array) {
   const pdf = await PDFDocument.load(bytes)
   let result = ''
+  const runs: { page: number; text: string; size: number; x: number; top: number; font: string }[] = []
   const decode = (stream: PDFRawStream) => new TextDecoder().decode(decodePDFRawStream(stream).decode())
   for (const page of pdf.getPages()) {
     const fonts = page.node.Resources()?.lookup(PDFName.of('Font'), PDFDict)
@@ -61,20 +62,54 @@ async function exportedText(bytes: Uint8Array) {
       maps.set(name.decodeText(), map)
     }
     const contents = page.node.Contents(), streams = contents instanceof PDFArray ? contents.asArray() : contents ? [contents] : []
-    let selected = ''
+    let selected = '', size = 0, x = 0, y = 0
     for (const ref of streams) {
       const stream = pdf.context.lookup(ref)
       if (!(stream instanceof PDFRawStream)) continue
-      for (const token of decode(stream).matchAll(/\/([\w-]+)\s+[\d.]+\s+Tf|<([0-9a-f]+)>\s*Tj/gi)) {
-        if (token[1]) selected = token[1]
-        else result += token[2].match(/.{4}/g)?.map(code => maps.get(selected)?.get(code.toUpperCase()) ?? '').join('') || ''
+      for (const token of decode(stream).matchAll(/\/([\w-]+)\s+([\d.]+)\s+Tf|1 0 0 1 ([-\d.]+) ([-\d.]+) Tm|<([0-9a-f]+)>\s*Tj/gi)) {
+        if (token[1]) { selected = token[1]; size = Number(token[2]) }
+        else if (token[3]) { x = Number(token[3]); y = Number(token[4]) }
+        else {
+          const value = token[5].match(/.{4}/g)?.map(code => maps.get(selected)?.get(code.toUpperCase()) ?? '').join('') || ''
+          result += value
+          runs.push({ page: pdf.getPages().indexOf(page), text: value, size, x, top: page.getHeight() - y, font: selected })
+        }
       }
     }
     result += '\n'
   }
-  return { pdf, text: result }
+  return { pdf, text: result, runs }
 }
 const request = (content: Record<string, unknown> = {}, options = {}) => iepPdfExportSchema.parse({ academicYear: 115, content: { studentFamilyForm: { values: { studentName: '王曉明' }, checks: {}, medications: [] }, ...content }, options })
+
+test('cover team names remain readable and centered while signature cells stay empty', async () => {
+  const input = request({}, { teamMembers: [
+    { id: 'homeroom', role: '班級導師', name: '測試導師' },
+    { id: 'special', role: '特教教師', name: '測試特教老師' },
+    { id: 'therapist', role: '物理治療師', name: '陳測試治療師' },
+    { id: 'parent', role: '法定代理人', name: '王家長' },
+    { id: 'student', role: '學生本人', name: '王曉明' },
+  ] })
+  const { runs } = await exportedText((await generateIepPdf(input)).bytes)
+  const cells = runs.filter(run => run.page === 0 && run.top > 474 && run.top < 692 && run.font.startsWith('DFKaiShu'))
+  for (const member of input.options.teamMembers!) {
+    const run = cells.find(run => run.text === member.name)
+    assert.ok(run, member.name)
+    assert.equal(run.size, 11, 'normal names must never shrink into tiny text')
+    const center = member.role === '物理治療師' || member.role === '學生本人' ? 442.5 : 187.5
+    assert.ok(Math.abs(run.x + member.name.length * 11 / 2 - center) < .1, 'name is centered within its column')
+  }
+  assert.ok(!cells.some(run => run.x >= 226 && run.x < 278 || run.x >= 480 && run.x < 534), 'signatures remain blank')
+})
+
+test('long or multiple team names keep full details without reducing the cover font', async () => {
+  const names = ['王曉明', '陳小華', '這是一個超過姓名欄寬度的測試姓名']
+  const { text, runs } = await exportedText((await generateIepPdf(request({}, { teamMembers: names.map((name, i) => ({ id: String(i), role: '特教教師', name })) }))).bytes)
+  for (const name of names) assert.ok(text.includes(name))
+  const marker = runs.find(run => run.page === 0 && run.text === '名單詳續頁')
+  assert.ok(marker)
+  assert.equal(marker.size, 11)
+})
 
 test('blank IEP keeps all 20 A4 source pages with an embedded student name', async () => {
   const output = await generateIepPdf(request())

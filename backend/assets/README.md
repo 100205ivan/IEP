@@ -4,6 +4,8 @@
 
 The exporter fills these vector pages, adds copies for additional goal domains and meetings, and inserts complete text continuations directly after each section where needed. Page numbers are regenerated. Signatures are never generated.
 
+The cover team table is redrawn within its original footprint with wider name columns, centered 11-point names and a continuous grid. Long or multiple names continue in full on the following page instead of shrinking below a readable size. The original role groups, color cues and empty signature cells are retained.
+
 Set `IEP_PDF_FONT_PATH` to an embeddable Traditional Chinese TTF/OTF on the backend host. On Windows the default is `%SystemRoot%/Fonts/kaiu.ttf` (標楷體). Font files are not included in the repository. The process must be restarted after changing the font setting.
 
 Cover fields, team names and the default legacy timetable semester are saved per IEP in `ieps.content.pdfExportOptions` through the regular Save IEP action. Legacy IEPs without settings open with blank/default values. Exporting does not write data; an export request may explicitly override the saved options for its preview. Timetable entries carry their own semester, and both semesters (including eighth periods) are exported together. Legacy entries inherit the saved default semester before editing. Missing source fields stay blank; hidden inactive drafts are excluded. Reference explanation pages 12 and 16 remain included.

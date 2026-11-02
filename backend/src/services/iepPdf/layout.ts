@@ -39,6 +39,7 @@ export class PdfPainter {
     this.measure(value)
     this.page.drawText(value, { x, y: this.page.getHeight() - top - size * 0.87, size, font: this.font, color })
   }
+  textWidth(value: string, size: number) { return this.measure(value) * size }
   wrap(value: string, width: number, size: number): string[] {
     const result: string[] = []
     for (const paragraph of value.replace(/\r\n?/g, '\n').split('\n')) {

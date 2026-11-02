@@ -58,7 +58,7 @@ export function IepPdfExport({ content, options, onOptionsChange, academicYear, 
   }
   const change = <K extends keyof IepPdfOptions>(key: K, value: IepPdfOptions[K]) => onOptionsChange({ ...options, [key]: value })
   return <section className="content-panel pdf-export" id="chapter-export" role="tabpanel" aria-labelledby="chapter-tab-export">
-    <div className="section-heading"><p className="eyebrow">匯出</p><h1>個別化教育計畫 PDF</h1><p>依葉瓊華教授 114.03.23 參考格式，匯出壹至伍與 IEP 會議紀錄。</p></div>
+    <div className="section-heading"><p className="eyebrow">匯出</p><h1>個別化教育計畫 PDF</h1><p>匯出壹至伍與 IEP 會議紀錄。</p></div>
     <div className="pdf-export-summary"><strong>{studentName || '未填姓名'} · {academicYear || '未填'} 學年度</strong><p>使用目前畫面上的填寫內容與已儲存的評量紀錄。超出表格的文字會附在該節續頁，簽名欄保留供紙本簽署。</p></div>
     <details className="pdf-export-options"><summary>封面與課表設定<span>隨「儲存 IEP」保存</span></summary><p>選填，空白欄位會留白。修改後請點上方「儲存 IEP」，下次開啟會自動帶入；產生預覽不會自動儲存。</p><fieldset className="pdf-export-fields" disabled={disabled} aria-label="封面與課表設定">
       {([['schoolName', '學校名稱'], ['caseManager', '個管教師'], ['caseManagerTitle', '個管教師職稱']] as const).map(([key, label]) => <label key={key}>{label}<input maxLength={200} value={options[key]} onChange={e => change(key, e.target.value)} /></label>)}

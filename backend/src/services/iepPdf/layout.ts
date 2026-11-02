@@ -183,7 +183,7 @@ export class IepPdfDocument {
     this.document.setTitle(`${studentName} ${academicYear} 學年度個別化教育計畫`)
     this.document.setAuthor('EyeEP')
     this.document.setCreator('EyeEP IEP PDF Export')
-    this.document.setSubject('依葉瓊華教授 114.03.23 個別化教育計畫參考格式填製')
+    this.document.setSubject('學生個別化教育計畫與 IEP 會議紀錄')
     return { bytes: await this.document.save(), pageCount: this.document.getPageCount(), supplementPageCount: additions }
   }
 }

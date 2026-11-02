@@ -27,6 +27,8 @@ export function chapterJsonValue(content: Record<string, unknown>, key: string):
   return Object.hasOwn(content, key) && content[key] !== undefined ? JSON.stringify(content[key]) : null
 }
 
+// Historical 006 schema; 007 removes the duplicate timestamp columns after
+// checking their values. Fresh installations must still run both migrations.
 export function chapterTableSql(chapter: typeof iepChapterTables[number]): string {
   return `CREATE TABLE IF NOT EXISTS ${chapter.table} (
     iep_id CHAR(36) NOT NULL PRIMARY KEY,

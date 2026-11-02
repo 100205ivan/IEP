@@ -132,7 +132,7 @@ DB_PASSWORD=
 npm run dev
 ~~~
 
-程式會依序執行 migration 001 至 006，不需要手動逐一貼 SQL。`backend/src/db/migrate.ts` 管理啟動順序，006 的資料搬移邏輯位於 `backend/src/db/migrations/iepChapterMigration.ts`。同目錄的 `006_iep_chapter_tables.sql` 是建表參考；僅執行該 SQL 不會搬移資料，應啟動後端完成整個 migration。
+程式會依序執行 migration 001 至 007，不需要手動逐一貼 SQL。`backend/src/db/migrate.ts` 管理啟動順序，006 的資料搬移邏輯位於 `backend/src/db/migrations/iepChapterMigration.ts`，007 的欄位清理位於 `unusedColumnMigration.ts`。同目錄的 006／007 SQL 是 DDL 參考，應啟動後端完成資料搬移、清理前檢查及版本記錄。
 
 確認是否完成：
 
@@ -142,7 +142,7 @@ FROM schema_migrations
 ORDER BY version;
 ~~~
 
-正常應包含：001_initial、002_assessment_records、003_assessment_document_analyses、004_game_assessment_results、005_game_assessment_result_shape、006_iep_chapter_tables。
+正常應包含：001_initial、002_assessment_records、003_assessment_document_analyses、004_game_assessment_results、005_game_assessment_result_shape、006_iep_chapter_tables、007_unused_columns。
 
 ## 資料庫結構
 
@@ -171,7 +171,7 @@ Migration 追蹤表。主鍵為 version，另有 applied_at。
 | `iep_transitions` | 伍：轉銜服務及追蹤 | `transition_support` |
 | `iep_meetings` | IEP 會議紀錄 | `meeting_records` |
 
-各表每份 IEP 各一列，以 `iep_id` 作為主鍵及外鍵，連到 `ieps.id`；另有 `created_at`、`updated_at`。子項目的勾選、巢狀明細與清單保留 JSON 結構。`students` 保存學生基本身分，`ieps` 保存年度歸屬，六張表透過 IEP 對應學生及學年度。評量紀錄、文件及遊戲仍使用原本三張評量資料表。
+各表每份 IEP 各一列，以 `iep_id` 作為主鍵及外鍵，連到 `ieps.id`。建立與更新時間統一由父表 `ieps.created_at`、`ieps.updated_at` 記錄。子項目的勾選、巢狀明細與清單保留 JSON 結構。`students` 保存學生基本身分，`ieps` 保存年度歸屬，六張表透過 IEP 對應學生及學年度。評量紀錄、文件及遊戲仍使用原本三張評量資料表。
 
 SQL `NULL` 代表該 API 欄位未提供；JSON `null`、空字串及空陣列是不同的已提供值，讀回時會保持區別。新建空白年度 IEP 仍會建立六列章節資料，各欄位可為 SQL `NULL`。
 
@@ -183,6 +183,14 @@ SQL `NULL` 代表該 API 欄位未提供；JSON `null`、空字串及空陣列�
 
 在 `backend/` 執行 `npm run test:chapter-migration` 與 `npm run test:chapter-storage`，可驗證搬移、重跑、錯誤還原、API 相容性、跨年度、清空欄位、並行讀寫及刪除連動。測試使用獨立的 `eyeep_chapter_*_test_<隨機識別碼>` 資料庫並於結束移除，連線帳號需具備建立／刪除測試資料庫及建立測試 trigger 的權限。
 
+### 未使用及重複時間欄位清理
+
+007 移除六張章節表各自的 `created_at`、`updated_at`，以及 `game_assessment_results.updated_at`，共 13 個未被畫面或 API 回傳使用的冗餘欄位。章節時間由 `ieps` 保存；遊戲結果為不可修改的歷史紀錄，保留 `created_at` 與 `played_at`。學生、年度、章節內容、關聯識別碼、評量及資料沿用通知均維持原有功能；`ieps.content` 仍保存沿用通知及延伸資訊。
+
+執行前先備份資料庫。清理程式會先檢查所有候選欄位：章節時間須與父表相同，遊戲更新時間須與建立時間相同；如有不同的歷史時間，會在變更任何表之前停止，交由管理者確認。MariaDB DDL 會自動提交，因此程式會檢查仍存在的欄位，讓中途中斷的清理可以續跑；完成後才記錄 007 版本。
+
+在 `backend/` 執行 `npm run test:unused-columns`，會使用獨立的 `eyeep_cleanup_test_<隨機識別碼>` 資料庫，驗證歷史時間保護、部分 DDL 續跑、重跑及內容保存，測試完成後移除。舊版程式仍會寫入已移除的時間欄位，回復舊版須同時還原變更前的資料庫備份。
+
 ### assessment_records
 
 所有評量的共同索引資料。主鍵 id；外鍵 student_id → students.id 與 iep_id → ieps.id。重要欄位為 source（manual／document／monkey／cpt）、assessment_date、assessment_type、assessment_tool、evaluator、summary、created_at、updated_at。學生與 IEP 外鍵使用 ON DELETE RESTRICT。
@@ -193,7 +201,7 @@ SQL `NULL` 代表該 API 欄位未提供；JSON `null`、空字串及空陣列�
 
 ### game_assessment_results
 
-Monkey／CPT 完整結果。migration 005 後的主鍵為 id；外鍵 assessment_record_id → assessment_records.id 且唯一；result_id 唯一。重要欄位為 game_type、result_summary、result_payload（完整 JSON）、played_at、created_at、updated_at。
+Monkey／CPT 完整結果。migration 005 後的主鍵為 id；外鍵 assessment_record_id → assessment_records.id 且唯一；result_id 唯一。重要欄位為 game_type、result_summary、result_payload（完整 JSON）、played_at、created_at。007 已移除未使用的 updated_at。
 
 ## 資料庫關聯圖
 
@@ -261,7 +269,6 @@ erDiagram
         JSON result_payload
         DATETIME played_at
         DATETIME created_at
-        DATETIME updated_at
     }
     schema_migrations {
         VARCHAR version PK

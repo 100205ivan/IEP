@@ -25,6 +25,7 @@ import { normalizeGoalDomains, normalizeSemesterGoals } from '../services/educat
 import { normalizeBehaviorIntervention, normalizeTransitionSupport } from '../services/behaviorTransitionNormalization'
 import { normalizeMeetingRecords } from '../services/meetingRecordsNormalization'
 import { IepPdfExport } from '../components/iep/IepPdfExport'
+import { initialIepPdfOptions, normalizeIepPdfOptions, type IepPdfOptions } from '../models/iepPdfOptions'
 
 const mainChapters: readonly MainChapter[] = [
   { id: 'assessment', label: '壹、學生能力現況、家庭狀況及需求評估' },
@@ -81,6 +82,7 @@ export function IepEditorPage() {
   const [saveStatus, setSaveStatus] = useState<'unsaved' | 'saving' | 'saved' | 'error'>('unsaved')
   const [loadError, setLoadError] = useState('')
   const [basicInfoReviewNotice, setBasicInfoReviewNotice] = useState<IepContent['basicInfoReviewNotice']>()
+  const [pdfExportOptions, setPdfExportOptions] = useState<IepPdfOptions>(initialIepPdfOptions)
   const [loaded, setLoaded] = useState(!iepId)
   const [activeMainChapter, setActiveMainChapter] = useState('assessment')
   const [activeAssessmentChapter, setActiveAssessmentChapter] = useState(() => searchParams.get('subTab') === 'ability-record' ? 'ability-record' : 'family-info')
@@ -115,6 +117,7 @@ export function IepEditorPage() {
       const content = record.content as Partial<IepContent> & Record<string, unknown>
       if (studentId && record.studentId !== studentId) throw new Error('此 IEP 不屬於目前學生。')
       setAcademicYear(String(record.academicYear))
+      setPdfExportOptions(normalizeIepPdfOptions(content.pdfExportOptions))
       if (content.studentFamilyForm) setStudentFamilyForm(content.studentFamilyForm)
       const loadedDomains = normalizeGoalDomains(content.goalDomains)
       setGoalDomains(loadedDomains)
@@ -165,7 +168,8 @@ export function IepEditorPage() {
   const updateAssessmentSelections = track(setAssessmentSelections)
   const updateAssessmentDetails = track(setAssessmentDetails)
   const updateStrengthWeaknessSummary = track(setStrengthWeaknessSummary)
-  const buildContent = (): IepContent => ({ studentFamilyForm, goalDomains, semesterGoals, learningNotes, behaviorIntervention, transitionSupport, meetingRecords, specialEducationSupport, inclusiveEducationPlan, curriculumAdjustment, coursePlanItems, weeklySchedule: weeklySchedule.filter((entry) => coursePlanItems.some((course) => course.id === entry.courseId)), assessmentSelections, assessmentDetails, strengthWeaknessSummary, ...(basicInfoReviewNotice ? { basicInfoReviewNotice } : {}) })
+  const updatePdfExportOptions = track(setPdfExportOptions)
+  const buildContent = (): IepContent => ({ studentFamilyForm, goalDomains, semesterGoals, learningNotes, behaviorIntervention, transitionSupport, meetingRecords, specialEducationSupport, inclusiveEducationPlan, curriculumAdjustment, coursePlanItems, weeklySchedule: weeklySchedule.filter((entry) => coursePlanItems.some((course) => course.id === entry.courseId)), assessmentSelections, assessmentDetails, strengthWeaknessSummary, pdfExportOptions, ...(basicInfoReviewNotice ? { basicInfoReviewNotice } : {}) })
   const buildStudent = (): StudentFieldsPayload => ({ name: studentFamilyForm.values.studentName.trim(), gender: studentFamilyForm.values.gender, birthDate: studentFamilyForm.values.birthDate || null, nationalId: studentFamilyForm.values.nationalId || null, studentNumber: studentFamilyForm.values.studentId || '' })
   const updateAcademicYear = (value: string) => { setAcademicYear(value); markUnsaved() }
   const save = async () => {
@@ -217,7 +221,7 @@ export function IepEditorPage() {
         ) : activeMainChapter === 'meeting' ? (
           <IepMeetingRecords records={meetingRecords} setRecords={updateMeetingRecords} studentName={studentName} academicYear={academicYear} />
         ) : activeMainChapter === 'export' ? (
-          <IepPdfExport key={`${studentId}:${iepId}`} content={buildContent()} academicYear={Number(academicYear)} studentName={studentName} studentId={studentId} iepId={iepId} disabled={!loaded} />
+          <IepPdfExport key={`${studentId}:${iepId}`} content={buildContent()} options={pdfExportOptions} onOptionsChange={updatePdfExportOptions} academicYear={Number(academicYear)} studentName={studentName} studentId={studentId} iepId={iepId} disabled={!loaded} />
         ) : (
           <section className="content-panel unavailable-panel" id={`chapter-${activeMainChapter}`} role="tabpanel" aria-labelledby={`chapter-tab-${activeMainChapter}`}>
             <p>{activeMain?.label}尚未製作</p>

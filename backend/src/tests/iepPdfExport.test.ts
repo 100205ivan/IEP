@@ -49,6 +49,28 @@ test('blank IEP keeps all 20 A4 source pages with an embedded student name', asy
   for (const page of pdf.getPages()) { assert.ok(Math.abs(page.getWidth() - 595.32) < 1); assert.ok(Math.abs(page.getHeight() - 841.92) < 1) }
 })
 
+test('each student status ticks exactly its own source checkbox; blank ticks none', async () => {
+  const sourceBoxes = { 新生: 238.97, 轉學生: 309.19, 舊生: 393.22 }
+  for (const status of ['', '新生', '轉學生', '舊生'] as const) {
+    const output = await generateIepPdf(request({}, { studentStatus: status }))
+    const pdf = await PDFDocument.load(output.bytes), page = pdf.getPage(0)
+    const contents = page.node.Contents()!
+    const streams = contents instanceof PDFArray ? contents.asArray() : [contents]
+    const strokes: number[] = []
+    for (const ref of streams) {
+      const stream = pdf.context.lookup(ref)
+      if (!(stream instanceof PDFRawStream)) continue
+      const text = new TextDecoder().decode(decodePDFRawStream(stream).decode())
+      for (const match of text.matchAll(/([-\d.]+) ([-\d.]+) m\s+([-\d.]+) ([-\d.]+) l/g)) {
+        const x = Number(match[1]), top = page.getHeight() - Number(match[2])
+        if (x > 237 && x < 420 && top >= 162.53 && top <= 176.57) strokes.push(x)
+      }
+    }
+    assert.equal(strokes.length, status ? 2 : 0, status || 'blank')
+    if (status) assert.ok(strokes.every(x => x > sourceBoxes[status] && x < sourceBoxes[status] + 14.04), status)
+  }
+})
+
 test('long multiline text survives across section continuations without truncation', async () => {
   const value = '起點' + '完整內容測試。'.repeat(1800) + '\n終點保留'
   const output = await generateIepPdf(request({ strengthWeaknessSummary: { overallNeeds: value } }))

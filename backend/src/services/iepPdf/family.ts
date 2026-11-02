@@ -8,8 +8,10 @@ export async function drawFamily(pdf: IepPdfDocument, input: IepPdfRequest) {
   const options = input.options
   const cover = await pdf.page(1, '封面與團隊成員')
   cover.field([146, 85, 305, 25], `${options.schoolName || '____________學校'}　${input.academicYear}學年度`, '學校與學年度', { size: 16, min: 12, align: 'center' })
-  cover.field([95, 160, 145, 20], v('studentName'), '學生姓名', { size: 12 })
-  cover.choices(options.studentStatus ? [options.studentStatus] : [], [250, 158, 270, 22])
+  cover.field([95, 160, 140, 20], v('studentName'), '學生姓名', { size: 12 })
+  // The first checkbox starts at x=238.97. The source text extraction splits
+  // 轉學生 into separate runs and stores its checkbox label as 學生.
+  cover.choices(options.studentStatus ? [options.studentStatus] : [], [237, 158, 285, 22], { 轉學生: '學生' })
   cover.field([156, 188, 230, 20], [v('grade'), v('className')].filter(Boolean).join('　'), '普通班就讀班級', { size: 12 })
   const special = input.content.specialEducationSupport?.specialEducation ?? []
   cover.choices(special, [94, 214, 450, 22], { 資源班: '分散式資源班', 巡迴輔導: '巡迴輔導班', 集中式特殊教育班: '集中式特教班' })

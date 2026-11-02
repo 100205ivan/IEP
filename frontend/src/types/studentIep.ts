@@ -8,8 +8,10 @@ import type { GoalDomain, SemesterGoal } from '../components/iep/GoalsChapter'
 import type { BehaviorInterventionValue } from '../components/iep/BehaviorIntervention'
 import type { TransitionSupportValue } from '../components/iep/TransitionSupport'
 import type { IepMeetingRecord } from '../models/iepMeeting'
+import type { IepPdfOptions } from '../models/iepPdfOptions'
 
 export interface IepContent {
+  pdfExportOptions?: IepPdfOptions
   studentFamilyForm: StudentFamilyFormValue
   specialEducationSupport?: SpecialEducationSupportValue
   inclusiveEducationPlan?: InclusiveEducationPlanValue

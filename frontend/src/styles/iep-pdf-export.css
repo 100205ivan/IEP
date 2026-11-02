@@ -3,7 +3,7 @@
 .pdf-export-options { margin: 1.5rem 0; border-bottom: 1px solid #d4e2df; padding-bottom: 1rem; }
 .pdf-export-options summary { cursor: pointer; font-weight: 600; padding: .5rem 0; }
 .pdf-export-options summary span { margin-left: 1rem; font-weight: 400; font-size: .875rem; color: #596b65; }
-.pdf-export-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.pdf-export-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1rem 0 0; padding: 0; border: 0; min-width: 0; }
 .pdf-export-fields label { display: flex; flex-direction: column; gap: .4rem; }
 .pdf-export-fields input, .pdf-export-fields select, .pdf-preview-toolbar select { min-height: 42px; border: 1px solid #a8beb6; border-radius: 5px; padding: .5rem; background: white; color: inherit; font: inherit; }
 .pdf-export-fields small { color: #596b65; }

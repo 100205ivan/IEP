@@ -6,4 +6,4 @@ The exporter fills these vector pages, adds copies for additional goal domains a
 
 Set `IEP_PDF_FONT_PATH` to an embeddable Traditional Chinese TTF/OTF on the backend host. On Windows the default is `%SystemRoot%/Fonts/kaiu.ttf` (標楷體). Font files are not included in the repository. The process must be restarted after changing the font setting.
 
-The cover-only fields entered on the Export tab apply to that export session. One system timetable is placed in the semester selected by the user. Missing source fields stay blank; hidden inactive drafts are excluded. Reference explanation pages 12 and 16 remain included.
+Cover fields and the timetable semester are saved per IEP in `ieps.content.pdfExportOptions` through the regular Save IEP action. Legacy IEPs without settings open with blank/default values. Exporting does not write data; an export request may explicitly override the saved options for its preview. One system timetable is placed in the selected semester. Missing source fields stay blank; hidden inactive drafts are excluded. Reference explanation pages 12 and 16 remain included.

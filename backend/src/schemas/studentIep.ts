@@ -5,9 +5,11 @@ import { curriculumAdjustmentSchema, coursePlanItemSchema, weeklyScheduleEntrySc
 import { goalDomainSchema, semesterGoalSchema, validateEducationGoalLinks } from './educationGoals.js'
 import { behaviorInterventionSchema, transitionSupportSchema } from './behaviorTransition.js'
 import { iepMeetingRecordsSchema } from './iepMeetingRecords.js'
+import { iepPdfOptionsSchema } from './iepPdfOptions.js'
 
 // Validate connected chapters without stripping data belonging to other chapters.
 export const iepContentSchema = z.object({
+  pdfExportOptions: iepPdfOptionsSchema.optional(),
   specialEducationSupport: specialEducationSupportSchema.optional(),
   inclusiveEducationPlan: inclusiveEducationPlanSchema.optional(),
   curriculumAdjustment: curriculumAdjustmentSchema.optional(),

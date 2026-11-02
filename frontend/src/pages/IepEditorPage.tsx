@@ -24,6 +24,7 @@ import { normalizeCurriculumAdjustment, normalizeCoursePlanItems, normalizeWeekl
 import { normalizeGoalDomains, normalizeSemesterGoals } from '../services/educationGoalsNormalization'
 import { normalizeBehaviorIntervention, normalizeTransitionSupport } from '../services/behaviorTransitionNormalization'
 import { normalizeMeetingRecords } from '../services/meetingRecordsNormalization'
+import { IepPdfExport } from '../components/iep/IepPdfExport'
 
 const mainChapters: readonly MainChapter[] = [
   { id: 'assessment', label: '壹、學生能力現況、家庭狀況及需求評估' },
@@ -215,6 +216,8 @@ export function IepEditorPage() {
           <TransitionSupport value={transitionSupport} onChange={updateTransitionSupport} />
         ) : activeMainChapter === 'meeting' ? (
           <IepMeetingRecords records={meetingRecords} setRecords={updateMeetingRecords} studentName={studentName} academicYear={academicYear} />
+        ) : activeMainChapter === 'export' ? (
+          <IepPdfExport key={`${studentId}:${iepId}`} content={buildContent()} academicYear={Number(academicYear)} studentName={studentName} studentId={studentId} iepId={iepId} disabled={!loaded} />
         ) : (
           <section className="content-panel unavailable-panel" id={`chapter-${activeMainChapter}`} role="tabpanel" aria-labelledby={`chapter-tab-${activeMainChapter}`}>
             <p>{activeMain?.label}尚未製作</p>

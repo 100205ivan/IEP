@@ -63,16 +63,19 @@ export class PdfPainter {
     const [x, top, width, height] = box, size = Math.max(11, options.size ?? 11), leading = size * 1.2
     const all = this.wrap(valueText, Math.max(1, width - 4), size)
     const capacity = Math.max(0, Math.floor((height - 2 - size) / leading) + 1)
-    const overflow = all.length > capacity
+    // A fixed source-form cell may be narrower than a single glyph. Never let
+    // a glyph (including the overflow marker) escape its original cell.
+    const tooNarrow = all.some(line => this.measure(line) * size > width - 4)
+    const overflow = all.length > capacity || tooNarrow
     if (overflow && options.spill === false) throw new PdfExportError(`「${label}」無法在指定欄位完整顯示。`)
     if (overflow) this.supplement(label, valueText)
-    if (!capacity) return
+    if (!capacity || tooNarrow) return
     if (options.clear !== false) this.clear(box)
     const lines = all.slice(0, capacity)
     if (overflow && lines.length) {
       let last = lines[lines.length - 1]
       while (last && this.measure(last + '…') * size > width - 4) last = Array.from(last).slice(0, -1).join('')
-      lines[lines.length - 1] = last + '…'
+      lines[lines.length - 1] = this.measure('…') * size <= width - 4 ? last + '…' : last
     }
     lines.forEach((line, i) => this.text(x + (options.align === 'center' ? Math.max(2, (width - this.measure(line) * size) / 2) : 2), top + 1 + i * leading, line, size))
   }

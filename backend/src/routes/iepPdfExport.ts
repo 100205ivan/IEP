@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { iepPdfExportSchema } from '../schemas/iepPdfExport.js'
-import { generateIepPdf } from '../services/iepPdfExport.js'
+import { generateIepWord, generateIepWordPdf } from '../services/iepWordExport.js'
 import { PdfExportError } from '../services/iepPdf/layout.js'
 import { getIep } from '../services/studentIepService.js'
 import { getDocumentAnalysis, getGameAssessmentResult, listPersistedAssessments } from '../services/assessmentRecordService.js'
@@ -9,7 +9,7 @@ import { listIepAttachments } from '../services/iepAttachmentService.js'
 
 export const iepPdfExportRouter = Router()
 const domainNames: Record<string, string> = { sensory: '感官功能', perceptualMotor: '知覺動作', selfCare: '生活自理', cognitive: '認知', communication: '溝通', socialEmotional: '情緒與社會行為', academicLearning: '學業學習' }
-iepPdfExportRouter.post('/iep-export/pdf', async (request, response, next) => {
+iepPdfExportRouter.post(['/iep-export/pdf', '/iep-export/word'], async (request, response, next) => {
   const parsed = iepPdfExportSchema.safeParse(request.body)
   if (!parsed.success) return response.status(400).json({ ok: false, error: { code: 'INVALID_PDF_REQUEST', message: parsed.error.issues[0]?.message || '請檢查匯出資料。' } })
   try {
@@ -30,7 +30,13 @@ iepPdfExportRouter.post('/iep-export/pdf', async (request, response, next) => {
       }
       return { ...record, detail }
     }))
-    const pdf = await generateIepPdf(input, assessments, input.iepId ? await listIepAttachments(input.iepId) : [])
+    const attachments = input.iepId ? await listIepAttachments(input.iepId) : []
+    if (request.path.endsWith('/word')) {
+      const word = await generateIepWord(input, assessments, attachments)
+      response.set({ 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Content-Disposition': `attachment; filename="IEP.docx"; filename*=UTF-8''${encodeURIComponent(word.fileName)}`, 'Cache-Control': 'no-store' })
+      return response.send(word.bytes)
+    }
+    const pdf = await generateIepWordPdf(input, assessments, attachments)
     response.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="IEP.pdf"; filename*=UTF-8''${encodeURIComponent(pdf.fileName)}`, 'Cache-Control': 'no-store', 'X-IEP-PDF-Pages': String(pdf.pageCount), 'X-IEP-PDF-Supplements': String(pdf.supplementPageCount) })
     return response.send(Buffer.from(pdf.bytes))
   } catch (error) {

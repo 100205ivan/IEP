@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { readFile } from 'node:fs/promises'
 import { PDFArray, PDFDict, PDFDocument, PDFName, PDFRawStream, decodePDFRawStream } from 'pdf-lib'
 import { iepPdfExportSchema } from '../schemas/iepPdfExport.js'
 import { generateIepPdf } from '../services/iepPdfExport.js'
-import { PdfExportError } from '../services/iepPdf/layout.js'
+import { IepPdfDocument, PdfExportError } from '../services/iepPdf/layout.js'
 
 test('reference extensions reach the PDF: team names, item notes, subskills, execution and both semester eighth periods', async () => {
   const course = { id: 'extra-course', courseName: '測試溝通課', courseType: '特殊需求領域課程', teachingMethod: '個別教學', placement: '外加', referenceCategory: '高中：彈性學習時間', weeklyPeriods: 1, startDate: '2026-09-01', endDate: '2027-01-20' }
@@ -94,23 +95,21 @@ test('cover team names remain readable and centered while signature cells stay e
     { id: 'parent', role: '法定代理人', name: '王家長' },
     { id: 'student', role: '學生本人', name: '王曉明' },
   ] })
-  const { runs } = await exportedText((await generateIepPdf(input)).bytes)
+  const { runs, text } = await exportedText((await generateIepPdf(input)).bytes)
   const cells = runs.filter(run => run.page === 0 && run.top > 474 && run.top < 692 && run.font.startsWith('DFKaiShu'))
-  for (const member of input.options.teamMembers!) {
-    const run = cells.find(run => run.text === member.name)
-    assert.ok(run, member.name)
-    assert.equal(run.size, 11, 'normal names must never shrink into tiny text')
-    const center = member.role === '物理治療師' || member.role === '學生本人' ? 442.5 : 187.5
-    assert.ok(Math.abs(run.x + member.name.length * 11 / 2 - center) < .1, 'name is centered within its column')
+  for (const member of input.options.teamMembers!) assert.ok(text.includes(member.name), member.name)
+  for (const run of cells) {
+    assert.equal(run.size, 11)
+    assert.ok(run.x >= 150 && run.x + run.text.length * 11 <= 197 || run.x >= 399 && run.x + run.text.length * 11 <= 459, 'name preview stays in the original source name column')
   }
-  assert.ok(!cells.some(run => run.x >= 226 && run.x < 278 || run.x >= 480 && run.x < 534), 'signatures remain blank')
+  assert.ok(!cells.some(run => run.x >= 197 && run.x < 278 || run.x >= 459 && run.x < 534), 'source signature cells remain blank')
 })
 
 test('long or multiple team names keep full details without reducing the cover font', async () => {
   const names = ['王曉明', '陳小華', '這是一個超過姓名欄寬度的測試姓名']
   const { text, runs } = await exportedText((await generateIepPdf(request({}, { teamMembers: names.map((name, i) => ({ id: String(i), role: '特教教師', name })) }))).bytes)
   for (const name of names) assert.ok(text.includes(name))
-  const preview = runs.find(run => run.page === 0 && run.text.startsWith('王曉明') && run.text.endsWith('…'))
+  const preview = runs.find(run => run.page === 0 && run.text.startsWith('王') && run.text.endsWith('…'))
   assert.ok(preview, 'the cover shows a meaningful name preview')
   assert.equal(preview.size, 11)
   assert.ok(!text.includes('詳續頁'), 'complete names continue without a placeholder-only cell')
@@ -189,7 +188,7 @@ test('extra assessment records and their evaluators are retained', async () => {
   assert.ok(output.pageCount > 20)
 })
 
-test('assessment summaries expand into readable table rows with repeated column headings', async () => {
+test('assessment summaries retain the original fixed table and continue in full when cells fill', async () => {
   const records = Array.from({ length: 5 }, (_, i) => ({ assessmentDate: '2026-11-02', assessmentType: '觀察', assessmentTool: `課堂觀察表${i}`, evaluator: `測試教師${i}`, summary: `摘要起點${i}` + '觀察學生參與課堂並完成任務。'.repeat(5) + `摘要終點${i}` }))
   const output = await generateIepPdf(request(), records)
   const { text, runs } = await exportedText(output.bytes)
@@ -202,7 +201,7 @@ test('assessment summaries expand into readable table rows with repeated column 
     assert.ok(content.length)
     assert.ok(content.every(run => run.size === 11))
   }
-  assert.ok(runs.some(run => run.page > 2 && run.text === '評量結果摘要' && run.size === 12))
+  assert.ok(runs.some(run => run.page > 2 && run.text.includes('（續頁）')), 'overflow is visibly identified as a continuation')
 })
 
 test('a very long assessment preserves all summary content and keeps CPT units together', async () => {
@@ -212,15 +211,10 @@ test('a very long assessment preserves all summary content and keeps CPT units t
   ])
   const { text, runs } = await exportedText(output.bytes)
   assert.ok(text.includes('長篇摘要起點') && text.includes('長篇摘要結束'))
-  const summaryColumn = runs.filter(run => run.x >= 320 && run.size === 11 && run.font.startsWith('DFKaiShu') && !run.text.startsWith('（建議包含')).map(run => run.text).join('')
-  assert.ok(summaryColumn.includes('長篇摘要起點' + '內容完整保留。'.repeat(400) + '長篇摘要結束'), 'summary text remains complete across page breaks and repeated identity cells')
+  assert.ok(runs.filter(run => run.x === 43 && run.size === 11).map(run => run.text).join('').includes('長篇摘要起點' + '內容完整保留。'.repeat(400) + '長篇摘要結束'), 'full summary is retained across continuation page headers')
   assert.equal(output.supplementPageCount, output.pageCount - 20)
-  for (const value of ['RT 473 ms', 'RTV 381 ms。', 'Commission 3 次']) {
-    const run = runs.find(run => run.text === value)
-    assert.ok(run, value)
-    assert.equal(run.size, 11)
-  }
-  assert.ok(runs.some(run => run.text === '遊戲評量' && run.size === 11), 'the evaluator label is not split into an orphaned final character')
+  for (const value of ['RT 473 ms', 'RTV 381 ms。', 'Commission 3 次']) assert.ok(text.includes(value), value)
+  assert.ok(runs.filter(run => run.font.startsWith('DFKaiShu')).every(run => run.size >= 11 || run.size === 9), 'content is readable; page numbers may use 9pt')
 })
 
 test('both semesters, extra goal rows, annual links and fourth evaluations survive', async () => {
@@ -279,4 +273,47 @@ test('active service, curriculum, behavior and transition fields reach the PDF',
   })
   const { text } = await exportedText((await generateIepPdf(input)).bytes)
   for (const value of ['服務型態保留', '特殊服務說明保留', '專業人員保留', '專業說明保留', '家庭支持說明保留', '參與方式保留', '融合活動說明保留', '融合支持說明保留', '教材調整說明保留', '課程備註保留', '介入目標保留', '行為功能說明保留', '前事策略說明保留', '介入成效說明保留', '轉銜重點保留', '轉銜需求說明保留', '轉銜進度保留', '追蹤摘要第2筆', '轉介說明第2筆']) assert.ok(text.includes(value), value)
+})
+
+
+test('filled exports preserve every source form page instead of replacing it with reflowed tables', async () => {
+  const source = await PDFDocument.load(await readFile(new URL('../../assets/iep-reference.pdf', import.meta.url)))
+  const output = await PDFDocument.load((await generateIepPdf(request({
+    studentFamilyForm: { values: { studentName: '王曉明', registeredAddress: '格式比對地址' }, checks: {}, medications: [] },
+    assessmentDetails: { 'sensory-otherObservation': '格式比對觀察' },
+    specialEducationSupport: { specialNotes: '格式比對支持' },
+    goalDomains: [{ id: 'domain', domainName: '語文', annualGoals: [] }],
+    behaviorIntervention: { needStatus: '有需求' },
+    transitionSupport: { generalServiceContent: '格式比對轉銜' },
+  }))).bytes)
+  const streams = (pdf: PDFDocument) => pdf.getPages().flatMap(page => {
+    const content = page.node.Contents()
+    return (content instanceof PDFArray ? content.asArray() : content ? [content] : []).flatMap(ref => {
+      const stream = pdf.context.lookup(ref)
+      return stream instanceof PDFRawStream ? [Buffer.from(decodePDFRawStream(stream).decode()).toString('base64')] : []
+    })
+  })
+  const actual = new Set(streams(output))
+  for (const stream of streams(source)) assert.ok(actual.has(stream), 'original headings, tables, instructions and reference pages retained')
+})
+
+test('fixed-cell text and overflow markers stay inside their allocated rectangles', async () => {
+  const pdf = await IepPdfDocument.create(), p = await pdf.page(2, '欄位邊界測試')
+  const cells = [[100, 100, 5, 16], [100, 130, 38, 14], [100, 160, 82, 31], [100, 210, 245, 29]] as const
+  const original = p.text.bind(p)
+  let active: readonly [number, number, number, number] | undefined
+  let emitted = 0
+  p.text = (x, top, value, size = 10, color) => {
+    if (active) {
+      assert.ok(x >= active[0] && x + p.textWidth(value, size) <= active[0] + active[2], value)
+      assert.ok(top >= active[1] && top + size <= active[1] + active[3], value)
+      emitted++
+    }
+    original(x, top, value, size, color)
+  }
+  const value = '長姓名與日期115/11/2 ABCDEFGHIJKLMNOPQRSTUVWXYZ' + '完整保留。'.repeat(30)
+  for (const box of cells) { active = box; p.field(box, value, `欄位${box[1]}`) }
+  assert.ok(emitted > 0)
+  assert.equal(p.supplements.length, cells.length)
+  assert.ok(p.supplements.every(item => item.text === value))
 })

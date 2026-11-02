@@ -1,37 +1,32 @@
 import type { IepPdfRequest } from '../../schemas/iepPdfExport.js'
 import { IepPdfDocument } from './layout.js'
-import { FormFlow } from './flow.js'
 import { date } from './format.js'
 
 export async function drawMeetings(pdf: IepPdfDocument, input: IepPdfRequest, student: { studentName: string; grade: string; className: string }) {
   const meetings = input.content.meetingRecords ?? []
-  if (!meetings.length) {
-    for (const source of [19, 20]) {
-      const p = await pdf.page(source, 'IEP 會議紀錄'), delta = source === 20 ? 15.7 : 0
-      p.field([126, 103 + delta, 169, 16], student.studentName, '會議學生姓名')
-      p.field([338, 103 + delta, 191, 16], [student.grade, student.className].filter(Boolean).join('　'), '會議班級')
-    }
-    return
-  }
-  const roles: Record<string, string> = { parent: '家長', student: '學生', administrator: '行政人員', general_teacher: '普通班教師', special_education_teacher: '特殊教育教師', professional: '相關專業人員', other: '其他人員' }
-  for (const [index, meeting] of meetings.entries()) {
-    const f = await FormFlow.create(pdf, input, `IEP 會議紀錄（第 ${index + 1} 次）`)
-    await f.fields([['會議類型', meeting.meetingType === '其他' ? meeting.otherMeetingType : meeting.meetingType]])
-    await f.grid([['學生姓名', student.studentName], ['班級', [student.grade, student.className].filter(Boolean).join('　')], ['開會日期', date(meeting.date)], ['開會地點', meeting.location], ['主席', meeting.chairperson], ['紀錄', meeting.recorder]])
-    if (meeting.participants.length) {
-      await f.heading('與會人員及簽名（簽名欄供紙本簽署）')
-      await f.table(['身分', '姓名', '職稱／補充', '出席', '簽名'], [90, 90, 190, 60, 90], meeting.participants.map(person => [roles[person.role] || person.role, person.name, person.title, person.attended ? '出席' : '未出席', '']), { minHeight: 50 })
-    }
-    await f.heading('一、會議說明與討論')
-    for (const [i, topic] of meeting.discussionTopics.filter(topic => topic.enabled).entries()) {
-      const label = `討論事項 ${i + 1}：${topic.type === '其他' ? topic.otherName || '其他' : topic.type}`
-      if (topic.summary.trim()) await f.paragraph(label, topic.summary)
-      else await f.heading(label)
-    }
-    await f.heading('二、會議決議事項')
-    for (const [i, decision] of meeting.decisions.entries()) await f.paragraph(`決議 ${i + 1}`, decision.content)
-    await f.heading('三、臨時動議')
-    if (meeting.hasMotions) for (const [i, motion] of meeting.motions.entries()) await f.paragraph(`動議 ${i + 1}`, motion.content)
-    else await f.paragraph('臨時動議', '無臨時動議。')
+  const blanks = [19, 20]
+  for (const [i, meeting] of (meetings.length ? meetings : [undefined, undefined]).entries()) {
+    const source = meeting ? meeting.meetingType === '期初會議' ? 19 : 20 : blanks[i]
+    const p = await pdf.page(source, `IEP 會議紀錄${meeting ? '：' + date(meeting.date) : ''}`)
+    const delta = source === 20 ? 15.7 : 0
+    if (meeting) p.field([65, 80 + delta, 465, 18], `個別化教育計畫${meeting.meetingType === '其他' ? meeting.otherMeetingType : meeting.meetingType}紀錄`, '會議類型', { size: 14, min: 11, align: 'center' })
+    p.field([126, 103 + delta, 169, 16], student.studentName, '會議學生姓名', { size: 11 })
+    p.field([338, 103 + delta, 191, 16], [student.grade, student.className].filter(Boolean).join('　'), '會議班級', { size: 11 })
+    p.field([126, 125 + delta, 169, 16], meeting ? date(meeting.date) : '', '開會日期', { size: 11 })
+    p.field([361, 125 + delta, 168, 16], meeting?.location, '會議地點')
+    p.field([102, 146 + delta, 193, 16], meeting?.chairperson, '會議主席')
+    p.field([337, 146 + delta, 192, 16], meeting?.recorder, '會議紀錄者')
+    const roles = source === 19 ? ['parent', 'student', 'administrator', 'general_teacher', 'special_education_teacher', 'professional'] : ['student', 'parent', 'administrator', 'general_teacher', 'special_education_teacher', 'professional']
+    roles.forEach((role, index) => {
+      const participants = meeting?.participants.filter(participant => participant.role === role) ?? []
+      const value = participants.map(person => `${person.name}${person.title ? `（${person.title}）` : ''}${person.attended ? '' : '（未出席）'}`).join('\n')
+      p.field([65 + index * 78.2, 205 + delta, 74.5, source === 20 ? 61 : 77], value, `與會人員：${role}`, { size: 9, min: 8 })
+      // Names are printed for identification. The remaining empty area is reserved for handwritten signatures.
+    })
+    meeting?.participants.filter(person => person.role === 'other').forEach(person => p.supplement('其他與會人員', `${person.name}　${person.title}　${person.attended ? '出席' : '未出席'}`))
+    const shift = source === 20 ? -4.6 : 0
+    p.field([65, 330 + shift, 464, 194], meeting?.discussionTopics.filter(topic => topic.enabled).map(topic => `${topic.type === '其他' ? topic.otherName || '其他' : topic.type}\n${topic.summary}`).join('\n\n'), '會議說明與討論', { size: 11, min: 10 })
+    p.field([65, 561 + shift, 464, 70], meeting?.decisions.map((decision, index) => `${index + 1}. ${decision.content}`).join('\n'), '會議決議事項', { size: 11, min: 10 })
+    p.field([65, 668 + shift, 464, source === 20 ? 51 : 70], meeting ? meeting.hasMotions ? meeting.motions.map((motion, index) => `${index + 1}. ${motion.content}`).join('\n') : '無臨時動議。' : '', '臨時動議', { size: 11, min: 10 })
   }
 }

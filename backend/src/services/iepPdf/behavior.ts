@@ -1,39 +1,45 @@
 import type { IepPdfRequest } from '../../schemas/iepPdfExport.js'
 import { IepPdfDocument } from './layout.js'
-import { FormFlow } from './flow.js'
 import { choiceText, date, lines } from './format.js'
-import { drawBehaviorReference } from './reference.js'
 
 export async function drawBehavior(pdf: IepPdfDocument, input: IepPdfRequest) {
+  const p = await pdf.page(15, '肆、行為功能介入方案及行政支援')
   const b = input.content.behaviorIntervention
-  if (!b || !b.needStatus) await pdf.page(15, '肆、行為功能介入方案及行政支援')
-  else {
-    const f = await FormFlow.create(pdf, input, '肆、行為功能介入方案及行政支援')
-    await f.fields([['介入需求', b.needStatus === '暫無需求' ? '經評估，學生暫無此需求。' : '經評估，學生有需求。']])
-    if (b.needStatus === '有需求') {
-      await f.fields([['方案狀態', b.planStatus], ['計畫執行期間', [date(b.planPeriod.startDate), date(b.planPeriod.endDate)].filter(Boolean).join(' ～ ')]])
-      await f.heading('行為評估')
-      await f.fields([['行為定義', b.behaviorAssessment.definition], ['發生時間', b.behaviorAssessment.time], ['發生地點', b.behaviorAssessment.location], ['引發因素', b.behaviorAssessment.triggers], ['發生頻率', b.behaviorAssessment.frequency], ['持續時間', b.behaviorAssessment.duration]])
-      if (b.behaviorFunctions.selected.length) { await f.heading('行為功能分析'); await f.table(['行為功能', '說明'], [150, 370], b.behaviorFunctions.selected.map(value => [value, b.behaviorFunctions.notes[value] || ''])) }
-      await f.paragraph('行為介入目標', b.interventionGoal)
-      const strategies = [
-        ['antecedent', 'A 前事處理與先兆控制', lines([['環境策略', choiceText(b.antecedentStrategies.environment)], ['課程策略', choiceText(b.antecedentStrategies.curriculum)], ['互動策略', choiceText(b.antecedentStrategies.interaction)], ['說明', b.antecedentStrategies.notes]])],
-        ['teaching', 'B 行為教導策略', lines([['策略', choiceText(b.teachingStrategies)], ['說明', b.teachingStrategies.notes]])],
-        ['consequence', 'C 後果處理策略', lines([['增強適當行為', choiceText(b.consequenceStrategies.increase)], ['減少不當行為', choiceText(b.consequenceStrategies.reduce)], ['說明', b.consequenceStrategies.notes]])],
-      ] as const
-      for (const [key, title, value] of strategies) {
-        await f.heading(title)
-        await f.paragraph('介入策略', value)
-        const execution = b.executionDetails?.[key]
-        await f.fields([['執行方式', execution?.executionMethod], ['執行人員', execution?.implementers ?? choiceText(b.implementers)], ['執行狀況', execution?.progress]])
-      }
-      await f.paragraph('個別因素與注意事項', b.individualFactors)
-      await f.paragraph('行政支援', choiceText(b.administrativeSupports))
-      const result = b.outcomeEvaluation
-      await f.heading('執行成效評估及後續建議')
-      await f.fields([['檢討日期', date(result.date)], ['評估方式', choiceText(result.methods)], ['評估結果', result.result === '其他' ? result.resultOther : result.result], ['後續建議', result.recommendation === '其他' ? result.recommendationOther : result.recommendation], ['補充說明', result.notes]])
+  if (!b) { await pdf.page(16, '行為功能介入策略（參考）'); return }
+  p.choices([b.needStatus], [36, 73, 520, 36], { 暫無需求: '經評估，學生暫無此需求', 有需求: '經評估學生有需求' })
+  if (b.needStatus === '有需求') {
+    p.choices([b.planStatus], [36, 109, 520, 55], { 建立新的行為功能介入方案: '建立行為功能介入方案' })
+    p.supplement('方案狀態', b.planStatus)
+    p.field([145, 181, 393, 21], [date(b.planPeriod.startDate), date(b.planPeriod.endDate)].filter(Boolean).join(' ～ '), '介入計畫期程', { size: 11 })
+    p.field([144, 205, 394, 22], b.behaviorAssessment.definition, '行為定義')
+    p.field([144, 229, 167, 22], b.behaviorAssessment.time, '行為發生時間')
+    p.field([399, 229, 139, 22], b.behaviorAssessment.location, '行為發生地點')
+    p.field([144, 253, 394, 22], b.behaviorAssessment.triggers, '引發因素')
+    p.supplement('行為頻率與持續時間', lines([['頻率', b.behaviorAssessment.frequency], ['持續時間', b.behaviorAssessment.duration]]))
+    const functions = ['獲得他人注意', '獲得事物／活動', '獲得自我刺激', '逃避要求', '逃避事物／活動', '其他']
+    p.choices(b.behaviorFunctions.selected, [144, 276, 394, 132], {}, '其他行為功能評估')
+    functions.forEach((value, i) => { if (b.behaviorFunctions.selected.includes(value as never)) p.field([285, 278 + i * 23.4, 250, 18], b.behaviorFunctions.notes[value], value + '說明') })
+    for (const value of b.behaviorFunctions.selected.filter(value => !functions.includes(value))) p.supplement(value, b.behaviorFunctions.notes[value])
+    p.field([57, 442, 83, 104], b.interventionGoal, '行為介入目標')
+    const antecedent = lines([['環境策略', choiceText(b.antecedentStrategies.environment)], ['課程策略', choiceText(b.antecedentStrategies.curriculum)], ['互動策略', choiceText(b.antecedentStrategies.interaction)], ['說明', b.antecedentStrategies.notes]])
+    const teaching = lines([['策略', choiceText(b.teachingStrategies)], ['說明', b.teachingStrategies.notes]])
+    const consequence = lines([['增強適當行為', choiceText(b.consequenceStrategies.increase)], ['減少不當行為', choiceText(b.consequenceStrategies.reduce)], ['說明', b.consequenceStrategies.notes]])
+    for (const [top, height, title, value] of [[442, 35, 'A 前事控制策略', antecedent], [480, 32, 'B 行為教導策略', teaching], [515, 32, 'C 後果處理策略', consequence]] as const) {
+      const key = top === 442 ? 'antecedent' : top === 480 ? 'teaching' : 'consequence'
+      const execution = b.executionDetails?.[key]
+      p.field([186, top, 124, height], value, title, { size: 9, min: 8 })
+      p.field([314, top, 82, height], execution?.executionMethod, title + '執行方式', { size: 9, min: 8 })
+      p.field([400, top, 77, height], execution?.implementers ?? choiceText(b.implementers), title + '執行人員', { size: 9, min: 8 })
+      p.field([481, top, 57, height], execution?.progress, title + '執行狀況', { size: 9, min: 8 })
     }
+    p.supplement('個別因素與注意事項', b.individualFactors)
+    p.field([144, 551, 394, 28], choiceText(b.administrativeSupports), '行政支援')
+    const result = b.outcomeEvaluation
+    p.field([57, 583, 481, 19], `執行成效評估及後續建議${result.date ? `（${date(result.date)}檢討）` : ''}`, '成效評估日期', { size: 11, align: 'center' })
+    p.choices(result.methods.selected, [57, 629, 158, 115])
+    p.choices([result.result], [218, 629, 158, 115])
+    p.choices([result.recommendation], [380, 629, 158, 115])
+    p.supplement('成效評估與建議說明', lines([['評估方式', choiceText(result.methods)], ['評估結果', result.result === '其他' ? result.resultOther : result.result], ['後續建議', result.recommendation === '其他' ? result.recommendationOther : result.recommendation], ['說明', result.notes]]))
   }
-  if (b?.needStatus) await drawBehaviorReference(pdf, input)
-  else await pdf.page(16, '行為功能介入策略（參考）')
+  await pdf.page(16, '行為功能介入策略（參考）')
 }

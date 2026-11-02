@@ -1,0 +1,18 @@
+.reference-fields { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #c9d9d3; }
+.reference-fields p { color: #486358; line-height: 1.7; }
+.reference-fields label, .reference-detail > label { display: flex; flex-direction: column; gap: .4rem; margin: .6rem 0; }
+.reference-fields fieldset, .reference-detail fieldset { min-width: 0; margin: 1rem 0; padding: 1rem; border: 1px solid #c9d9d3; }
+.reference-fields legend { font-weight: 600; padding: 0 .4rem; }
+.reference-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.reference-full { grid-column: 1 / -1; }
+.reference-fields input:not([type=checkbox]), .reference-fields select, .reference-fields textarea, .reference-detail textarea, .reference-detail select { width: 100%; min-width: 0; min-height: 42px; padding: .55rem; color: inherit; background: white; border: 1px solid #9bb7ac; border-radius: 4px; font: inherit; }
+.reference-fields textarea, .reference-detail textarea { min-height: 84px; resize: vertical; }
+.reference-inline { display: flex; align-items: end; gap: 1rem; flex-wrap: wrap; }
+.reference-inline > label { flex: 1 1 220px; }
+.reference-checks { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; }
+.reference-checks label, .reference-fields label.reference-check { display: flex; flex-direction: row; align-items: baseline; gap: .5rem; }
+.reference-detail { padding: 1rem 0; border-bottom: 1px solid #d5e0db; }
+.reference-detail summary { cursor: pointer; font-weight: 600; padding: .3rem 0; }
+.reference-fields :focus-visible, .reference-detail :focus-visible { outline: 2px solid #15766c; outline-offset: 3px; }
+@media (max-width: 740px) { .reference-grid { grid-template-columns: 1fr; } }
+.certificate-preview { display: block; max-width: 100%; max-height: 240px; margin-top: 12px; object-fit: contain; border: 1px solid #c7d5d1; }

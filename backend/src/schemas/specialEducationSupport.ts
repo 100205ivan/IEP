@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { referenceSupportSchema } from './referenceForms.js'
 
 const notes = z.string().max(20_000, '服務說明不可超過 20,000 字。').default('')
 const text = z.string().max(2_000, '服務欄位不可超過 2,000 字。').default('')
@@ -17,6 +18,7 @@ const professionalDetail = z.object({
 
 // Empty fields remain valid so teachers can save a partially completed IEP.
 export const specialEducationSupportSchema = z.object({
+  referenceDetails: referenceSupportSchema.optional(),
   specialEducation: z.array(z.enum(['資源班', '巡迴輔導', '集中式特殊教育班', '普通班接受特殊教育服務', '在家教育', '其他'])).default([]),
   specialOther: text,
   specialFrequency: z.enum(['請選擇', '每日', '每週 1 節', '每週 2 節', '每週 3 節', '每週 4 節以上', '依需求提供', '其他']).default('請選擇'),

@@ -117,7 +117,8 @@ export function IepEditorPage() {
       const content = record.content as Partial<IepContent> & Record<string, unknown>
       if (studentId && record.studentId !== studentId) throw new Error('此 IEP 不屬於目前學生。')
       setAcademicYear(String(record.academicYear))
-      setPdfExportOptions(normalizeIepPdfOptions(content.pdfExportOptions))
+      const loadedPdfOptions = normalizeIepPdfOptions(content.pdfExportOptions)
+      setPdfExportOptions(loadedPdfOptions)
       if (content.studentFamilyForm) setStudentFamilyForm(content.studentFamilyForm)
       const loadedDomains = normalizeGoalDomains(content.goalDomains)
       setGoalDomains(loadedDomains)
@@ -131,7 +132,7 @@ export function IepEditorPage() {
       setCurriculumAdjustment(normalizeCurriculumAdjustment(content.curriculumAdjustment))
       const loadedCourses = normalizeCoursePlanItems(content.coursePlanItems)
       setCoursePlanItems(loadedCourses)
-      setWeeklySchedule(normalizeWeeklySchedule(content.weeklySchedule, loadedCourses))
+      setWeeklySchedule(normalizeWeeklySchedule(content.weeklySchedule, loadedCourses, loadedPdfOptions.weeklyScheduleSemester).map(entry => ({ ...entry, semester: entry.semester ?? loadedPdfOptions.weeklyScheduleSemester })))
       if (content.assessmentSelections) setAssessmentSelections(content.assessmentSelections as AssessmentSelections)
       if (content.assessmentDetails) setAssessmentDetails(content.assessmentDetails as AssessmentDetails)
       if (content.strengthWeaknessSummary) setStrengthWeaknessSummary(content.strengthWeaknessSummary as StrengthWeaknessSummary)
@@ -206,7 +207,7 @@ export function IepEditorPage() {
           <section className="content-panel" id="chapter-services" role="tabpanel" aria-labelledby="chapter-tab-services">
             <div className="section-heading"><p className="eyebrow">貳</p><h1>學生所需特殊教育、相關服務及支持策略</h1><p>依學生個別需求規劃特殊教育服務、相關支持、融合教育及課程調整方式。</p></div>
             <AssessmentSubTabs chapters={serviceSubChapters} activeChapter={activeServiceChapter} onChange={setActiveServiceChapter} ariaLabel="貳、子章節" idPrefix="services" />
-            {activeServiceChapter === 'special-education-support' ? <SpecialEducationSupport value={specialEducationSupport} onChange={updateSpecialEducationSupport} /> : activeServiceChapter === 'inclusive-education' ? <InclusiveEducationPlan value={inclusiveEducationPlan} onChange={updateInclusiveEducationPlan} /> : activeServiceChapter === 'curriculum-adjustment' ? <CurriculumAdjustment value={curriculumAdjustment} onChange={updateCurriculumAdjustment} /> : activeServiceChapter === 'curriculum-plan' ? <StudentCoursePlan courses={coursePlanItems} setCourses={updateCoursePlanItems} /> : activeServiceChapter === 'weekly-schedule' ? <StudentWeeklySchedule courses={coursePlanItems} schedule={weeklySchedule} setSchedule={updateWeeklySchedule} onGoToCoursePlan={() => setActiveServiceChapter('curriculum-plan')} /> : <ServicePlaceholder activeChapter={activeServiceChapter} />}
+            {activeServiceChapter === 'special-education-support' ? <SpecialEducationSupport value={specialEducationSupport} onChange={updateSpecialEducationSupport} /> : activeServiceChapter === 'inclusive-education' ? <InclusiveEducationPlan value={inclusiveEducationPlan} onChange={updateInclusiveEducationPlan} /> : activeServiceChapter === 'curriculum-adjustment' ? <CurriculumAdjustment courses={coursePlanItems} value={curriculumAdjustment} onChange={updateCurriculumAdjustment} /> : activeServiceChapter === 'curriculum-plan' ? <StudentCoursePlan courses={coursePlanItems} setCourses={updateCoursePlanItems} /> : activeServiceChapter === 'weekly-schedule' ? <StudentWeeklySchedule courses={coursePlanItems} schedule={weeklySchedule} setSchedule={updateWeeklySchedule} onGoToCoursePlan={() => setActiveServiceChapter('curriculum-plan')} /> : <ServicePlaceholder activeChapter={activeServiceChapter} />}
           </section>
         ) : activeMainChapter === 'goals' ? (
           <section className="content-panel" id="chapter-goals" role="tabpanel" aria-labelledby="chapter-tab-goals">

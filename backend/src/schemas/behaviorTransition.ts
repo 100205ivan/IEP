@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { behaviorExecutionSchema } from './referenceForms.js'
 
 const text = z.string().max(2_000, '介入／轉銜補充欄位不可超過 2,000 字。').default('')
 const notes = z.string().max(20_000, '介入／轉銜說明不可超過 20,000 字。').default('')
@@ -8,14 +9,15 @@ function choiceObject(options: readonly [string, ...string[]]) {
 }
 const choice = (options: readonly [string, ...string[]]) => choiceObject(options).prefault({})
 const preference = (options: readonly [string, ...string[]]) => z.object({ caregiver: choice(options), student: choice(options) }).passthrough().prefault({})
-const focusOptions = ['學習輔導', '生活輔導', '就業輔導', '心理輔導', '福利服務', '其他'] as const
+const focusOptions = ['學習輔導', '升學輔導', '生活輔導', '就業輔導', '心理輔導', '福利服務', '其他'] as const
 
 export const behaviorInterventionSchema = z.object({
-  needStatus: z.enum(['暫無需求', '有需求'], { error: '請選擇有效的行為介入需求。' }).default('暫無需求'),
+  executionDetails: behaviorExecutionSchema.optional(),
+  needStatus: z.enum(['', '暫無需求', '有需求'], { error: '請選擇有效的行為介入需求。' }).default(''),
   planStatus: z.enum(['', '建立新的行為功能介入方案', '維持前次行為功能介入方案，繼續執行', '調整前次行為功能介入方案，繼續執行'], { error: '請選擇有效的介入方案狀態。' }).default(''),
   planPeriod: z.object({ startDate: date, endDate: date }).passthrough().prefault({}),
   behaviorAssessment: z.object({ definition: notes, time: text, location: text, triggers: text, frequency: text, duration: text }).passthrough().prefault({}),
-  behaviorFunctions: z.object({ selected: z.array(z.enum(['獲得內在刺激', '獲得外在刺激', '逃避內在刺激', '逃避外在刺激', '其他'])).default([]), notes: z.record(z.string(), text).default({}) }).passthrough().prefault({}),
+  behaviorFunctions: z.object({ selected: z.array(z.enum(['獲得他人注意', '獲得事物／活動', '獲得自我刺激', '逃避要求', '逃避事物／活動', '獲得內在刺激', '獲得外在刺激', '逃避內在刺激', '逃避外在刺激', '其他'])).default([]), notes: z.record(z.string(), text).default({}) }).passthrough().prefault({}),
   interventionGoal: notes,
   antecedentStrategies: z.object({
     environment: choice(['提供示範', '預告或提示', '調整座位／活動地點', '調整物理環境', '建立結構化環境', '提供豐富多元環境', '安排同儕支持', '調整班規', '提供學習／溝通輔具', '其他']),
@@ -48,7 +50,7 @@ export const behaviorInterventionSchema = z.object({
 })
 
 function transitionService(options: readonly [string, ...string[]]) {
-  return z.object({ needStatus: z.enum(['無需求', '有需求']).default('無需求'), options: choice(options), needsDescription: notes, startDate: date, endDate: date, provider: text, progress: notes }).passthrough().prefault({})
+  return z.object({ needStatus: z.enum(['', '無需求', '有需求']).default(''), options: choice(options), needsDescription: notes, startDate: date, endDate: date, provider: text, progress: notes }).passthrough().prefault({})
 }
 const followUpRecord = z.object({
   id: z.string().trim().min(1, '追蹤紀錄識別碼不可空白。').max(100),
@@ -67,6 +69,7 @@ export const transitionSupportSchema = z.object({
   transitionFocus: choice(focusOptions),
   generalServiceContent: notes, receivingUnit: text, specialNotes: notes,
   crossStagePlan: z.object({
+    employmentDetails: z.partialRecord(z.enum(['國中', '高中']), z.object({ caregiverWorkplace: text, studentWorkplace: text, caregiverHome: text, studentHome: text }).passthrough()).optional(),
     enabled: z.boolean().default(false),
     educationStage: z.enum(['國小', '國中', '高中', '其他'], { error: '請選擇有效的轉銜教育階段。' }).default('國小'),
     grade: text,

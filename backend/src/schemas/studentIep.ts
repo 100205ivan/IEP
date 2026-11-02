@@ -30,7 +30,7 @@ export const iepContentSchema = z.object({
   const occupiedSlots = new Set<string>()
   for (const [index, entry] of (content.weeklySchedule ?? []).entries()) {
     if (!courseIds.has(entry.courseId)) context.addIssue({ code: 'custom', path: ['weeklySchedule', index, 'courseId'], message: '課表只能安排目前 IEP 課程規劃中的課程。' })
-    const slot = `${entry.day}/${entry.period}`
+    const slot = `${entry.semester ?? content.pdfExportOptions?.weeklyScheduleSemester ?? '第一學期'}/${entry.day}/${entry.period}`
     if (occupiedSlots.has(slot)) context.addIssue({ code: 'custom', path: ['weeklySchedule', index], message: '同一天的同一節次只能安排一筆課程。' })
     occupiedSlots.add(slot)
   }

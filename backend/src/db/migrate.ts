@@ -172,6 +172,19 @@ export async function runMigrations() {
     }
     await migrateIepChapterTables(connection)
     await removeUnusedColumns(connection)
+    if (!applied.has('008_iep_attachments')) {
+      await connection.query(`CREATE TABLE IF NOT EXISTS iep_attachments (
+        iep_id CHAR(36) NOT NULL,
+        kind VARCHAR(32) NOT NULL,
+        mime_type VARCHAR(32) NOT NULL,
+        file_name VARCHAR(255) NOT NULL,
+        image_bytes MEDIUMBLOB NOT NULL,
+        updated_at DATETIME(3) NOT NULL,
+        PRIMARY KEY (iep_id, kind),
+        CONSTRAINT fk_iep_attachments_iep FOREIGN KEY (iep_id) REFERENCES ieps(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`)
+      await connection.query('INSERT INTO schema_migrations (version, applied_at) VALUES (?, CURRENT_TIMESTAMP(3))', ['008_iep_attachments'])
+    }
   } finally {
     connection.release()
   }

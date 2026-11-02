@@ -1,10 +1,12 @@
 import { z } from 'zod'
+import { inclusiveReferenceRowsSchema } from './referenceForms.js'
 
 const other = z.string().max(2_000, '融合教育補充欄位不可超過 2,000 字。').default('')
 const notes = z.string().max(20_000, '融合教育說明不可超過 20,000 字。').default('')
 
 // Allow empty fields for drafts. Keep the saved values aligned with the form.
 export const inclusiveEducationPlanSchema = z.object({
+  referenceRows: inclusiveReferenceRowsSchema.optional(),
   grade: z.enum(['', '一年級', '二年級', '三年級', '四年級', '五年級', '六年級', '七年級', '八年級', '九年級'], { error: '請選擇有效的融合教育年級。' }).default(''),
   className: z.enum(['', '1 班', '2 班', '3 班', '4 班', '5 班'], { error: '請選擇有效的融合教育班級。' }).default(''),
   participation: z.enum(['', '全時參與普通班', '部分時間抽離', '其他方式'], { error: '請選擇有效的融合教育參與方式。' }).default(''),

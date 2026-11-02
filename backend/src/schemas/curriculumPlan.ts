@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { adjustmentSubjectDetailsSchema, referenceOptions } from './referenceForms.js'
 
 const text = z.string().max(2_000, '課程補充欄位不可超過 2,000 字。').default('')
 const notes = z.string().max(20_000, '課程說明不可超過 20,000 字。').default('')
@@ -20,6 +21,7 @@ function adjustmentGroup(options: readonly [string, ...string[]]) {
 }
 
 export const curriculumAdjustmentSchema = z.object({
+  subjectDetails: adjustmentSubjectDetailsSchema.optional(),
   environment: adjustmentGroup(['座位調整', '同儕協助', '教室動線調整', '減少環境干擾刺激', '提供獨立／安靜學習空間', '調整教室光線或聲音', '提供視覺提示', '輔具或學習設備', '其他']),
   content: adjustmentGroup(['個別化教材', '教材內容簡化', '調整學習內容難度', '減少學習內容份量', '提供重點整理', '提供圖像／視覺化教材', '將抽象內容具體化', '增加生活化或實作內容', '其他']),
   process: adjustmentGroup(['工作分析／步驟化教學', '分段指令', '重複或簡化指令', '多感官教學', '示範後操作', '增加練習機會', '延長學習時間', '調整學習速度', '合作學習', '同儕示範／協助', '視覺流程提示', '提供立即回饋', '其他']),
@@ -27,6 +29,10 @@ export const curriculumAdjustmentSchema = z.object({
 }).passthrough()
 
 export const coursePlanItemSchema = z.object({
+  placement: z.enum(['', '原班', '抽離', '外加']).optional(),
+  referenceCategory: z.union([z.literal(''), z.enum(referenceOptions.courseCategories.map(row => row.name) as [string, ...string[]])]).optional(),
+  startDate: z.union([z.literal(''), z.iso.date()]).optional(),
+  endDate: z.union([z.literal(''), z.iso.date()]).optional(),
   id: courseId,
   courseName: z.string().trim().min(1, '請填寫課程名稱。').max(255, '課程名稱不可超過 255 字。'),
   courseType: z.enum(['普通教育課程', '特殊教育課程', '特殊需求領域課程', '其他'], { error: '請選擇有效的課程／領域類型。' }),
@@ -38,10 +44,11 @@ export const coursePlanItemSchema = z.object({
   otherLocation: text,
   weeklyPeriods: z.number({ error: '每週節數須為數字。' }).finite().nonnegative('每週節數須為 0 或正數。'),
   notes,
-}).passthrough()
+}).passthrough().superRefine((value, context) => { if (value.startDate && value.endDate && value.endDate < value.startDate) context.addIssue({ code: 'custom', path: ['endDate'], message: '課程結束日期不可早於開始日期。' }) })
 
 export const weeklyScheduleEntrySchema = z.object({
+  semester: z.enum(['第一學期', '第二學期']).optional(),
   day: z.enum(['星期一', '星期二', '星期三', '星期四', '星期五'], { error: '請選擇有效的上課日。' }),
-  period: z.enum(['早自習', '第一節', '第二節', '第三節', '第四節', '午休', '第五節', '第六節', '第七節'], { error: '請選擇有效的課表節次。' }),
+  period: z.enum(['早自習', '第一節', '第二節', '第三節', '第四節', '午休', '第五節', '第六節', '第七節', '第八節'], { error: '請選擇有效的課表節次。' }),
   courseId,
 }).passthrough()

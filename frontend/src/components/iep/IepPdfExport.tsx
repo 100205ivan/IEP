@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { PDFDocumentProxy } from 'pdfjs-dist'
 import type { IepContent } from '../../types/studentIep'
 import type { IepPdfOptions } from '../../models/iepPdfOptions'
+import { IepCertificateFields, IepTeamFields } from './IepExportExtras'
 
 interface Props { content: IepContent; options: IepPdfOptions; onOptionsChange: (value: IepPdfOptions) => void; academicYear: number; studentName: string; studentId?: string; iepId?: string; disabled: boolean }
 
@@ -62,9 +63,11 @@ export function IepPdfExport({ content, options, onOptionsChange, academicYear, 
     <details className="pdf-export-options"><summary>封面與課表設定<span>隨「儲存 IEP」保存</span></summary><p>選填，空白欄位會留白。修改後請點上方「儲存 IEP」，下次開啟會自動帶入；產生預覽不會自動儲存。</p><fieldset className="pdf-export-fields" disabled={disabled} aria-label="封面與課表設定">
       {([['schoolName', '學校名稱'], ['caseManager', '個管教師'], ['caseManagerTitle', '個管教師職稱']] as const).map(([key, label]) => <label key={key}>{label}<input maxLength={200} value={options[key]} onChange={e => change(key, e.target.value)} /></label>)}
       <label>學生身分<select value={options.studentStatus} onChange={e => change('studentStatus', e.target.value as IepPdfOptions['studentStatus'])}><option value="">留白</option>{['新生', '轉學生', '舊生'].map(v => <option key={v}>{v}</option>)}</select></label>
-      <label>課表學期<select value={options.weeklyScheduleSemester} onChange={e => change('weeklyScheduleSemester', e.target.value as IepPdfOptions['weeklyScheduleSemester'])}><option>第一學期</option><option>第二學期</option></select><small>將目前課表填入所選學期。</small></label>
+      <label>預設課表學期<select value={options.weeklyScheduleSemester} onChange={e => change('weeklyScheduleSemester', e.target.value as IepPdfOptions['weeklyScheduleSemester'])}><option>第一學期</option><option>第二學期</option></select><small>兩學期課表都會一併匯出。</small></label>
       {([['draftedDate', 'IEP 訂定日期'], ['committeeApprovalDate', '特推會審議日期'], ['curriculumApprovalDate', '課發會通過日期'], ['newStudentReviewDate', '新生檢討日期'], ['firstReviewDate', '第一次檢討日期'], ['secondReviewDate', '第二次檢討日期']] as const).map(([key, label]) => <label key={key}>{label}<input type="date" value={options[key]} onChange={e => change(key, e.target.value)} /></label>)}
     </fieldset></details>
+    <IepTeamFields value={options.teamMembers ?? []} onChange={value => change('teamMembers', value)} disabled={disabled} />
+    <IepCertificateFields key={`${studentId}/${iepId}`} studentId={studentId} iepId={iepId} disabled={disabled} />
     <div className="pdf-export-actions"><button type="button" className="button button--primary" disabled={disabled || busy} onClick={() => void generate()}>{busy ? '正在產生 PDF…' : preview ? '重新產生預覽' : '產生 PDF 預覽'}</button>{preview && <a className="button button--secondary" href={preview.url} download={preview.filename}>下載 PDF</a>}</div>
     {error && <p className="student-list-error" role="alert">{error}</p>}
     {!preview && !busy && <p className="pdf-export-empty">產生後可在這裡逐頁檢查，再下載 PDF。</p>}

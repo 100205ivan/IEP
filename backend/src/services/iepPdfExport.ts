@@ -7,12 +7,13 @@ import { drawGoals } from './iepPdf/goals.js'
 import { drawBehavior } from './iepPdf/behavior.js'
 import { drawTransition } from './iepPdf/transition.js'
 import { drawMeetings } from './iepPdf/meetings.js'
+import type { IepAttachment } from './iepAttachmentService.js'
 
 /** Pure document rendering: exporting never changes saved IEPs or assessment records. */
-export async function generateIepPdf(input: IepPdfRequest, assessments: PdfAssessment[] = []) {
+export async function generateIepPdf(input: IepPdfRequest, assessments: PdfAssessment[] = [], attachments: IepAttachment[] = []) {
   const pdf = await IepPdfDocument.create()
   const student = await drawFamily(pdf, input)
-  await drawAssessments(pdf, input, assessments)
+  await drawAssessments(pdf, input, assessments, attachments)
   await drawServices(pdf, input)
   await drawGoals(pdf, input)
   await drawBehavior(pdf, input)

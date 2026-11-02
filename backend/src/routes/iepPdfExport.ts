@@ -5,6 +5,7 @@ import { PdfExportError } from '../services/iepPdf/layout.js'
 import { getIep } from '../services/studentIepService.js'
 import { getDocumentAnalysis, getGameAssessmentResult, listPersistedAssessments } from '../services/assessmentRecordService.js'
 import { lines } from '../services/iepPdf/format.js'
+import { listIepAttachments } from '../services/iepAttachmentService.js'
 
 export const iepPdfExportRouter = Router()
 const domainNames: Record<string, string> = { sensory: '感官功能', perceptualMotor: '知覺動作', selfCare: '生活自理', cognitive: '認知', communication: '溝通', socialEmotional: '情緒與社會行為', academicLearning: '學業學習' }
@@ -29,7 +30,7 @@ iepPdfExportRouter.post('/iep-export/pdf', async (request, response, next) => {
       }
       return { ...record, detail }
     }))
-    const pdf = await generateIepPdf(input, assessments)
+    const pdf = await generateIepPdf(input, assessments, input.iepId ? await listIepAttachments(input.iepId) : [])
     response.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="IEP.pdf"; filename*=UTF-8''${encodeURIComponent(pdf.fileName)}`, 'Cache-Control': 'no-store', 'X-IEP-PDF-Pages': String(pdf.pageCount), 'X-IEP-PDF-Supplements': String(pdf.supplementPageCount) })
     return response.send(Buffer.from(pdf.bytes))
   } catch (error) {

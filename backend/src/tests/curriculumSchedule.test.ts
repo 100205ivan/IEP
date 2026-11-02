@@ -46,7 +46,7 @@ test('schedule rejects unknown courses, invalid weekdays/periods and duplicate t
   for (const entry of [
     { day: '星期一', period: '第一節', courseId: 'missing-course' },
     { day: '星期六', period: '第一節', courseId: course.id },
-    { day: '星期一', period: '第八節', courseId: course.id },
+    { day: '星期一', period: '第九節', courseId: course.id },
   ]) assert.equal(valid({ ...content, weeklySchedule: [entry] }), false)
   assert.equal(valid({ ...content, weeklySchedule: [...content.weeklySchedule, ...content.weeklySchedule] }), false)
   assert.equal(valid({ weeklySchedule: content.weeklySchedule }), false)
@@ -92,6 +92,6 @@ test('legacy schedule cleanup mirrors the UI: retain one valid slot and remove d
   const { normalizeWeeklySchedule } = await import(moduleUrl)
   const entry = content.weeklySchedule[0]
   const schedule = [entry, { ...entry }, { ...entry, day: '星期六' }, { ...entry, period: '第八節' }, { ...entry, courseId: 'deleted-course' }]
-  assert.deepEqual(normalizeWeeklySchedule(schedule, [course]), [entry])
+  assert.deepEqual(normalizeWeeklySchedule(schedule, [course]), [entry, { ...entry, period: '第八節' }])
   assert.deepEqual(normalizeWeeklySchedule(schedule, []), [])
 })

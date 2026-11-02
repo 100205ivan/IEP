@@ -1,11 +1,14 @@
 import type { IepPdfRequest } from '../../schemas/iepPdfExport.js'
 import { IepPdfDocument, type Box } from './layout.js'
 import { date, lines, object, strings, text } from './format.js'
+import { referenceOptions } from '../../schemas/referenceForms.js'
+import type { IepAttachment } from '../iepAttachmentService.js'
 
 export interface PdfAssessment { assessmentDate: string; assessmentType: string; otherAssessmentType?: string; assessmentTool: string; evaluator: string; summary: string; detail?: string }
-export async function drawAssessments(pdf: IepPdfDocument, input: IepPdfRequest, assessments: PdfAssessment[]) {
+export async function drawAssessments(pdf: IepPdfDocument, input: IepPdfRequest, assessments: PdfAssessment[], attachments: IepAttachment[] = []) {
   for (let offset = 0; offset < Math.max(1, assessments.length); offset += 7) {
     const p = await pdf.page(3, '壹、二、學生能力現況評量紀錄')
+    if (offset === 0) for (const attachment of attachments) await p.picture(attachment.bytes, attachment.mimeType, [attachment.kind === 'certificate-front' ? 40 : 294, 91, 246, 187])
     assessments.slice(offset, offset + 7).forEach((record, index) => {
       const top = 506 + index * 31.7
       const values = [date(record.assessmentDate), record.assessmentTool, record.evaluator, record.summary]
@@ -30,9 +33,18 @@ export async function drawAssessments(pdf: IepPdfDocument, input: IepPdfRequest,
       if (strings(selections[key]).some(value => value === '異常' || value === '需要')) p.supplement(`${labels[key]}說明`, details[key + 'Detail'])
     })
     for (const [id, label, impactTop, observationTop, needsTop, evaluatorTop] of config.domains) {
-      p.choices(strings(selections[id + '-classImpact']), [290, impactTop - 1, 253, 36], {}, label + '：班級適應影響')
-      // A single overall impact is recorded by the system, rather than inferred for each sub-skill.
-      p.field([293, impactTop + 37, 248, 38], details[id + '-classImpactDescription'], label + '：班級適應影響')
+      const subskills = referenceOptions.impactGroups[id]
+      if (subskills?.length) {
+        p.supplement(label + '：整體班級適應影響', lines([['影響', strings(selections[id + '-classImpact']).join('、')], ['說明', details[id + '-classImpactDescription']]]))
+        for (const skill of subskills) {
+          const key = `${id}-${skill.id}-classImpact`
+          p.choices(strings(selections[key]), [290, skill.top - 1, 253, 36], {}, `${label}／${skill.title}：影響`)
+          p.field([293, skill.top + 37, 248, Math.max(14, skill.bottom - skill.top - 40)], details[key + 'Description'], `${label}／${skill.title}：影響說明`)
+        }
+      } else {
+        p.choices(strings(selections[id + '-classImpact']), [290, impactTop - 1, 253, 36], {}, label + '：班級適應影響')
+        p.field([293, impactTop + 37, 248, 38], details[id + '-classImpactDescription'], label + '：班級適應影響')
+      }
       const lowerHeight = evaluatorTop + 17 - observationTop
       p.field([39, observationTop, 248, lowerHeight], details[id + '-otherObservation'], label + '：其他觀察紀錄')
       p.field([293, needsTop, 248, Math.max(14, evaluatorTop - needsTop - 1)], details[id + '-needsAssessment'], label + '：需求評估說明')

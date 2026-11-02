@@ -1,4 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
+import { AdjustmentSubjectFields } from './ReferenceFormFields'
+import type { AdjustmentSubjectDetail } from '../../models/referenceForms'
+import type { CoursePlanItem } from './StudentCoursePlan'
 
 const subjects = ['全部課程', '國語', '英語', '數學', '自然', '社會', '藝術', '健康與體育', '綜合活動', '特殊需求領域', '其他']
 const adjustmentGroups = [
@@ -10,7 +13,7 @@ const adjustmentGroups = [
 
 export type AdjustmentKind = typeof adjustmentGroups[number]['id']
 export interface AdjustmentValue { selectedStrategies: string[]; otherStrategy: string; applicableSubjects: string[]; otherSubject: string; description: string }
-export type CurriculumAdjustmentValue = Record<AdjustmentKind, AdjustmentValue>
+export type CurriculumAdjustmentValue = Record<AdjustmentKind, AdjustmentValue> & { subjectDetails?: Record<string, AdjustmentSubjectDetail> }
 function CheckboxList({ options, selected, onToggle }: { options: readonly string[]; selected: string[]; onToggle: (option: string) => void }) { return <div className="adjustment-checkbox-list">{options.map((option) => <label key={option}><input type="checkbox" checked={selected.includes(option)} onChange={() => onToggle(option)} />{option}</label>)}</div> }
 
 function AdjustmentCard({ group, value, onChange }: { group: typeof adjustmentGroups[number]; value: AdjustmentValue; onChange: (next: AdjustmentValue) => void }) {
@@ -23,6 +26,6 @@ function AdjustmentCard({ group, value, onChange }: { group: typeof adjustmentGr
   return <section className="adjustment-card"><h2>{group.title}</h2><div className="adjustment-section"><h3>調整策略</h3><CheckboxList options={group.options} selected={value.selectedStrategies} onToggle={toggleStrategy} />{value.selectedStrategies.includes('其他') && <label className="adjustment-field conditional-adjustment-field">其他調整策略<input value={value.otherStrategy} onChange={(event) => onChange({ ...value, otherStrategy: event.target.value })} /></label>}</div><div className="adjustment-section"><h3>適用課程／領域</h3><CheckboxList options={subjects} selected={value.applicableSubjects} onToggle={toggleSubject} />{value.applicableSubjects.includes('其他') && <label className="adjustment-field conditional-adjustment-field">其他課程／領域<input value={value.otherSubject} onChange={(event) => onChange({ ...value, otherSubject: event.target.value })} /></label>}</div><label className="adjustment-field adjustment-field--full">調整說明<textarea placeholder={group.placeholder} value={value.description} onChange={(event) => onChange({ ...value, description: event.target.value })} /></label></section>
 }
 
-export function CurriculumAdjustment({ value, onChange }: { value: CurriculumAdjustmentValue; onChange: Dispatch<SetStateAction<CurriculumAdjustmentValue>> }) {
-  return <section className="curriculum-adjustment" id="services-curriculum-adjustment" role="tabpanel" aria-labelledby="services-tab-curriculum-adjustment"><div className="curriculum-adjustment-heading"><h2>三、課程調整方式</h2><p>依學生學習需求，規劃學習環境、學習內容、學習歷程及學習評量之調整方式。</p></div><div className="adjustment-card-grid">{adjustmentGroups.map((group) => <AdjustmentCard key={group.id} group={group} value={value[group.id]} onChange={(next) => onChange((current) => ({ ...current, [group.id]: next }))} />)}</div></section>
+export function CurriculumAdjustment({ value, onChange, courses = [] }: { courses?: CoursePlanItem[]; value: CurriculumAdjustmentValue; onChange: Dispatch<SetStateAction<CurriculumAdjustmentValue>> }) {
+  return <section className="curriculum-adjustment" id="services-curriculum-adjustment" role="tabpanel" aria-labelledby="services-tab-curriculum-adjustment"><div className="curriculum-adjustment-heading"><h2>三、課程調整方式</h2><p>依學生學習需求，規劃學習環境、學習內容、學習歷程及學習評量之調整方式。</p></div><AdjustmentSubjectFields value={value} courses={courses} onChange={subjectDetails => onChange(current => ({ ...current, subjectDetails }))} /><div className="adjustment-card-grid">{adjustmentGroups.map((group) => <AdjustmentCard key={group.id} group={group} value={value[group.id]} onChange={(next) => onChange((current) => ({ ...current, [group.id]: next }))} />)}</div></section>
 }

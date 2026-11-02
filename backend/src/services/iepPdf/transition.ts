@@ -15,21 +15,44 @@ export async function drawTransition(pdf: IepPdfDocument, input: IepPdfRequest) 
     p.supplement('轉銜原因與重點', lines([['原因', choiceText(t.transitionReasons)], ['重點', choiceText(t.transitionFocus)]]))
     const cross = t.crossStagePlan
     if (cross.enabled) {
-      p.choices(['跨教育階段'], [31, 280, 525, 20])
-      const top = cross.educationStage === '國小' ? 302 : cross.educationStage === '國中' ? 395 : 526
-      p.field([34, top, 235, 17], `${cross.educationStage}　${cross.grade}`, '跨階段轉銜年級', { size: 11 })
-      if (cross.educationStage === '國小') {
-        for (const [key, x, label] of [['caregiver', 34, '照顧者'], ['student', 279, '學生']] as const) {
-          p.field([x, 339, key === 'caregiver' ? 240 : 275, 52], choiceText(cross.elementaryPlan[key]), `國小升學規劃：${label}`, { size: 10 })
+      p.choices(['跨階段'], [31, 280, 525, 20])
+      const stage = cross.educationStage
+      const top = stage === '國小' ? 303.16 : stage === '國中' ? 396.16 : 527.7
+      if (stage !== '其他') {
+        p.check(36, top)
+        p.field([78, top, 26, 15], cross.grade.replace(/年級/g, ''), '跨階段轉銜年級', { size: 9, min: 8 })
+      }
+      if (stage === '國小') {
+        for (const [key, x, label] of [['caregiver', 36, '照顧者'], ['student', 277.27, '學生']] as const) {
+          const pref = cross.elementaryPlan[key]
+          if (pref.selected.some(value => ['國中普通班', '國中資源班', '國中特教班'].includes(value))) {
+            p.check(x, 339.52)
+            p.field([x + 13, 339, 37, 15], pref.selected.filter(value => ['國中普通班', '國中資源班', '國中特教班'].includes(value)).map(value => value.replace('國中', '')).join('、'), `國小升學規劃：${label}`, { size: 8, min: 7 })
+          }
+          if (pref.selected.includes('特殊學校國中部')) p.check(x, 357.4)
+          if (pref.selected.includes('其他')) { p.check(x, 375.4); p.field([x + 38, 375, 190, 15], pref.other, `國小其他升學規劃：${label}`, { size: 9 }) }
         }
-      } else if (cross.educationStage === '國中' || cross.educationStage === '高中') {
-        const plan = cross.educationStage === '國中' ? cross.juniorHighPlan : cross.seniorHighPlan
-        const start = cross.educationStage === '國中' ? 450 : 581
-        for (const [key, x, label] of [['caregiver', 144, '照顧者'], ['student', 215, '學生']] as const) {
-          p.field([x, start, 59, cross.educationStage === '國中' ? 54 : 68], choiceText(plan.furtherEducation[key]), '升學意願：' + label, { size: 8, min: 7 })
-          p.field([key === 'caregiver' ? 418 : 485, start, 67, 54], choiceText(plan.employment[key]), '就業意願：' + label, { size: 8, min: 7 })
+      } else if (stage === '國中' || stage === '高中') {
+        const plan = stage === '國中' ? cross.juniorHighPlan : cross.seniorHighPlan
+        const rows = stage === '國中' ? [452.1, 479.46, 506.82] : [583.5, 601.98, 620.49, 638.85]
+        const educationOptions = stage === '國中' ? ['高級中等學校', '高級中等學校集中式特教班', '特殊教育學校'] : ['一般大學', '科技大學', '專科學校', '其他']
+        const header = stage === '國中' ? 415.12 : 546.66
+        if (plan.furtherEducation.caregiver.selected.length || plan.furtherEducation.student.selected.length) p.check(36, header)
+        if (plan.employment.caregiver.selected.length || plan.employment.student.selected.length) p.check(278.47, header)
+        if (plan.otherPlan) { p.check(484.06, header); p.supplement(stage + '其他生涯規劃', plan.otherPlan) }
+        for (const [key, x, jobX, label] of [['caregiver', 171.77, 343.03, '照顧者'], ['student', 239.09, 417.58, '學生']] as const) {
+          const education = plan.furtherEducation[key], employment = plan.employment[key]
+          educationOptions.forEach((option, index) => { if (education.selected.includes(option)) p.check(x, rows[index]) })
+          if (education.selected.includes('其他')) p.supplement(stage + '其他升學規劃：' + label, education.other)
+          for (const [index, option, field] of [[0, '職場', 'Workplace'], [1, '在家', 'Home']] as const) {
+            if (!employment.selected.includes(option)) continue
+            p.check(jobX, rows[index])
+            const detail = cross.employmentDetails?.[stage]?.[`${key}${field}`]
+            p.field([jobX + 13, rows[index], key === 'caregiver' ? 59 : 49, 15], detail, `${stage}：${label}${option}規劃`, { size: 8, min: 7 })
+          }
+          if (employment.selected.includes('其他')) p.supplement(stage + '其他就業規劃：' + label, employment.other)
         }
-        p.supplement(cross.educationStage + '其他生涯規劃', plan.otherPlan)
+        if (plan.employment.caregiver.selected.includes('其他') || plan.employment.student.selected.includes('其他')) p.field([285, rows[2], 195, 15], lines([['照顧者', plan.employment.caregiver.other], ['學生', plan.employment.student.other]]).replace(/\n/g, '　'), stage + '其他就業規劃', { size: 8, min: 7 })
       } else p.supplement('其他教育階段轉銜規劃', cross.otherStageNotes)
     }
   }
@@ -37,10 +60,10 @@ export async function drawTransition(pdf: IepPdfDocument, input: IepPdfRequest) 
   for (let offset = 0; offset < Math.max(1, followUps.length); offset += 2) {
     const q = await pdf.page(18, '伍、轉銜服務及離校後追蹤輔導')
     if (t && !t.noTransitionNeed && offset === 0) {
-      for (const [i, [key, label, start, end]] of ([['education', '學習輔導', 93, 132], ['dailyLiving', '生活輔導', 139, 182], ['employment', '就業輔導', 193, 232], ['psychological', '心理輔導', 239, 276], ['welfare', '福利服務', 282, 318], ['professional', '相關專業服務', 323, 359]] as const).entries()) {
+      for (const [i, [key, label, start, end]] of ([['education', '升學輔導', 93, 132], ['dailyLiving', '生活輔導', 139, 182], ['employment', '就業輔導', 193, 232], ['psychological', '心理輔導', 239, 276], ['welfare', '福利服務', 282, 318], ['professional', '相關專業服務', 323, 359]] as const).entries()) {
         const service = t.services[key]
         q.choices([service.needStatus], [92, start - 2, 82, end - start])
-        if (service.needStatus === '無需求') continue
+        if (service.needStatus !== '有需求') continue
         q.choices(service.options.selected, [178, start - 2, 223, end - start], { 熟悉新學校上學路線: '熟悉新學校上學的路線' })
         q.field([404, start, 52, end - start - 1], [date(service.startDate), date(service.endDate)].filter(Boolean).join('\n～\n'), label + '服務日期', { size: 8, min: 7 })
         q.field([460, start, 52, end - start - 1], service.provider, label + '提供者', { size: 9, min: 8 })

@@ -1,6 +1,7 @@
 import type { IepPdfRequest } from '../../schemas/iepPdfExport.js'
 import { IepPdfDocument } from './layout.js'
 import { date, lines, object, records, text } from './format.js'
+import { referenceOptions } from '../../schemas/referenceForms.js'
 
 export async function drawFamily(pdf: IepPdfDocument, input: IepPdfRequest) {
   const family = object(input.content.studentFamilyForm), values = object(family.values), checks = object(family.checks)
@@ -20,6 +21,13 @@ export async function drawFamily(pdf: IepPdfDocument, input: IepPdfRequest) {
   const initialMeeting = input.content.meetingRecords?.find(meeting => meeting.meetingType === '期初會議')
   const dates = [options.draftedDate || initialMeeting?.date || '', options.committeeApprovalDate, options.curriculumApprovalDate, options.newStudentReviewDate, options.firstReviewDate, options.secondReviewDate]
   dates.forEach((value, index) => { if (value) cover.field([index === 0 ? 137 : index < 3 ? 207 : index === 3 ? 183 : 137, 270 + index * 27.3, 210, 19], date(value), '封面會議日期', { size: 12 }) })
+  const teamTops = [475.7, 491.8, 507.9, 524.1, 540.2, 557.7, 575.2, 591.3, 607.5, 623.6, 639.7, 656.8]
+  referenceOptions.teamRoles.forEach((role, index) => {
+    const members = (options.teamMembers ?? []).filter(member => member.role === role && member.name.trim())
+    const left = index < 12 || index === 24, row = index < 24 ? index % 12 : 12
+    cover.field([left ? 150 : 399, row === 12 ? 674.4 : teamTops[row], left ? 47 : 60, 15], members.map(member => member.name).join('、'), role + '姓名', { size: 9, min: 7 })
+    for (const member of members) if (member.title) cover.supplement('團隊成員', `${role}：${member.name}（${member.title}）`)
+  })
   const p = await pdf.page(2, '壹、一、學生基本資料及家庭狀況')
   const put = (box: readonly [number, number, number, number], key: string, label: string, isDate = false) => p.field(box, isDate ? date(v(key)) : v(key), label, { size: 10.5 })
   put([94, 99, 46, 32], 'studentName', '姓名')
@@ -37,7 +45,7 @@ export async function drawFamily(pdf: IepPdfDocument, input: IepPdfRequest) {
   put([200, 212, 83, 15], 'committeeReassessmentDate', '重鑑日期', true)
   p.field([405, 212, 139, 15], [v('committeeDisabilityCategory'), v('committeeSeverity')].filter(Boolean).join('／'), '鑑定障礙類別及程度')
   put([200, 231, 83, 15], 'proofAssessmentDate', '證明鑑定日期', true)
-  p.field([405, 231, 139, 15], [v('icfCategory') === 'other' ? v('icfOther') : v('icfCategory'), v('icfLevel')].filter(Boolean).join('／'), 'ICF 類別及程度')
+  p.field([405, 231, 139, 15], [v('icfCategoryDetail') || (v('icfCategory') === 'other' ? v('icfOther') : ({ physical: '肢體功能相關', sensory: '感官功能相關', mental: '心智／心理功能相關' } as Record<string, string>)[v('icfCategory')] || v('icfCategory')), v('icfLevel')].filter(Boolean).join('／'), 'ICF 類別及程度')
   put([200, 249, 83, 15], 'proofReassessmentDate', '證明重鑑日期', true)
   put([360, 249, 184, 15], 'icdDiagnosis', 'ICD 診斷')
   const binary = (key: string, area: readonly [number, number, number, number]) => { if (v(key)) p.choices([v(key) === 'has' ? '有' : '無'], area) }
@@ -70,8 +78,12 @@ export async function drawFamily(pdf: IepPdfDocument, input: IepPdfRequest) {
     p.field([130, y, 65, 20], v(prefix + 'Name'), label + '姓名')
     if (v(prefix + 'Phone')) p.field([94, y + 17, 101, 45], `聯絡電話：\n${v(prefix + 'Phone')}`, label + '電話')
     for (const [x, width, key, title] of [[199, 26, 'Age', '年齡'], [229, 52, 'Education', '教育程度'], [286, 67, 'Occupation', '職業']] as const) p.field([x, y + 22, width, 22], v(prefix + key), label + title, { size: 9 })
-    p.supplement(label + '關係', v(prefix + 'Relationship'))
+    const relationship = v(prefix + 'Relationship')
+    p.choices(relationship ? [relationship] : [], [354, 482, 120, 72], { father: '父親', mother: '母親', grandfather: '祖父', grandmother: '祖母', 'maternal-grandfather': '外祖父', 'maternal-grandmother': '外祖母', other: '其他', 兄: '其他', 姊: '其他', 其他親屬: '其他' }, label + '關係')
+    p.supplement(label + '關係', relationship)
   }
+  const otherRelationships = ['guardian', checks.sameGuardian ? 'guardian' : 'caregiver'].map((prefix, index) => ({ role: index === 0 ? '法定代理人' : '實際照顧者', value: v(prefix + 'Relationship') })).filter(item => ['兄', '姊', '其他親屬', '其他'].includes(item.value))
+  p.field([394, 538, 79, 16], otherRelationships.map(item => `${item.role}：${item.value}`).join('、'), '其他照顧者關係', { size: 9, min: 8 })
   const economic = ({ 'not-low-income': '非低收', 'near-low-income': '中低收入', 'low-income': '低收入' } as Record<string, string>)[v('economicStatus')]
   if (economic) p.choices([economic], [477, 475, 65, 52])
   p.field([112, 574, 84, 15], v('emergencyContact'), '緊急聯絡人')

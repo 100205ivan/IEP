@@ -1,4 +1,6 @@
+import type { TeamMember } from './referenceForms'
 export interface IepPdfOptions {
+  teamMembers?: TeamMember[]
   schoolName: string
   caseManager: string
   caseManagerTitle: string
@@ -22,5 +24,6 @@ export function normalizeIepPdfOptions(value: unknown): IepPdfOptions {
   }
   if (source.studentStatus === '' || source.studentStatus === '新生' || source.studentStatus === '轉學生' || source.studentStatus === '舊生') result.studentStatus = source.studentStatus
   if (source.weeklyScheduleSemester === '第一學期' || source.weeklyScheduleSemester === '第二學期') result.weeklyScheduleSemester = source.weeklyScheduleSemester
+  if (Array.isArray(source.teamMembers)) result.teamMembers = source.teamMembers.filter((v): v is TeamMember => typeof v === 'object' && v !== null && typeof v.id === 'string' && typeof v.name === 'string' && typeof v.role === 'string').map(v => ({ ...v, title: typeof v.title === 'string' ? v.title : '' }))
   return result
 }

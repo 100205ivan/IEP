@@ -5,6 +5,43 @@ import { iepPdfExportSchema } from '../schemas/iepPdfExport.js'
 import { generateIepPdf } from '../services/iepPdfExport.js'
 import { PdfExportError } from '../services/iepPdf/layout.js'
 
+test('reference extensions reach the PDF: team names, item notes, subskills, execution and both semester eighth periods', async () => {
+  const course = { id: 'extra-course', courseName: '測試溝通課', courseType: '特殊需求領域課程', teachingMethod: '個別教學', placement: '外加', referenceCategory: '高中：彈性學習時間', weeklyPeriods: 1, startDate: '2026-09-01', endDate: '2027-01-20' }
+  const input = request({
+    specialEducationSupport: { referenceDetails: { supportNeed: '有需求', groups: { aids: { status: '有需求', selected: ['溝通輔具'], notes: { 溝通輔具: '測試平板輔具' } } } } },
+    assessmentSelections: { 'sensory-hearing-classImpact': ['有影響'] }, assessmentDetails: { 'sensory-hearing-classImpactDescription': '測試聽覺影響' },
+    inclusiveEducationPlan: { referenceRows: [{ item: '班級性融合', selected: true, execution: '測試合作閱讀', frequency: '每週', responsible: '測試負責人' }] },
+    curriculumAdjustment: { subjectDetails: { 國語: { teacher: '測試授課者', content: '無須調整', process: '須調整' } } },
+    coursePlanItems: [course], weeklySchedule: ['第一學期', '第二學期'].map(semester => ({ semester, day: '星期二', period: '第八節', courseId: course.id })),
+    behaviorIntervention: { needStatus: '有需求', planStatus: '建立新的行為功能介入方案', behaviorFunctions: { selected: ['獲得他人注意'], notes: { 獲得他人注意: '測試注意功能' } }, executionDetails: { antecedent: { executionMethod: '測試每日執行', implementers: '測試執行者', progress: '測試執行進度' } } },
+    transitionSupport: { crossStagePlan: { enabled: true, educationStage: '國中', juniorHighPlan: { employment: { caregiver: { selected: ['職場'] }, student: { selected: ['在家'] } } }, employmentDetails: { 國中: { caregiverWorkplace: '測試圖書館', studentHome: '測試居家安排' } } } },
+  }, { teamMembers: [{ id: 'teacher', role: '班級導師', name: '測試團隊老師', title: '' }] })
+  const { text, pdf } = await exportedText((await generateIepPdf(input)).bytes)
+  for (const marker of ['測試團隊老師', '測試平板輔具', '測試聽覺影響', '測試合作閱讀', '測試負責人', '測試授課者', '測試注意功能', '測試每日執行', '測試執行者', '測試執行進度', '測試圖書館', '測試居家安排']) assert.ok(text.includes(marker), marker)
+  assert.ok((text.match(/測試溝通課/g) ?? []).length >= 4, 'course plan, detail and both timetable semesters')
+  assert.ok(pdf.getPageCount() >= 20)
+})
+
+test('certificate images are embedded into the original front/back attachment page', async () => {
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aZ1sAAAAASUVORK5CYII=', 'base64')
+  const output = await generateIepPdf(request(), [], ['certificate-front', 'certificate-back'].map(kind => ({ kind: kind as 'certificate-front' | 'certificate-back', mimeType: 'image/png', fileName: 'test.png', bytes: png, updatedAt: '' })))
+  const pdf = await PDFDocument.load(output.bytes)
+  const objects = pdf.getPage(2).node.Resources()?.lookup(PDFName.of('XObject'), PDFDict)
+  const images = objects?.entries().map(([, ref]) => pdf.context.lookup(ref)).filter(object => object instanceof PDFRawStream && object.dict.get(PDFName.of('Subtype'))?.toString() === '/Image') ?? []
+  assert.equal(images.length, 2)
+  assert.equal(output.pageCount, 20)
+})
+
+test('inactive new support groups and execution/transition drafts never leak into the PDF', async () => {
+  const hidden = '隱藏草稿不應匯出'
+  const output = await generateIepPdf(request({
+    specialEducationSupport: { referenceDetails: { groups: { aids: { status: '無需求', selected: ['溝通輔具'], notes: { 溝通輔具: hidden }, description: hidden } } } },
+    behaviorIntervention: { needStatus: '暫無需求', executionDetails: { antecedent: { executionMethod: hidden, progress: hidden } } },
+    transitionSupport: { noTransitionNeed: true, crossStagePlan: { enabled: true, employmentDetails: { 國中: { caregiverWorkplace: hidden } } } },
+  }))
+  assert.ok(!(await exportedText(output.bytes)).text.includes(hidden))
+})
+
 // Read actual embedded Unicode text, rather than checking renderer calls or mocks.
 async function exportedText(bytes: Uint8Array) {
   const pdf = await PDFDocument.load(bytes)

@@ -30,14 +30,15 @@ export function normalizeCoursePlanItems(value: unknown): CoursePlanItem[] {
   })
 }
 
-export function normalizeWeeklySchedule(value: unknown, courses: CoursePlanItem[]): WeeklyScheduleEntry[] {
+export function normalizeWeeklySchedule(value: unknown, courses: CoursePlanItem[], legacySemester: '第一學期' | '第二學期' = '第一學期'): WeeklyScheduleEntry[] {
   if (!Array.isArray(value)) return []
   const courseIds = new Set(courses.map(course => course.id))
   const slots = new Set<string>()
   return value.flatMap(value => {
     const entry = record(value)
     if (!weekdays.includes(entry.day as Weekday) || !periods.includes(entry.period as PeriodId) || !courseIds.has(text(entry.courseId))) return []
-    const slot = `${entry.day}/${entry.period}`
+    if (entry.semester !== undefined && entry.semester !== '第一學期' && entry.semester !== '第二學期') return []
+    const slot = `${entry.semester ?? legacySemester}/${entry.day}/${entry.period}`
     if (slots.has(slot)) return []
     slots.add(slot)
     return [{ ...entry, day: entry.day as Weekday, period: entry.period as PeriodId, courseId: text(entry.courseId) }]

@@ -4,7 +4,7 @@ import { PDFDocument, PDFFont, PDFPage, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 
 export type Box = readonly [x: number, top: number, width: number, height: number]
-type TemplateLayout = { width: number; height: number; checks: { x: number; y: number; size: number; label: string }[] }
+type TemplateLayout = { width: number; height: number; checks: { x: number; y: number; size: number; label: string; note?: Box }[] }
 export type Supplement = { title: string; text: string }
 const normalize = (text: string) => text.normalize('NFKC').replace(/[\s_，、。:：()（）/／,\-]/g, '')
 const black = rgb(0, 0, 0), white = rgb(1, 1, 1)
@@ -75,6 +75,25 @@ export class PdfPainter {
   check(x: number, top: number, size = 12) {
     this.line(x + 1.8, top + size * .55, x + size * .4, top + size * .78, .9)
     this.line(x + size * .4, top + size * .78, x + size * .91, top + size * .16, .9)
+  }
+  shade([x, top, width, height]: Box) { this.page.drawRectangle({ x, y: this.page.getHeight() - top - height, width, height, color: rgb(.92, .94, .93) }) }
+  async picture(bytes: Uint8Array, mime: string, box: Box) {
+    const document = this.page.doc
+    const picture = mime === 'image/png' ? await document.embedPng(bytes) : await document.embedJpg(bytes)
+    const [x, top, width, height] = box, scale = Math.min(width / picture.width, height / picture.height)
+    const w = picture.width * scale, h = picture.height * scale
+    this.page.drawImage(picture, { x: x + (width - w) / 2, y: this.page.getHeight() - top - (height + h) / 2, width: w, height: h })
+  }
+  choiceNotes(values: readonly string[], area: Box, notes: Record<string, string>, label: string, aliases: Record<string, string> = {}) {
+    this.choices(values, area, aliases, label)
+    for (const value of values) {
+      const note = notes[value]
+      if (!note?.trim()) continue
+      const [x, y, width, height] = area
+      const anchor = this.layout.checks.find(check => check.x >= x && check.x < x + width && check.y >= y && check.y < y + height && normalize(check.label).startsWith(normalize(aliases[value] ?? value)))
+      if (anchor?.note) this.field(anchor.note, note, `${label}：${value}`, { size: 9, min: 8 })
+      else this.supplement(`${label}：${value}`, note)
+    }
   }
   choices(values: readonly string[], area: Box, aliases: Record<string, string> = {}, label?: string) {
     const wanted = values.map(value => normalize(aliases[value] ?? value)).filter(Boolean)

@@ -6,7 +6,7 @@ import type { StudentFamilyFormValue } from './StudentFamilyForm'
 import type { TransitionSupportValue } from './TransitionSupport'
 
 export const initialBehaviorIntervention: BehaviorInterventionValue = {
-  needStatus: '暫無需求', planStatus: '', planPeriod: { startDate: '', endDate: '' },
+  needStatus: '', planStatus: '', planPeriod: { startDate: '', endDate: '' },
   behaviorAssessment: { definition: '', time: '', location: '', triggers: '', frequency: '', duration: '' },
   behaviorFunctions: { selected: [], notes: {} }, interventionGoal: '',
   antecedentStrategies: { environment: { selected: [], other: '' }, curriculum: { selected: [], other: '' }, interaction: { selected: [], other: '' }, notes: '' },
@@ -77,7 +77,7 @@ export const initialStudentFamilyFormValue: StudentFamilyFormValue = {
 
 const transitionChoice = () => ({ selected: [], other: '' })
 const transitionPreference = () => ({ caregiver: transitionChoice(), student: transitionChoice() })
-const transitionService = () => ({ needStatus: '無需求' as const, options: transitionChoice(), needsDescription: '', startDate: '', endDate: '', provider: '', progress: '' })
+const transitionService = () => ({ needStatus: '' as const, options: transitionChoice(), needsDescription: '', startDate: '', endDate: '', provider: '', progress: '' })
 export const initialTransitionSupport: TransitionSupportValue = {
   noTransitionNeed: false,
   transitionReasons: transitionChoice(),

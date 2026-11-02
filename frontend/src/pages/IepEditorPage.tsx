@@ -22,6 +22,7 @@ import { createStudentWithIep, getStudentIep, updateStudentIep, type StudentFiel
 import type { IepContent } from '../types/studentIep'
 import { normalizeCurriculumAdjustment, normalizeCoursePlanItems, normalizeWeeklySchedule } from '../services/curriculumPlanNormalization'
 import { normalizeGoalDomains, normalizeSemesterGoals } from '../services/educationGoalsNormalization'
+import { normalizeBehaviorIntervention, normalizeTransitionSupport } from '../services/behaviorTransitionNormalization'
 
 const mainChapters: readonly MainChapter[] = [
   { id: 'assessment', label: '壹、學生能力現況、家庭狀況及需求評估' },
@@ -117,8 +118,8 @@ export function IepEditorPage() {
       setGoalDomains(loadedDomains)
       setSemesterGoals(normalizeSemesterGoals(content.semesterGoals, loadedDomains))
       setLearningNotes(typeof content.learningNotes === 'string' ? content.learningNotes : '')
-      if (content.behaviorIntervention) setBehaviorIntervention(content.behaviorIntervention as BehaviorInterventionValue)
-      if (content.transitionSupport) setTransitionSupport(content.transitionSupport as TransitionSupportValue)
+      setBehaviorIntervention(normalizeBehaviorIntervention(content.behaviorIntervention))
+      setTransitionSupport(normalizeTransitionSupport(content.transitionSupport))
       if (content.meetingRecords) setMeetingRecords(content.meetingRecords as IepMeetingRecord[])
       setSpecialEducationSupport(normalizeSpecialEducationSupport(content.specialEducationSupport))
       setInclusiveEducationPlan(normalizeInclusiveEducationPlan(content.inclusiveEducationPlan))

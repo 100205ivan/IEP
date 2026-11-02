@@ -5,6 +5,8 @@ import type { CurriculumAdjustmentValue } from '../components/iep/CurriculumAdju
 import type { CoursePlanItem } from '../components/iep/StudentCoursePlan'
 import type { WeeklyScheduleEntry } from '../components/iep/StudentWeeklySchedule'
 import type { GoalDomain, SemesterGoal } from '../components/iep/GoalsChapter'
+import type { BehaviorInterventionValue } from '../components/iep/BehaviorIntervention'
+import type { TransitionSupportValue } from '../components/iep/TransitionSupport'
 
 export interface IepContent {
   studentFamilyForm: StudentFamilyFormValue
@@ -16,6 +18,8 @@ export interface IepContent {
   goalDomains?: GoalDomain[]
   semesterGoals?: SemesterGoal[]
   learningNotes?: string
+  behaviorIntervention?: BehaviorInterventionValue
+  transitionSupport?: TransitionSupportValue
   basicInfoReviewNotice?: {
     inheritedFromAcademicYear: number
     requiresReview: true

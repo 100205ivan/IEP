@@ -6,6 +6,8 @@ The exporter fills these vector pages, adds copies for additional goal domains a
 
 The cover team table is redrawn within its original footprint with wider name columns, centered 11-point names and a continuous grid. Long or multiple names continue in full on the following page instead of shrinking below a readable size. The original role groups, color cues and empty signature cells are retained.
 
+Assessment records use an 11-point table with content-sized rows and repeated column headings on additional A4 pages. Summaries stay in the table, including when a single record spans pages; metadata repeats to identify continued rows. The certificate and source instructions appear once. Additional analysis details follow the complete assessment table. Game metrics break at their original semicolons for readability.
+
 The source-format heading and byline at the top of the cover have been removed from the template text stream for student exports. The original source attribution is retained in this documentation.
 
 Set `IEP_PDF_FONT_PATH` to an embeddable Traditional Chinese TTF/OTF on the backend host. On Windows the default is `%SystemRoot%/Fonts/kaiu.ttf` (標楷體). Font files are not included in the repository. The process must be restarted after changing the font setting.

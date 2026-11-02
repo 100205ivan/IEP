@@ -116,6 +116,7 @@ export class PdfPainter {
 
 export class IepPdfDocument {
   private pages: { painter: PdfPainter; section: string }[] = []
+  private continuationPages = 0
   private widths = new Map<string, number>()
   private characters: Set<number>
   private constructor(private document: PDFDocument, private source: PDFDocument, private font: PDFFont, private layouts: TemplateLayout[]) { this.characters = new Set(font.getCharacterSet()) }
@@ -141,6 +142,14 @@ export class IepPdfDocument {
     this.document.addPage(page)
     const painter = new PdfPainter(page, this.font, this.layouts[templatePage - 1], this.measure)
     this.pages.push({ painter, section })
+    return painter
+  }
+  async blankPage(section: string): Promise<PdfPainter> {
+    const source = this.source.getPage(0)
+    const page = this.document.addPage([source.getWidth(), source.getHeight()])
+    const painter = new PdfPainter(page, this.font, { width: page.getWidth(), height: page.getHeight(), checks: [] }, this.measure)
+    this.pages.push({ painter, section })
+    this.continuationPages++
     return painter
   }
   async finish(studentName: string, academicYear: number) {
@@ -184,6 +193,6 @@ export class IepPdfDocument {
     this.document.setAuthor('EyeEP')
     this.document.setCreator('EyeEP IEP PDF Export')
     this.document.setSubject('學生個別化教育計畫與 IEP 會議紀錄')
-    return { bytes: await this.document.save(), pageCount: this.document.getPageCount(), supplementPageCount: additions }
+    return { bytes: await this.document.save(), pageCount: this.document.getPageCount(), supplementPageCount: additions + this.continuationPages }
   }
 }

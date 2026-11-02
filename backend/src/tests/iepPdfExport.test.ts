@@ -162,6 +162,40 @@ test('extra assessment records and their evaluators are retained', async () => {
   assert.ok(output.pageCount > 20)
 })
 
+test('assessment summaries expand into readable table rows with repeated column headings', async () => {
+  const records = Array.from({ length: 5 }, (_, i) => ({ assessmentDate: '2026-11-02', assessmentType: '觀察', assessmentTool: `課堂觀察表${i}`, evaluator: `測試教師${i}`, summary: `摘要起點${i}` + '觀察學生參與課堂並完成任務。'.repeat(5) + `摘要終點${i}` }))
+  const output = await generateIepPdf(request(), records)
+  const { text, runs } = await exportedText(output.bytes)
+  assert.equal(output.supplementPageCount, output.pageCount - 20, 'table continuation pages are included in the preview count')
+  assert.ok(output.pageCount > 20)
+  assert.ok(!text.includes('詳續頁'))
+  for (let i = 0; i < records.length; i++) {
+    assert.ok(text.includes(`摘要起點${i}`) && text.includes(`摘要終點${i}`))
+    const content = runs.filter(run => run.text.startsWith(`摘要起點${i}`))
+    assert.ok(content.length)
+    assert.ok(content.every(run => run.size === 11))
+  }
+  assert.ok(runs.some(run => run.page > 2 && run.text === '評量結果摘要' && run.size === 12))
+})
+
+test('a very long assessment preserves all summary content and keeps CPT units together', async () => {
+  const output = await generateIepPdf(request(), [
+    { source: 'cpt', assessmentDate: '2026-11-02', assessmentType: '注意力遊戲評量', assessmentTool: 'CPT', evaluator: 'EyeEP 遊戲評量', summary: 'Hit 10%；Omission 18 次；Commission 3 次；RT 473 ms；RTV 381 ms。' },
+    { assessmentDate: '2026-11-02', assessmentType: '觀察', assessmentTool: '長篇觀察表', evaluator: '測試教師', summary: '長篇摘要起點' + '內容完整保留。'.repeat(400) + '\n長篇摘要結束' },
+  ])
+  const { text, runs } = await exportedText(output.bytes)
+  assert.ok(text.includes('長篇摘要起點') && text.includes('長篇摘要結束'))
+  const summaryColumn = runs.filter(run => run.x >= 320 && run.size === 11 && run.font.startsWith('DFKaiShu')).map(run => run.text).join('')
+  assert.ok(summaryColumn.includes('長篇摘要起點' + '內容完整保留。'.repeat(400) + '長篇摘要結束'), 'summary text remains complete across page breaks and repeated identity cells')
+  assert.equal(output.supplementPageCount, output.pageCount - 20)
+  for (const value of ['RT 473 ms', 'RTV 381 ms。', 'Commission 3 次']) {
+    const run = runs.find(run => run.text === value)
+    assert.ok(run, value)
+    assert.equal(run.size, 11)
+  }
+  assert.ok(runs.some(run => run.text === '遊戲評量' && run.size === 11), 'the evaluator label is not split into an orphaned final character')
+})
+
 test('both semesters, extra goal rows, annual links and fourth evaluations survive', async () => {
   const domain = { id: 'domain', domainName: '語文測試領域', annualGoals: [{ id: 'annual', content: '學年目標保留' }] }
   const goals = Array.from({ length: 12 }, (_, i) => ({ id: `goal${i}`, domainId: 'domain', annualGoalId: 'annual', semester: i === 11 ? '第二學期' : '第一學期', content: `學期目標第${i}筆`, evaluationRecords: Array.from({ length: 4 }, (_, n) => ({ id: `${i}-${n}`, date: '2026-11-02', result: `結果${i}之${n}`, notes: `備註${i}之${n}` })) }))

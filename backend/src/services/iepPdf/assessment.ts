@@ -3,20 +3,11 @@ import { IepPdfDocument, type Box } from './layout.js'
 import { date, lines, object, strings, text } from './format.js'
 import { referenceOptions } from '../../schemas/referenceForms.js'
 import type { IepAttachment } from '../iepAttachmentService.js'
+import { drawAssessmentTable } from './assessmentTable.js'
 
-export interface PdfAssessment { assessmentDate: string; assessmentType: string; otherAssessmentType?: string; assessmentTool: string; evaluator: string; summary: string; detail?: string }
+export interface PdfAssessment { source?: string; assessmentDate: string; assessmentType: string; otherAssessmentType?: string; assessmentTool: string; evaluator: string; summary: string; detail?: string }
 export async function drawAssessments(pdf: IepPdfDocument, input: IepPdfRequest, assessments: PdfAssessment[], attachments: IepAttachment[] = []) {
-  for (let offset = 0; offset < Math.max(1, assessments.length); offset += 7) {
-    const p = await pdf.page(3, '壹、二、學生能力現況評量紀錄')
-    if (offset === 0) for (const attachment of attachments) await p.picture(attachment.bytes, attachment.mimeType, [attachment.kind === 'certificate-front' ? 40 : 294, 91, 246, 187])
-    assessments.slice(offset, offset + 7).forEach((record, index) => {
-      const top = 506 + index * 31.7
-      const values = [date(record.assessmentDate), record.assessmentTool, record.evaluator, record.summary]
-      const cols = [[45, 60], [109, 95], [208, 80], [292, 245]]
-      values.forEach((value, i) => p.field([cols[i][0], top, cols[i][1], 29], value, `評量 ${offset + index + 1}：${['日期', '工具', '評量者', '摘要'][i]}`, { size: 9.5, min: 8 }))
-      p.supplement(`評量 ${offset + index + 1}：${record.assessmentTool}`, lines([['評量類型', record.assessmentType === '其他' ? record.otherAssessmentType : record.assessmentType], ['詳細結果', record.detail]]))
-    })
-  }
+  await drawAssessmentTable(pdf, input, assessments, attachments)
   const selections = object(input.content.assessmentSelections), details = object(input.content.assessmentDetails)
   // Areas scope repeated checkbox labels to the correct skill and observation.
   const pages: { source: number; groups: [string, Box][]; domains: [string, string, number, number, number, number][] }[] = [

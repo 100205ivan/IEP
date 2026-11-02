@@ -1,12 +1,29 @@
 import { z } from 'zod'
 import { specialEducationSupportSchema } from './specialEducationSupport.js'
 import { inclusiveEducationPlanSchema } from './inclusiveEducationPlan.js'
+import { curriculumAdjustmentSchema, coursePlanItemSchema, weeklyScheduleEntrySchema } from './curriculumPlan.js'
 
 // Validate connected chapters without stripping data belonging to other chapters.
 export const iepContentSchema = z.object({
   specialEducationSupport: specialEducationSupportSchema.optional(),
   inclusiveEducationPlan: inclusiveEducationPlanSchema.optional(),
-}).catchall(z.unknown())
+  curriculumAdjustment: curriculumAdjustmentSchema.optional(),
+  coursePlanItems: z.array(coursePlanItemSchema).optional(),
+  weeklySchedule: z.array(weeklyScheduleEntrySchema).optional(),
+}).catchall(z.unknown()).superRefine((content, context) => {
+  const courseIds = new Set<string>()
+  for (const [index, course] of (content.coursePlanItems ?? []).entries()) {
+    if (courseIds.has(course.id)) context.addIssue({ code: 'custom', path: ['coursePlanItems', index, 'id'], message: '課程識別碼不可重複。' })
+    courseIds.add(course.id)
+  }
+  const occupiedSlots = new Set<string>()
+  for (const [index, entry] of (content.weeklySchedule ?? []).entries()) {
+    if (!courseIds.has(entry.courseId)) context.addIssue({ code: 'custom', path: ['weeklySchedule', index, 'courseId'], message: '課表只能安排目前 IEP 課程規劃中的課程。' })
+    const slot = `${entry.day}/${entry.period}`
+    if (occupiedSlots.has(slot)) context.addIssue({ code: 'custom', path: ['weeklySchedule', index], message: '同一天的同一節次只能安排一筆課程。' })
+    occupiedSlots.add(slot)
+  }
+})
 
 const nullableString = z.string().trim().nullable().optional()
 

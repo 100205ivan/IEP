@@ -20,6 +20,7 @@ import { initialBehaviorIntervention, initialCurriculumAdjustment, initialInclus
 import { IepMeetingRecords, type IepMeetingRecord } from '../components/iep/IepMeetingRecords'
 import { createStudentWithIep, getStudentIep, updateStudentIep, type StudentFieldsPayload } from '../services/studentIepApi'
 import type { IepContent } from '../types/studentIep'
+import { normalizeCurriculumAdjustment, normalizeCoursePlanItems, normalizeWeeklySchedule } from '../services/curriculumPlanNormalization'
 
 const mainChapters: readonly MainChapter[] = [
   { id: 'assessment', label: '壹、學生能力現況、家庭狀況及需求評估' },
@@ -119,9 +120,10 @@ export function IepEditorPage() {
       if (content.meetingRecords) setMeetingRecords(content.meetingRecords as IepMeetingRecord[])
       setSpecialEducationSupport(normalizeSpecialEducationSupport(content.specialEducationSupport))
       setInclusiveEducationPlan(normalizeInclusiveEducationPlan(content.inclusiveEducationPlan))
-      if (content.curriculumAdjustment) setCurriculumAdjustment(content.curriculumAdjustment as CurriculumAdjustmentValue)
-      if (content.coursePlanItems) setCoursePlanItems(content.coursePlanItems as CoursePlanItem[])
-      if (content.weeklySchedule) setWeeklySchedule(content.weeklySchedule as WeeklyScheduleEntry[])
+      setCurriculumAdjustment(normalizeCurriculumAdjustment(content.curriculumAdjustment))
+      const loadedCourses = normalizeCoursePlanItems(content.coursePlanItems)
+      setCoursePlanItems(loadedCourses)
+      setWeeklySchedule(normalizeWeeklySchedule(content.weeklySchedule, loadedCourses))
       if (content.assessmentSelections) setAssessmentSelections(content.assessmentSelections as AssessmentSelections)
       if (content.assessmentDetails) setAssessmentDetails(content.assessmentDetails as AssessmentDetails)
       if (content.strengthWeaknessSummary) setStrengthWeaknessSummary(content.strengthWeaknessSummary as StrengthWeaknessSummary)

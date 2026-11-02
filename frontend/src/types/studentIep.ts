@@ -1,11 +1,17 @@
 import type { StudentFamilyFormValue } from '../components/iep/StudentFamilyForm'
 import type { SpecialEducationSupportValue } from '../components/iep/SpecialEducationSupport'
 import type { InclusiveEducationPlanValue } from '../components/iep/InclusiveEducationPlan'
+import type { CurriculumAdjustmentValue } from '../components/iep/CurriculumAdjustment'
+import type { CoursePlanItem } from '../components/iep/StudentCoursePlan'
+import type { WeeklyScheduleEntry } from '../components/iep/StudentWeeklySchedule'
 
 export interface IepContent {
   studentFamilyForm: StudentFamilyFormValue
   specialEducationSupport?: SpecialEducationSupportValue
   inclusiveEducationPlan?: InclusiveEducationPlanValue
+  curriculumAdjustment?: CurriculumAdjustmentValue
+  coursePlanItems?: CoursePlanItem[]
+  weeklySchedule?: WeeklyScheduleEntry[]
   basicInfoReviewNotice?: {
     inheritedFromAcademicYear: number
     requiresReview: true

@@ -312,6 +312,16 @@ npm start
 
 在 `backend/` 執行 `npm run test:inclusive-education` 可測試 schema 與前端預設值處理；此指令不連線資料庫，也不建立學生資料。實際 API／資料庫測試使用本機指定的學生 IEP。
 
+### 課程調整、課程規劃與每週課表的儲存
+
+「貳 → 三、課程調整方式」「四、學生課程規劃表」「五、學生每週課表」均透過「儲存 IEP」保存，分別寫入 `ieps.content` 的 `curriculumAdjustment`、`coursePlanItems`、`weeklySchedule`，不需新增資料表或 migration。
+
+課程視窗的「儲存課程」、課表視窗的「儲存安排」會先更新目前畫面，完成後仍須按上方「儲存 IEP」才能寫入資料庫。刪除課程後儲存 IEP，會一併移除該課程的課表安排。課表以課程 ID 連結名稱、教師等資料，修改課程後會同步顯示新內容。
+
+後端驗證四種課程調整策略、課程欄位與節數，並拒絕重複課程 ID、重複時段，以及課表引用不存在於同份 IEP 的課程。超過規劃每週節數仍依畫面提示處理，不阻擋儲存。舊資料缺少欄位時會補上預設值；舊課表會依既有畫面邏輯保留每時段第一筆有效安排，忽略無法對應課程的項目。
+
+在 `backend/` 執行 `npm run test:curriculum-schedule` 可測試欄位驗證、課程與課表關聯、刪除連動及舊資料處理。此指令不連線資料庫或建立學生；實際資料庫測試使用本機指定的學生 IEP。
+
 ### MySQL 未啟動
 
 若出現連線失敗或 ECONNREFUSED，請啟動 XAMPP MySQL，並確認 DB_PORT 與 XAMPP 實際 port 相同。

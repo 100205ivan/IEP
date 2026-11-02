@@ -14,10 +14,10 @@ export function IepHeader({ studentName, schoolYear, semester, saveStatus, onSav
   return (
     <header className="site-header">
       <div className="header-content page-container">
-        <div className="brand">
+        <a className="brand" href="/students" aria-label="EyeEP，返回首頁" title="返回首頁">
           <span className="brand-name">EyeEP</span>
           <span className="brand-subtitle">個別化教育計畫</span>
-        </div>
+        </a>
         <div className="student-summary" aria-label="目前學生與學期">
           <span className="student-name">{studentName}</span>
           <label className="school-year-editor">學年度 <input aria-label="學年度" inputMode="numeric" value={schoolYear} onChange={(event) => onSchoolYearChange(event.target.value)} /></label>

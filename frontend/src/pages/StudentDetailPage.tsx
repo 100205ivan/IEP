@@ -115,7 +115,7 @@ export function StudentDetailPage() {
   if (loading) return <main className="page-container student-detail-page"><p className="student-list-status">載入中…</p></main>
 
   return <div className="student-management-shell">
-    <header className="site-header"><div className="header-content page-container"><div className="brand"><span className="brand-name">EyeEP</span><span className="brand-subtitle">個別化教育計畫</span></div><span className="student-management-header-label">學生管理</span></div></header>
+    <header className="site-header"><div className="header-content page-container"><a className="brand" href="/students" aria-label="EyeEP，返回首頁" title="返回首頁"><span className="brand-name">EyeEP</span><span className="brand-subtitle">個別化教育計畫</span></a><span className="student-management-header-label">學生管理</span></div></header>
     <main className="page-container student-detail-page">
       <Link className="back-link" to="/students">← 返回學生管理</Link>
       {error ? <section className="student-detail-error" role="alert"><h1>無法載入學生資料</h1><p>{error}</p><div><button className="button button--primary" type="button" onClick={loadStudent}>重新載入</button></div></section> : student && <>

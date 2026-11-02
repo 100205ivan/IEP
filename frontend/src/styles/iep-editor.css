@@ -13,7 +13,9 @@
   gap: 24px;
 }
 
-.brand { display: flex; align-items: baseline; gap: 12px; }
+.brand { display: flex; align-items: baseline; gap: 12px; width: fit-content; min-height: 44px; text-decoration: none; }
+.brand:hover .brand-name { color: var(--color-primary); }
+.brand:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 4px; border-radius: 4px; }
 .brand-name { color: var(--color-primary-dark); font-size: 1.45rem; font-weight: 750; letter-spacing: .02em; }
 .brand-subtitle { color: var(--color-muted); font-size: .94rem; }
 .student-summary { display: flex; align-items: center; gap: 18px; color: var(--color-muted); font-size: .94rem; white-space: nowrap; }

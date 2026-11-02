@@ -43,7 +43,7 @@ export function StudentListPage() {
   const iepCount = useMemo(() => students.reduce((total, student) => total + student.ieps.length, 0), [students])
 
   return <div className="student-management-shell">
-    <header className="site-header"><div className="header-content page-container"><div className="brand"><span className="brand-name">EyeEP</span><span className="brand-subtitle">個別化教育計畫</span></div><span className="student-management-header-label">學生管理</span></div></header>
+    <header className="site-header"><div className="header-content page-container"><a className="brand" href="/students" aria-label="EyeEP，返回首頁" title="返回首頁"><span className="brand-name">EyeEP</span><span className="brand-subtitle">個別化教育計畫</span></a><span className="student-management-header-label">學生管理</span></div></header>
     <main className="page-container student-list-page">
       <div className="student-list-heading"><div><p className="eyebrow">EyeEP</p><h1>學生管理</h1><p>快速找到學生，查看其歷年 IEP 紀錄。</p></div><Link className="button button--primary" to="/students/new">＋ 新增學生</Link></div>
       <section className="student-list-summary" aria-label="學生資料摘要"><div><span>學生總數</span><strong>{students.length}</strong></div><div><span>IEP 紀錄總數</span><strong>{iepCount}</strong></div></section>

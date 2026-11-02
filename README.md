@@ -7,15 +7,37 @@ EyeEP 是以學生個別化教育計畫（IEP）為核心的教學與評量管�
 ## 目前功能與開發進度
 
 - 學生與年度 IEP 建立、讀取及編輯
+- 壹至伍與 IEP 會議紀錄後端儲存，支援切換學生與學年度
+- IEP 分章資料表、舊資料搬移與未使用欄位清理
 - 人工評量紀錄新增、查看、編輯與刪除
 - 評估文件 OCR（Tesseract.js）與去識別化文字整理
 - Gemini AI 評估文件分析，依七大能力向度整理摘要與 evidence
 - Gemini AI 能力優弱勢與整體需求摘要：先預覽、修改草稿，再選擇欄位套用
 - Monkey 工作記憶遊戲與 CPT 持續注意力遊戲
 - Monkey／CPT 結果持久化至 MariaDB，支援查看、刪除與歷史紀錄
+- PDF 預覽與匯出、封面設定、證明文件附件及可讀的跨頁排版
+- 點擊頁面上方 EyeEP 標誌返回首頁
 - 七大能力向度相關評量參考面板已實作，但目前尚未完成完整實測
 
 AI 文件分析與摘要需要有效且有可用額度的 Gemini API Key；其他不需要 AI 的功能仍可在沒有 Key 時啟動。
+
+## 組員同步 main
+
+上述已完成功能及 AI 使用說明已整合到共用的 `main`，不必再分別拉取先前的功能分支。請在 Git clone 下來的專案資料夾執行：
+
+~~~powershell
+git fetch origin
+git switch main
+git pull --ff-only origin main
+npm ci --prefix backend
+npm ci --prefix frontend
+~~~
+
+有尚未提交的修改時，先在自己的功能分支完成 commit，再切換 `main`。只有下載 ZIP 的資料夾沒有 Git 紀錄，請依下方「下載與安裝依賴」重新 clone 專案。
+
+每位組員仍需各自設定本機 `backend/.env` 與 MariaDB；GitHub 不包含 API 金鑰、資料庫密碼或學生資料。已有資料庫請先備份，再依「系統啟動順序」啟動 MySQL、重啟 backend 及啟動 frontend。後端會執行尚未套用的 migration，前端須重新啟動以載入新增功能。
+
+新功能仍依下方「GitHub 協作流程」開分支、commit 與建立 Pull Request，確認後再合併回 `main`。
 
 ## AI 使用說明
 
@@ -192,7 +214,7 @@ DB_PASSWORD=
 npm run dev
 ~~~
 
-程式會依序執行 migration 001 至 007，不需要手動逐一貼 SQL。`backend/src/db/migrate.ts` 管理啟動順序，006 的資料搬移邏輯位於 `backend/src/db/migrations/iepChapterMigration.ts`，007 的欄位清理位於 `unusedColumnMigration.ts`。同目錄的 006／007 SQL 是 DDL 參考，應啟動後端完成資料搬移、清理前檢查及版本記錄。
+程式會依序執行 migration 001 至 008，不需要手動逐一貼 SQL。`backend/src/db/migrate.ts` 管理啟動順序，006 的資料搬移邏輯位於 `backend/src/db/migrations/iepChapterMigration.ts`，007 的欄位清理位於 `unusedColumnMigration.ts`，008 建立證明文件附件資料表。同目錄的 006／007 SQL 是 DDL 參考，應啟動後端完成資料搬移、清理前檢查及版本記錄。
 
 確認是否完成：
 
@@ -202,7 +224,7 @@ FROM schema_migrations
 ORDER BY version;
 ~~~
 
-正常應包含：001_initial、002_assessment_records、003_assessment_document_analyses、004_game_assessment_results、005_game_assessment_result_shape、006_iep_chapter_tables、007_unused_columns。
+正常應包含：001_initial、002_assessment_records、003_assessment_document_analyses、004_game_assessment_results、005_game_assessment_result_shape、006_iep_chapter_tables、007_unused_columns、008_iep_attachments。
 
 ## 資料庫結構
 
@@ -262,6 +284,10 @@ SQL `NULL` 代表該 API 欄位未提供；JSON `null`、空字串及空陣列�
 ### game_assessment_results
 
 Monkey／CPT 完整結果。migration 005 後的主鍵為 id；外鍵 assessment_record_id → assessment_records.id 且唯一；result_id 唯一。重要欄位為 game_type、result_summary、result_payload（完整 JSON）、played_at、created_at。007 已移除未使用的 updated_at。
+
+### iep_attachments
+
+證明文件正反面附件。複合主鍵為 iep_id 與 kind；iep_id 外鍵連到 ieps.id，刪除 IEP 會連帶移除附件。保存圖片格式、檔名、圖片內容及更新時間，供 PDF 匯出使用。上傳附件會直接儲存，不同於封面文字設定仍須按「儲存 IEP」。
 
 ## 資料庫關聯圖
 

@@ -2,6 +2,7 @@ import type { IepPdfRequest } from '../../schemas/iepPdfExport.js'
 import { IepPdfDocument } from './layout.js'
 import { date, lines, object, records, text } from './format.js'
 import { drawTeam } from './team.js'
+import { FormFlow, type FieldRow } from './flow.js'
 
 export async function drawFamily(pdf: IepPdfDocument, input: IepPdfRequest) {
   const family = object(input.content.studentFamilyForm), values = object(family.values), checks = object(family.checks)
@@ -22,82 +23,34 @@ export async function drawFamily(pdf: IepPdfDocument, input: IepPdfRequest) {
   const dates = [options.draftedDate || initialMeeting?.date || '', options.committeeApprovalDate, options.curriculumApprovalDate, options.newStudentReviewDate, options.firstReviewDate, options.secondReviewDate]
   dates.forEach((value, index) => { if (value) cover.field([index === 0 ? 137 : index < 3 ? 207 : index === 3 ? 183 : 137, 270 + index * 27.3, 210, 19], date(value), '封面會議日期', { size: 12 }) })
   drawTeam(cover, options.teamMembers ?? [])
-  const p = await pdf.page(2, '壹、一、學生基本資料及家庭狀況')
-  const put = (box: readonly [number, number, number, number], key: string, label: string, isDate = false) => p.field(box, isDate ? date(v(key)) : v(key), label, { size: 10.5 })
-  put([94, 99, 46, 32], 'studentName', '姓名')
-  p.field([229, 99, 53, 32], ({ male: '男', female: '女' } as Record<string, string>)[v('gender')] || v('gender'), '性別')
-  put([321, 99, 82, 32], 'birthDate', '出生日期', true)
-  put([477, 98, 68, 16], 'nationalId', '身分證字號')
-  put([477, 117, 68, 16], 'studentId', '學號')
-  put([94, 136, 188, 16], 'classEntryDate', '入班時間', true)
-  p.field([320, 136, 83, 16], [v('grade'), v('className')].filter(Boolean).join('　'), '班級')
-  put([477, 136, 68, 16], 'homeroomTeacher', '導師')
-  put([99, 155, 445, 16], 'registeredAddress', '戶籍地址')
-  p.field([99, 174, 445, 16], checks.sameAddress ? v('registeredAddress') : v('residentialAddress'), '居住地址')
-  put([200, 193, 83, 15], 'committeeAssessmentDate', '鑑定日期', true)
-  p.field([405, 193, 139, 15], [v('committeeDocumentNumber'), v('committeeSpecialEducationNumber')].filter(Boolean).join('　'), '鑑定文號')
-  put([200, 212, 83, 15], 'committeeReassessmentDate', '重鑑日期', true)
-  p.field([405, 212, 139, 15], [v('committeeDisabilityCategory'), v('committeeSeverity')].filter(Boolean).join('／'), '鑑定障礙類別及程度')
-  put([200, 231, 83, 15], 'proofAssessmentDate', '證明鑑定日期', true)
-  p.field([405, 231, 139, 15], [v('icfCategoryDetail') || (v('icfCategory') === 'other' ? v('icfOther') : ({ physical: '肢體功能相關', sensory: '感官功能相關', mental: '心智／心理功能相關' } as Record<string, string>)[v('icfCategory')] || v('icfCategory')), v('icfLevel')].filter(Boolean).join('／'), 'ICF 類別及程度')
-  put([200, 249, 83, 15], 'proofReassessmentDate', '證明重鑑日期', true)
-  put([360, 249, 184, 15], 'icdDiagnosis', 'ICD 診斷')
-  const binary = (key: string, area: readonly [number, number, number, number]) => { if (v(key)) p.choices([v(key) === 'has' ? '有' : '無'], area) }
-  binary('specialDisease', [94, 266, 105, 17])
-  if (v('specialDisease') === 'has') {
-    p.choices(['氣喘病', '心臟病', '癲癇'].filter(key => checks[key]).concat(checks.diseaseOther ? ['其他'] : []), [198, 265, 346, 18])
-    p.supplement('特殊疾病說明', lines([['疾病狀況', v('diseaseDescription')], ['其他疾病', checks.diseaseOther ? v('diseaseOther') : '']]))
+  const form = await FormFlow.create(pdf, input, '壹、一、學生基本資料及家庭狀況')
+  await form.heading('學生基本資料')
+  await form.grid([['姓名', v('studentName')], ['性別', ({ male: '男', female: '女' } as Record<string, string>)[v('gender')] || v('gender')], ['出生日期', date(v('birthDate'))], ['身分證字號', v('nationalId')], ['學號', v('studentId')], ['班級', [v('grade'), v('className')].filter(Boolean).join('　')], ['入班時間', date(v('classEntryDate'))], ['導師', v('homeroomTeacher')]])
+  await form.fields([['戶籍地址', v('registeredAddress')], ['居住地址', checks.sameAddress ? v('registeredAddress') : v('residentialAddress')]])
+  const assessment: FieldRow[] = [['鑑輔會鑑定日期', date(v('committeeAssessmentDate'))], ['重鑑日期', date(v('committeeReassessmentDate'))], ['鑑定文號', [v('committeeDocumentNumber'), v('committeeSpecialEducationNumber')].filter(Boolean).join('　')], ['鑑定障礙類別及程度', [v('committeeDisabilityCategory'), v('committeeSeverity')].filter(Boolean).join('／')], ['證明鑑定日期', date(v('proofAssessmentDate'))], ['證明重鑑日期', date(v('proofReassessmentDate'))], ['ICF 類別及程度', [v('icfCategoryDetail') || (v('icfCategory') === 'other' ? v('icfOther') : ({ physical: '肢體功能相關', sensory: '感官功能相關', mental: '心智／心理功能相關' } as Record<string, string>)[v('icfCategory')] || v('icfCategory')), v('icfLevel')].filter(Boolean).join('／')], ['ICD 診斷', v('icdDiagnosis')]]
+  if (assessment.some(([, value]) => text(value))) { await form.heading('鑑定與身心障礙證明'); await form.fields(assessment) }
+  const binary = (key: string) => !v(key) ? '' : v(key) === 'has' ? '有' : '無'
+  const health: FieldRow[] = [['特殊疾病', binary('specialDisease')], ['定期用藥', binary('regularMedication')], ['禁忌食物', binary('foodRestriction')], ['食物過敏', binary('foodAllergy')], ['藥物過敏', binary('drugAllergy')], ['經常就診醫院', binary('hospital')]]
+  if (health.some(([, value]) => text(value)) || v('otherSpecialCondition')) { await form.heading('健康與醫療資料'); await form.grid(health) }
+  if (v('specialDisease') === 'has') await form.paragraph('特殊疾病說明', lines([['疾病', ['氣喘病', '心臟病', '癲癇'].filter(key => checks[key]).join('、')], ['狀況說明', v('diseaseDescription')], ['其他疾病', checks.diseaseOther ? v('diseaseOther') : '']]))
+  if (v('regularMedication') === 'has' && records(family.medications).length) {
+    await form.heading('用藥資料')
+    await form.table(['藥物名稱', '使／服用方式', '臨床用途', '可能副作用'], [115, 145, 125, 135], records(family.medications).map(medicine => ['name', 'directions', 'purpose', 'sideEffects'].map(key => text(medicine[key]))))
   }
-  binary('regularMedication', [94, 294, 103, 24])
-  if (v('regularMedication') === 'has') {
-    records(family.medications).slice(0, 2).forEach((medicine, index) => {
-      const y = 303 + index * 17
-      for (const [column, key, label] of [[198, 'name', '藥物名稱'], [285, 'directions', '使／服用方式'], [405, 'purpose', '臨床用途'], [476, 'sideEffects', '副作用']] as const) p.field([column + 1, y, column === 198 ? 84 : column === 285 ? 117 : 67, 16], text(medicine[key]), label, { size: 9, min: 8 })
-    })
-    records(family.medications).slice(2).forEach((medicine, index) => p.supplement(`用藥資料 ${index + 3}`, lines([['名稱', medicine.name], ['用法', medicine.directions], ['用途', medicine.purpose], ['副作用', medicine.sideEffects]])))
+  for (const [key, detail, label] of [['foodRestriction', 'foodRestrictionDescription', '禁忌食物說明'], ['foodAllergy', 'foodAllergyDescription', '食物過敏說明'], ['drugAllergy', 'drugAllergyDescription', '藥物過敏說明']] as const) if (v(key) === 'has') await form.paragraph(label, v(detail))
+  await form.paragraph('其他特殊狀況', v('otherSpecialCondition'))
+  if (v('hospital') === 'has') await form.fields([['醫院名稱', v('hospitalName')], ['就醫科別', v('hospitalDepartment')], ['主治醫師', v('hospitalDoctor')], ['就診頻率', v('hospitalFrequency')]])
+  for (const [prefix, title] of [['guardian', '法定代理人'], [checks.sameGuardian ? 'guardian' : 'caregiver', '實際照顧者']] as const) {
+    const rows: FieldRow[] = [['姓名', v(prefix + 'Name')], ['與學生關係', v(prefix + 'Relationship')], ['聯絡電話', v(prefix + 'Phone')], ['年齡', v(prefix + 'Age')], ['教育程度', v(prefix + 'Education')], ['職業', v(prefix + 'Occupation')]]
+    if (rows.some(([, value]) => text(value))) { await form.heading(title); await form.grid(rows) }
   }
-  for (const [key, description, y, label] of [['foodRestriction', 'foodRestrictionDescription', 339, '禁忌食物'], ['foodAllergy', 'foodAllergyDescription', 358, '食物過敏'], ['drugAllergy', 'drugAllergyDescription', 377, '藥物過敏']] as const) {
-    binary(key, [150, y - 1, 125, 17])
-    if (v(key) === 'has') p.field([333, y - 1, 210, 17], v(description), label)
-  }
-  if (v('otherSpecialCondition')) { p.choices(['其他'], [93, 394, 450, 18]); put([154, 395, 389, 16], 'otherSpecialCondition', '其他特殊狀況') }
-  binary('hospital', [94, 421, 105, 18])
-  if (v('hospital') === 'has') {
-    p.field([165, 414, 378, 31], lines([['醫院', v('hospitalName')], ['科別', v('hospitalDepartment')], ['醫師', v('hospitalDoctor')]]).replace(/\n/g, '　'), '經常就診醫院')
-    p.supplement('就診頻率', v('hospitalFrequency'))
-  }
-  for (const [prefix, y] of [['guardian', 451], [checks.sameGuardian ? 'guardian' : 'caregiver', 520]] as const) {
-    const label = y === 451 ? '法定代理人' : '實際照顧者'
-    if (v(prefix + 'Name')) p.choices([label === '法定代理人' ? '法定' : '實際'], [38, y, 55, 42])
-    p.field([130, y, 65, 20], v(prefix + 'Name'), label + '姓名')
-    if (v(prefix + 'Phone')) p.field([94, y + 17, 101, 45], `聯絡電話：\n${v(prefix + 'Phone')}`, label + '電話')
-    for (const [x, width, key, title] of [[199, 26, 'Age', '年齡'], [229, 52, 'Education', '教育程度'], [286, 67, 'Occupation', '職業']] as const) p.field([x, y + 22, width, 22], v(prefix + key), label + title, { size: 9 })
-    const relationship = v(prefix + 'Relationship')
-    p.choices(relationship ? [relationship] : [], [354, 482, 120, 72], { father: '父親', mother: '母親', grandfather: '祖父', grandmother: '祖母', 'maternal-grandfather': '外祖父', 'maternal-grandmother': '外祖母', other: '其他', 兄: '其他', 姊: '其他', 其他親屬: '其他' }, label + '關係')
-    p.supplement(label + '關係', relationship)
-  }
-  const otherRelationships = ['guardian', checks.sameGuardian ? 'guardian' : 'caregiver'].map((prefix, index) => ({ role: index === 0 ? '法定代理人' : '實際照顧者', value: v(prefix + 'Relationship') })).filter(item => ['兄', '姊', '其他親屬', '其他'].includes(item.value))
-  p.field([394, 538, 79, 16], otherRelationships.map(item => `${item.role}：${item.value}`).join('、'), '其他照顧者關係', { size: 9, min: 8 })
-  const economic = ({ 'not-low-income': '非低收', 'near-low-income': '中低收入', 'low-income': '低收入' } as Record<string, string>)[v('economicStatus')]
-  if (economic) p.choices([economic], [477, 475, 65, 52])
-  p.field([112, 574, 84, 15], v('emergencyContact'), '緊急聯絡人')
-  p.field([269, 574, 133, 15], v('emergencyPhone'), '緊急聯絡電話')
-  p.field([472, 574, 72, 15], v('emergencyRelationship'), '緊急聯絡人關係')
   const siblings = [['siblingsOlderBrother', '兄'], ['siblingsYoungerBrother', '弟'], ['siblingsOlderSister', '姊'], ['siblingsYoungerSister', '妹']].filter(([key]) => v(key) !== '')
-  if (siblings.length) p.field([112, 592, 431, 16], siblings.map(([key, label]) => `${label} ${v(key)} 人`).join('、'), '家中手足')
-  for (const [key, y, first, second, title] of [['foreignParent', 611, 'fatherNationality', 'motherNationality', '國籍'], ['indigenousParent', 629, 'fatherIndigenousGroup', 'motherIndigenousGroup', '族籍']] as const) {
-    if (v(key)) p.choices([v(key) === 'yes' ? '是' : '否'], [155, y - 2, 90, 17])
-    if (v(key) === 'yes') {
-      p.choices([...(v(first) ? ['父'] : []), ...(v(second) ? ['母'] : [])], [240, y - 2, 304, 17])
-      p.field([307, y - 1, 64, 16], v(first), '父親' + title)
-      p.field([445, y - 1, 96, 16], v(second), '母親' + title)
-    }
-  }
-  binary('familyDisability', [228, 645, 125, 17])
-  if (v('familyDisability') === 'has') p.field([365, 646, 178, 16], `${v('familyDisabilityRelationship')} ${v('familyDisabilityDescription')}`, '家庭障礙個案說明')
-  p.field([95, 665, 448, 46], v('familySupportSituation'), '家庭支持現況')
-  const supports = [['supportNone', '無此需要'], ['familyConsultation', '家庭諮詢'], ['parentEducation', '親職教育'], ['trainingInformation', '輔導轉介'], ['serviceApplication', '協助家長申請'], ['otherSupport', '其他']]
-  p.choices(supports.filter(([key]) => checks[key] && (key === 'supportNone' || !checks.supportNone)).map(([, label]) => label), [94, 714, 449, 36])
-  if (checks.otherSupport && !checks.supportNone) p.field([379, 734, 163, 15], v('otherSupportDescription'), '其他家庭支持服務')
+  const familyRows: FieldRow[] = [['家庭經濟狀況', ({ 'not-low-income': '非低收入', 'near-low-income': '中低收入', 'low-income': '低收入' } as Record<string, string>)[v('economicStatus')]], ['緊急聯絡人', v('emergencyContact')], ['緊急聯絡電話', v('emergencyPhone')], ['緊急聯絡人關係', v('emergencyRelationship')], ['家中手足', siblings.map(([key, label]) => `${label} ${v(key)} 人`).join('、')], ['父母是否為外籍人士', v('foreignParent') ? v('foreignParent') === 'yes' ? '是' : '否' : ''], ['父親國籍', v('foreignParent') === 'yes' ? v('fatherNationality') : ''], ['母親國籍', v('foreignParent') === 'yes' ? v('motherNationality') : ''], ['父母是否為原住民', v('indigenousParent') ? v('indigenousParent') === 'yes' ? '是' : '否' : ''], ['父親族籍', v('indigenousParent') === 'yes' ? v('fatherIndigenousGroup') : ''], ['母親族籍', v('indigenousParent') === 'yes' ? v('motherIndigenousGroup') : ''], ['家庭身心障礙個案', binary('familyDisability')], ['家庭障礙個案說明', v('familyDisability') === 'has' ? `${v('familyDisabilityRelationship')} ${v('familyDisabilityDescription')}` : '']]
+  if (familyRows.some(([, value]) => text(value))) { await form.heading('家庭基本狀況'); await form.grid(familyRows) }
+  await form.paragraph('家庭支持現況', v('familySupportSituation'))
+  const supports = [['familyConsultation', '家庭諮詢'], ['parentEducation', '親職教育'], ['trainingInformation', '輔導、轉介與特殊教育相關研習及資訊'], ['serviceApplication', '協助家長申請相關機關（構）或團體服務'], ['otherSupport', '其他']]
+  const selected = checks.supportNone ? '無此需要' : supports.filter(([key]) => checks[key]).map(([, label]) => label).join('、')
+  await form.paragraph('家庭支持服務', selected)
+  if (checks.otherSupport && !checks.supportNone) await form.paragraph('其他家庭支持服務', v('otherSupportDescription'))
   return { studentName: v('studentName') || '未填姓名', grade: v('grade'), className: v('className') }
 }

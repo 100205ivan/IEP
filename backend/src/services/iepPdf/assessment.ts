@@ -1,5 +1,6 @@
 import type { IepPdfRequest } from '../../schemas/iepPdfExport.js'
-import { IepPdfDocument, type Box } from './layout.js'
+import { IepPdfDocument } from './layout.js'
+import { FormFlow } from './flow.js'
 import { date, lines, object, strings, text } from './format.js'
 import { referenceOptions } from '../../schemas/referenceForms.js'
 import type { IepAttachment } from '../iepAttachmentService.js'
@@ -8,50 +9,50 @@ import { drawAssessmentTable } from './assessmentTable.js'
 export interface PdfAssessment { source?: string; assessmentDate: string; assessmentType: string; otherAssessmentType?: string; assessmentTool: string; evaluator: string; summary: string; detail?: string }
 export async function drawAssessments(pdf: IepPdfDocument, input: IepPdfRequest, assessments: PdfAssessment[], attachments: IepAttachment[] = []) {
   await drawAssessmentTable(pdf, input, assessments, attachments)
-  const selections = object(input.content.assessmentSelections), details = object(input.content.assessmentDetails)
-  // Areas scope repeated checkbox labels to the correct skill and observation.
-  const pages: { source: number; groups: [string, Box][]; domains: [string, string, number, number, number, number][] }[] = [
-    { source: 4, groups: [['leftEar', [38, 144, 250, 18]], ['rightEar', [38, 162, 250, 18]], ['hearingAid', [38, 180, 250, 36]], ['leftEye', [38, 234, 250, 18]], ['rightEye', [38, 252, 250, 18]], ['visionAid', [38, 270, 250, 36]], ['fineMotor', [38, 450, 250, 112]], ['fineAidUse', [38, 505, 250, 19]], ['mobility', [38, 577, 250, 112]], ['mobilityAid', [38, 631, 250, 19]]], domains: [['sensory', '感官功能', 128, 325, 340, 361], ['motor', '知覺動作與行動能力', 436, 705, 719, 742]] },
-    { source: 5, groups: [['independent', [38, 104, 250, 20]], ['partialAssistance', [38, 151, 250, 20]], ['fullAssistance', [38, 198, 250, 20]], ['attention', [38, 377, 250, 111]], ['memory', [38, 503, 250, 76]], ['thinking', [38, 593, 250, 73]]], domains: [['selfCare', '生活自理能力', 92, 249, 263, 303], ['cognition', '認知能力', 380, 685, 701, 732]] },
-    { source: 6, groups: [['communicationMode', [38, 104, 250, 70]], ['nonverbalMethod', [38, 120, 250, 35]], ['verbal', [38, 182, 250, 99]], ['communicationAid', [38, 294, 250, 38]], ['emotion', [38, 449, 250, 68]], ['social', [38, 543, 250, 99]], ['genderInteraction', [38, 668, 250, 20]]], domains: [['communication', '溝通能力', 92, 348, 362, 371], ['socialEmotional', '情緒與社會行為', 452, 719, 733, 743]] },
-    { source: 7, groups: [['reading', [38, 93, 250, 38]], ['writing', [38, 147, 250, 57]], ['math', [38, 219, 250, 57]], ['learningBehavior', [38, 292, 250, 111]]], domains: [['academic', '學業學習能力', 96, 438, 453, 497]] },
+  const selected = object(input.content.assessmentSelections), details = object(input.content.assessmentDetails), summary = object(input.content.strengthWeaknessSummary)
+  const domains = [
+    { id: 'sensory', title: '感官功能', groups: ['leftEar', 'rightEar', 'hearingAid', 'leftEye', 'rightEye', 'visionAid'] },
+    { id: 'motor', title: '知覺動作與行動能力', groups: ['fineMotor', 'fineAidUse', 'mobility', 'mobilityAid'], extras: [['fineAidOther', '其他精細動作輔具'], ['mobilityAidOther', '其他行動輔具']] },
+    { id: 'selfCare', title: '生活自理能力', groups: ['independent', 'partialAssistance', 'fullAssistance'] },
+    { id: 'cognition', title: '認知能力', groups: ['attention', 'memory', 'thinking'] },
+    { id: 'communication', title: '溝通能力', groups: ['communicationMode', 'nonverbalMethod', 'verbal', 'communicationAid'], extras: [['nonverbalOther', '其他非口語方式']] },
+    { id: 'socialEmotional', title: '情緒與社會行為', groups: ['emotion', 'social', 'genderInteraction'] },
+    { id: 'academic', title: '學業學習能力', groups: ['reading', 'writing', 'math', 'learningBehavior'] },
   ]
   const labels: Record<string, string> = { leftEar: '左耳', rightEar: '右耳', leftEye: '左眼', rightEye: '右眼', hearingAid: '聽覺輔具', visionAid: '視覺輔具', fineMotor: '精細動作', fineAidUse: '精細動作輔具用途', mobility: '獨立行動', mobilityAid: '行動輔具', independent: '能獨立完成', partialAssistance: '需部分協助', fullAssistance: '需完全協助', attention: '注意力', memory: '記憶力', thinking: '思考能力', communicationMode: '慣用溝通方式', nonverbalMethod: '非口語溝通', verbal: '口語溝通', communicationAid: '溝通輔具', emotion: '情緒', social: '社會行為', genderInteraction: '兩性互動', reading: '閱讀', writing: '書寫', math: '算術', learningBehavior: '學習行為' }
-  for (const config of pages) {
-    const p = await pdf.page(config.source, '壹、三、教育需求評估與能力優弱勢分析')
-    config.groups.forEach(([key, box]) => {
-      p.choices(strings(selections[key]), [box[0] - 2, box[1], box[2] + 2, box[3]], { 'peer-level': key === 'emotion' ? '情緒穩定' : '與一般同儕無異', 枴杖: '柺杖' }, labels[key])
-      if (strings(selections[key]).some(value => value === '異常' || value === '需要')) p.supplement(`${labels[key]}說明`, details[key + 'Detail'])
-    })
-    for (const [id, label, impactTop, observationTop, needsTop, evaluatorTop] of config.domains) {
-      const subskills = referenceOptions.impactGroups[id]
-      if (subskills?.length) {
-        p.supplement(label + '：整體班級適應影響', lines([['影響', strings(selections[id + '-classImpact']).join('、')], ['說明', details[id + '-classImpactDescription']]]))
-        for (const skill of subskills) {
-          const key = `${id}-${skill.id}-classImpact`
-          p.choices(strings(selections[key]), [290, skill.top - 1, 253, 36], {}, `${label}／${skill.title}：影響`)
-          p.field([293, skill.top + 37, 248, Math.max(14, skill.bottom - skill.top - 40)], details[key + 'Description'], `${label}／${skill.title}：影響說明`)
-        }
-      } else {
-        p.choices(strings(selections[id + '-classImpact']), [290, impactTop - 1, 253, 36], {}, label + '：班級適應影響')
-        p.field([293, impactTop + 37, 248, 38], details[id + '-classImpactDescription'], label + '：班級適應影響')
-      }
-      const lowerHeight = evaluatorTop + 17 - observationTop
-      p.field([39, observationTop, 248, lowerHeight], details[id + '-otherObservation'], label + '：其他觀察紀錄')
-      p.field([293, needsTop, 248, Math.max(14, evaluatorTop - needsTop - 1)], details[id + '-needsAssessment'], label + '：需求評估說明')
-      p.field([293, evaluatorTop, 248, 16], lines([['評估者', details[id + '-evaluator']], ['日期', date(details[id + '-evaluationDate'])]]).replace(/\n/g, '　'), label + '：評估者及日期', { size: 9 })
+  const choices = (key: string) => strings(selected[key]).filter(Boolean).map(value => value === 'peer-level' ? key === 'emotion' ? '情緒穩定' : '與一般同儕無異' : value).join('、')
+  const hasSummary = Object.values(summary).some(value => Array.isArray(value) ? value.length : text(value).trim())
+  for (const [source, ids] of [[4, ['sensory', 'motor']], [5, ['selfCare', 'cognition']], [6, ['communication', 'socialEmotional']], [7, ['academic']]] as const) {
+    const active = domains.filter(domain => (ids as readonly string[]).includes(domain.id)).filter(domain => domain.groups.some(key => choices(key) || text(details[key + 'Detail'])) || Object.keys(details).some(key => key.startsWith(domain.id + '-') && text(details[key])) || Object.keys(selected).some(key => key.startsWith(domain.id + '-') && choices(key)) || domain.extras?.some(([key]) => text(details[key])))
+    if (!active.length && !(source === 7 && hasSummary)) { await pdf.page(source, '壹、三、學生教育需求評估與能力優弱勢分析'); continue }
+    const f = await FormFlow.create(pdf, input, '壹、三、學生教育需求評估與能力優弱勢分析')
+    for (const domain of active) {
+      await f.heading(domain.title + '現況')
+      const rows = domain.groups.flatMap(key => {
+        const values = strings(selected[key]), description = values.some(value => value === '異常' || value === '需要') ? text(details[key + 'Detail']) : ''
+        const value = [choices(key), description].filter(Boolean).join('\n')
+        return value ? [[labels[key], value]] : []
+      })
+      if (rows.length) await f.table(['評估項目', '能力現況與觀察'], [120, 400], rows)
+      for (const [key, label] of domain.extras ?? []) await f.paragraph(label, details[key])
+      await f.fields([['整體班級適應影響', choices(domain.id + '-classImpact')], ['整體影響說明', details[domain.id + '-classImpactDescription']]])
+      const impact = referenceOptions.impactGroups[domain.id] ?? []
+      const impactRows = impact.flatMap(skill => {
+        const key = `${domain.id}-${skill.id}-classImpact`
+        const value = lines([['影響判斷', choices(key)], ['影響說明', details[key + 'Description']]])
+        return value ? [[skill.title, value]] : []
+      })
+      if (impactRows.length) { await f.heading('分項的班級適應影響'); await f.table(['分項', '評估與說明'], [120, 400], impactRows) }
+      await f.paragraph('其他觀察紀錄', details[domain.id + '-otherObservation'])
+      await f.paragraph('需求評估說明', details[domain.id + '-needsAssessment'])
+      await f.info([['評估者', details[domain.id + '-evaluator']], ['評估日期', date(details[domain.id + '-evaluationDate'])]])
     }
-    const extra: [string, string][] = config.source === 4 ? [['fineAidOther', '其他精細動作輔具'], ['mobilityAidOther', '其他行動輔具']] : config.source === 6 ? [['nonverbalOther', '其他非口語方式']] : []
-    extra.forEach(([key, label]) => p.supplement(label, details[key]))
-    if (config.source === 7) {
-      const summary = object(input.content.strengthWeaknessSummary)
-      const aliases = { '其他特殊才能／狀況': '其他特殊才能' }
-      for (const [key, x, note] of [['strengths', 35, 'strengthNotes'], ['weaknesses', 296, 'weaknessNotes']] as const) {
-        const values = strings(summary[key])
-        p.choices(values.flatMap(v => v === '健康／感官相關' ? ['健康情況', '感官功能'] : [v]), [x, 589, 259, 99], key === 'strengths' ? aliases : { '其他特殊才能／狀況': '其他特殊狀況' })
-        p.field([x + 2, 700, 254, 54], summary[note], key === 'strengths' ? '優勢能力補充說明' : '弱勢能力補充說明')
-      }
-      p.supplement('整體需求摘要', summary.overallNeeds)
+    if (source === 7 && hasSummary) {
+      await f.heading('能力優弱勢分析')
+      await f.fields([['優勢能力', strings(summary.strengths).join('、')], ['弱勢能力', strings(summary.weaknesses).join('、')]])
+      await f.paragraph('優勢能力補充說明', summary.strengthNotes)
+      await f.paragraph('弱勢能力補充說明', summary.weaknessNotes)
+      await f.paragraph('整體需求摘要', summary.overallNeeds)
     }
   }
 }

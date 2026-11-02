@@ -78,6 +78,10 @@ async function exportedText(bytes: Uint8Array) {
     }
     result += '\n'
   }
+  const body = runs.filter(run => run.font.startsWith('DFKaiShu') && run.top < 765 && run.text.trim())
+  assert.ok(body.every(run => run.size >= 11), 'all generated form content remains at least 11pt')
+  assert.ok(!result.includes('詳續頁') && !result.includes('詳本節續頁'), 'no placeholder-only overflow cells remain')
+  assert.ok(body.every(run => run.top > 20 && run.top < 765 && run.x >= 32 && run.x < 557), 'form text starts inside the printable area')
   return { pdf, text: result, runs }
 }
 const request = (content: Record<string, unknown> = {}, options = {}) => iepPdfExportSchema.parse({ academicYear: 115, content: { studentFamilyForm: { values: { studentName: '王曉明' }, checks: {}, medications: [] }, ...content }, options })
@@ -106,9 +110,10 @@ test('long or multiple team names keep full details without reducing the cover f
   const names = ['王曉明', '陳小華', '這是一個超過姓名欄寬度的測試姓名']
   const { text, runs } = await exportedText((await generateIepPdf(request({}, { teamMembers: names.map((name, i) => ({ id: String(i), role: '特教教師', name })) }))).bytes)
   for (const name of names) assert.ok(text.includes(name))
-  const marker = runs.find(run => run.page === 0 && run.text === '名單詳續頁')
-  assert.ok(marker)
-  assert.equal(marker.size, 11)
+  const preview = runs.find(run => run.page === 0 && run.text.startsWith('王曉明') && run.text.endsWith('…'))
+  assert.ok(preview, 'the cover shows a meaningful name preview')
+  assert.equal(preview.size, 11)
+  assert.ok(!text.includes('詳續頁'), 'complete names continue without a placeholder-only cell')
 })
 
 test('blank IEP keeps all 20 A4 source pages with an embedded student name', async () => {
@@ -154,6 +159,28 @@ test('long multiline text survives across section continuations without truncati
   assert.equal((text.match(/測/g) ?? []).length, 1800)
 })
 
+test('long values in all dense forms preserve their start and end through readable pagination', async () => {
+  const narrative = (start: string, end: string) => start + '完整保留內容。'.repeat(90) + end
+  const content = {
+    studentFamilyForm: { values: { studentName: '王曉明', registeredAddress: narrative('地址起點', '地址終點'), regularMedication: 'has' }, checks: {}, medications: [{ name: '測試藥物', directions: narrative('用法起點', '用法終點') }] },
+    specialEducationSupport: { specialNotes: narrative('服務起點', '服務終點') },
+    curriculumAdjustment: { content: { applicableSubjects: ['國語'], description: narrative('調整起點', '調整終點') } },
+    goalDomains: [{ id: 'domain', domainName: '國語', annualGoals: [{ id: 'annual', content: narrative('學年起點', '學年終點') }] }],
+    semesterGoals: [{ id: 'goal', domainId: 'domain', annualGoalId: 'annual', content: narrative('目標起點', '目標終點'), evaluationRecords: [{ id: 'evaluation', result: narrative('結果起點', '結果終點'), notes: narrative('備註起點', '備註終點') }] }],
+    behaviorIntervention: { needStatus: '有需求', executionDetails: { antecedent: { executionMethod: narrative('執行起點', '執行終點') } } },
+    transitionSupport: { services: { education: { needStatus: '有需求', progress: narrative('轉銜起點', '轉銜終點') } } },
+    meetingRecords: [{ id: 'meeting', date: '2026-11-02', location: '測試會議室', discussionTopics: [{ id: 'topic', type: '特殊教育需求', enabled: true, summary: narrative('會議起點', '會議終點') }] }],
+  }
+  const input = request(content), original = JSON.stringify(input)
+  const { text } = await exportedText((await generateIepPdf(input)).bytes)
+  for (const label of ['地址', '用法', '服務', '調整', '學年', '目標', '結果', '備註', '執行', '轉銜', '會議']) {
+    assert.ok(text.includes(label + '起點'), label + ' start retained')
+    assert.ok(text.includes(label + '終點'), label + ' end retained')
+  }
+  assert.equal((text.match(/完整保留內容。/g) ?? []).length >= 11 * 89, true, 'paragraphs and table cells remain complete across page boundaries')
+  assert.equal(JSON.stringify(input), original, 'formatting never changes the IEP data')
+})
+
 test('extra assessment records and their evaluators are retained', async () => {
   const records = Array.from({ length: 9 }, (_, i) => ({ assessmentDate: '2026-11-02', assessmentType: '觀察', assessmentTool: `工具${i}`, evaluator: `評量人${i}`, summary: `摘要第${i}筆`, detail: `參考內容${i}` }))
   const output = await generateIepPdf(request(), records)
@@ -185,7 +212,7 @@ test('a very long assessment preserves all summary content and keeps CPT units t
   ])
   const { text, runs } = await exportedText(output.bytes)
   assert.ok(text.includes('長篇摘要起點') && text.includes('長篇摘要結束'))
-  const summaryColumn = runs.filter(run => run.x >= 320 && run.size === 11 && run.font.startsWith('DFKaiShu')).map(run => run.text).join('')
+  const summaryColumn = runs.filter(run => run.x >= 320 && run.size === 11 && run.font.startsWith('DFKaiShu') && !run.text.startsWith('（建議包含')).map(run => run.text).join('')
   assert.ok(summaryColumn.includes('長篇摘要起點' + '內容完整保留。'.repeat(400) + '長篇摘要結束'), 'summary text remains complete across page breaks and repeated identity cells')
   assert.equal(output.supplementPageCount, output.pageCount - 20)
   for (const value of ['RT 473 ms', 'RTV 381 ms。', 'Commission 3 次']) {
@@ -202,7 +229,7 @@ test('both semesters, extra goal rows, annual links and fourth evaluations survi
   const output = await generateIepPdf(request({ goalDomains: [domain], semesterGoals: goals }))
   const { text } = await exportedText(output.bytes)
   assert.ok(text.includes('學年目標保留'))
-  assert.ok(text.includes('第二學期目標'))
+  assert.ok(text.includes('第二學期教育目標'), 'the second-semester goal section is retained')
   for (let i = 0; i < 12; i++) { assert.ok(text.includes(`學期目標第${i}筆`)); assert.ok(text.includes(`結果${i}之3`)); assert.ok(text.includes(`備註${i}之3`)) }
 })
 
@@ -219,12 +246,15 @@ test('inactive clinical branches, unselected professional drafts and motions sta
   assert.equal(JSON.stringify(input), before)
   assert.ok(!text.includes('HIDDEN_'))
   assert.ok(text.includes('無臨時動議'))
+  const inactiveSupport = request({ specialEducationSupport: { specialNotes: 'HIDDEN_SUPPORT', referenceDetails: { supportNeed: '無需求' } } })
+  const { text: supportText } = await exportedText((await generateIepPdf(inactiveSupport)).bytes)
+  assert.ok(!supportText.includes('HIDDEN_SUPPORT'), 'inactive support drafts remain excluded')
 })
 
 test('all meetings, enabled topics and participants are included without fabricated signatures', async () => {
   const meetingRecords = Array.from({ length: 3 }, (_, i) => ({ id: `meeting${i}`, date: '2026-11-02', location: `測試地點${i}`, participants: [{ id: `person${i}`, name: `與會者${i}`, role: 'other', title: '測試角色', attended: false }], discussionTopics: [{ id: `topic${i}`, type: '其他', otherName: `議題${i}`, enabled: true, summary: `討論摘要${i}` }], hasMotions: true, motions: [{ id: `motion${i}`, content: `臨時動議${i}` }] }))
   const { text } = await exportedText((await generateIepPdf(request({ meetingRecords }))).bytes)
-  for (let i = 0; i < 3; i++) { assert.ok(text.includes(`與會者${i}`)); assert.ok(text.includes(`討論摘要${i}`)); assert.ok(text.includes(`臨時動議${i}`)) }
+  for (let i = 0; i < 3; i++) { assert.ok(text.includes(`與會者${i}`)); assert.ok(text.includes(`議題${i}`)); assert.ok(text.includes(`討論摘要${i}`)); assert.ok(text.includes(`臨時動議${i}`)) }
 })
 
 test('invalid export settings and orphaned timetable entries are rejected', () => {

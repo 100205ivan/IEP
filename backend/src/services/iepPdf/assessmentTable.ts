@@ -35,7 +35,7 @@ export async function drawAssessmentTable(pdf: IepPdfDocument, input: IepPdfRequ
   const header = () => {
     for (let i = 0; i < 3; i++) center(['評量日期', '評量工具或方式', '評量者'][i], columns[i], columns[i + 1], headerTop + 12, 12)
     center('評量結果摘要', columns[3], columns[4], headerTop + 5, 12)
-    center('（建議包含量化結果及質性解釋）', columns[3], columns[4], headerTop + 22, 9, rgb(0, .44, .75))
+    center('（建議包含量化結果及質性解釋）', columns[3], columns[4], headerTop + 22, 11, rgb(0, .44, .75))
     p.line(columns[0], headerTop, columns[4], headerTop, .8)
     p.line(columns[0], y, columns[4], y, .6)
   }
@@ -45,8 +45,9 @@ export async function drawAssessmentTable(pdf: IepPdfDocument, input: IepPdfRequ
     p = await pdf.blankPage(section)
     p.text(36, 38, section + '（續頁）', 14)
     const family = object(input.content.studentFamilyForm)
-    p.text(36, 63, `${text(object(family.values).studentName)}　${input.academicYear} 學年度`, 11)
-    headerTop = 94; y = 130; rows = 0; header()
+    const subtitle = p.wrap(`${text(object(family.values).studentName)}　${input.academicYear} 學年度`, 520, 11)
+    subtitle.forEach((line, i) => p.text(36, 63 + i * 15, line, 11))
+    headerTop = 79 + subtitle.length * 15; y = headerTop + 36; rows = 0; header()
   }
   header()
   for (const record of records) {

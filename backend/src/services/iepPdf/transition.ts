@@ -1,87 +1,47 @@
 import type { IepPdfRequest } from '../../schemas/iepPdfExport.js'
 import { IepPdfDocument } from './layout.js'
-import { choiceText, date, lines } from './format.js'
+import { FormFlow, type FieldRow } from './flow.js'
+import { choiceText, date } from './format.js'
 
 export async function drawTransition(pdf: IepPdfDocument, input: IepPdfRequest) {
-  const p = await pdf.page(17, '伍、學生之轉銜輔導及服務內容')
   const t = input.content.transitionSupport
-  if (t?.noTransitionNeed) p.field([123, 193, 432, 20], '經評估，目前無轉銜需求。', '轉銜需求')
-  if (t && !t.noTransitionNeed) {
-    p.choices(t.transitionReasons.selected, [31, 148, 525, 19])
-    p.choices(t.transitionFocus.selected, [31, 167, 525, 19])
-    p.field([123, 193, 432, 20], t.generalServiceContent, '轉銜服務內容')
-    p.field([123, 217, 432, 20], t.receivingUnit, '接收單位')
-    p.field([123, 241, 432, 20], t.specialNotes, '轉銜特別注意事項')
-    p.supplement('轉銜原因與重點', lines([['原因', choiceText(t.transitionReasons)], ['重點', choiceText(t.transitionFocus)]]))
+  if (!t) { await pdf.page(17, '伍、學生之轉銜輔導及服務內容'); await pdf.page(18, '伍、轉銜服務及離校後追蹤輔導'); return }
+  const f = await FormFlow.create(pdf, input, '伍、學生之轉銜輔導及服務內容')
+  await f.fields([['轉銜需求', t.noTransitionNeed ? '經評估，目前無轉銜需求。' : '轉銜輔導與服務規劃']])
+  if (!t.noTransitionNeed) {
+    await f.fields([['轉銜原因', choiceText(t.transitionReasons)], ['轉銜輔導重點', choiceText(t.transitionFocus)], ['轉銜服務內容', t.generalServiceContent], ['受理轉銜單位', t.receivingUnit], ['特殊記載事項', t.specialNotes]])
     const cross = t.crossStagePlan
     if (cross.enabled) {
-      p.choices(['跨階段'], [31, 280, 525, 20])
-      const stage = cross.educationStage
-      const top = stage === '國小' ? 303.16 : stage === '國中' ? 396.16 : 527.7
-      if (stage !== '其他') {
-        p.check(36, top)
-        p.field([78, top, 26, 15], cross.grade.replace(/年級/g, ''), '跨階段轉銜年級', { size: 9, min: 8 })
-      }
-      if (stage === '國小') {
-        for (const [key, x, label] of [['caregiver', 36, '照顧者'], ['student', 277.27, '學生']] as const) {
-          const pref = cross.elementaryPlan[key]
-          if (pref.selected.some(value => ['國中普通班', '國中資源班', '國中特教班'].includes(value))) {
-            p.check(x, 339.52)
-            p.field([x + 13, 339, 37, 15], pref.selected.filter(value => ['國中普通班', '國中資源班', '國中特教班'].includes(value)).map(value => value.replace('國中', '')).join('、'), `國小升學規劃：${label}`, { size: 8, min: 7 })
-          }
-          if (pref.selected.includes('特殊學校國中部')) p.check(x, 357.4)
-          if (pref.selected.includes('其他')) { p.check(x, 375.4); p.field([x + 38, 375, 190, 15], pref.other, `國小其他升學規劃：${label}`, { size: 9 }) }
+      await f.heading('跨階段生涯轉銜計畫')
+      await f.info([['目前教育階段', cross.educationStage], ['目前年級', cross.grade]])
+      if (cross.educationStage === '國小') await f.table(['規劃項目', '法定代理人／實際照顧者期望', '學生意願'], [110, 205, 205], [['升學／安置', choiceText(cross.elementaryPlan.caregiver), choiceText(cross.elementaryPlan.student)]])
+      else if (cross.educationStage === '國中' || cross.educationStage === '高中') {
+        const stage = cross.educationStage, plan = stage === '國中' ? cross.juniorHighPlan : cross.seniorHighPlan
+        await f.table(['規劃項目', '法定代理人／實際照顧者期望', '學生意願'], [110, 205, 205], [['升學', choiceText(plan.furtherEducation.caregiver), choiceText(plan.furtherEducation.student)], ['就業／在家', choiceText(plan.employment.caregiver), choiceText(plan.employment.student)]])
+        const employmentRows: FieldRow[] = []
+        for (const [key, label] of [['caregiver', '照顧者'], ['student', '學生']] as const) {
+          const options = plan.employment[key].selected, detail = cross.employmentDetails?.[stage]
+          employmentRows.push([label + '職場規劃', options.includes('職場') ? detail?.[`${key}Workplace`] : ''], [label + '在家規劃', options.includes('在家') ? detail?.[`${key}Home`] : ''])
         }
-      } else if (stage === '國中' || stage === '高中') {
-        const plan = stage === '國中' ? cross.juniorHighPlan : cross.seniorHighPlan
-        const rows = stage === '國中' ? [452.1, 479.46, 506.82] : [583.5, 601.98, 620.49, 638.85]
-        const educationOptions = stage === '國中' ? ['高級中等學校', '高級中等學校集中式特教班', '特殊教育學校'] : ['一般大學', '科技大學', '專科學校', '其他']
-        const header = stage === '國中' ? 415.12 : 546.66
-        if (plan.furtherEducation.caregiver.selected.length || plan.furtherEducation.student.selected.length) p.check(36, header)
-        if (plan.employment.caregiver.selected.length || plan.employment.student.selected.length) p.check(278.47, header)
-        if (plan.otherPlan) { p.check(484.06, header); p.supplement(stage + '其他生涯規劃', plan.otherPlan) }
-        for (const [key, x, jobX, label] of [['caregiver', 171.77, 343.03, '照顧者'], ['student', 239.09, 417.58, '學生']] as const) {
-          const education = plan.furtherEducation[key], employment = plan.employment[key]
-          educationOptions.forEach((option, index) => { if (education.selected.includes(option)) p.check(x, rows[index]) })
-          if (education.selected.includes('其他')) p.supplement(stage + '其他升學規劃：' + label, education.other)
-          for (const [index, option, field] of [[0, '職場', 'Workplace'], [1, '在家', 'Home']] as const) {
-            if (!employment.selected.includes(option)) continue
-            p.check(jobX, rows[index])
-            const detail = cross.employmentDetails?.[stage]?.[`${key}${field}`]
-            p.field([jobX + 13, rows[index], key === 'caregiver' ? 59 : 49, 15], detail, `${stage}：${label}${option}規劃`, { size: 8, min: 7 })
-          }
-          if (employment.selected.includes('其他')) p.supplement(stage + '其他就業規劃：' + label, employment.other)
-        }
-        if (plan.employment.caregiver.selected.includes('其他') || plan.employment.student.selected.includes('其他')) p.field([285, rows[2], 195, 15], lines([['照顧者', plan.employment.caregiver.other], ['學生', plan.employment.student.other]]).replace(/\n/g, '　'), stage + '其他就業規劃', { size: 8, min: 7 })
-      } else p.supplement('其他教育階段轉銜規劃', cross.otherStageNotes)
+        await f.fields(employmentRows)
+        await f.paragraph('其他生涯規劃', plan.otherPlan)
+      } else await f.paragraph('其他教育階段轉銜規劃', cross.otherStageNotes)
     }
   }
-  const followUps = t && !t.noTransitionNeed && t.followUp.enabled ? t.followUp.records : []
-  for (let offset = 0; offset < Math.max(1, followUps.length); offset += 2) {
-    const q = await pdf.page(18, '伍、轉銜服務及離校後追蹤輔導')
-    if (t && !t.noTransitionNeed && offset === 0) {
-      for (const [i, [key, label, start, end]] of ([['education', '升學輔導', 93, 132], ['dailyLiving', '生活輔導', 139, 182], ['employment', '就業輔導', 193, 232], ['psychological', '心理輔導', 239, 276], ['welfare', '福利服務', 282, 318], ['professional', '相關專業服務', 323, 359]] as const).entries()) {
-        const service = t.services[key]
-        q.choices([service.needStatus], [92, start - 2, 82, end - start])
-        if (service.needStatus !== '有需求') continue
-        q.choices(service.options.selected, [178, start - 2, 223, end - start], { 熟悉新學校上學路線: '熟悉新學校上學的路線' })
-        q.field([404, start, 52, end - start - 1], [date(service.startDate), date(service.endDate)].filter(Boolean).join('\n～\n'), label + '服務日期', { size: 8, min: 7 })
-        q.field([460, start, 52, end - start - 1], service.provider, label + '提供者', { size: 9, min: 8 })
-        q.field([515, start, 40, end - start - 1], service.progress, label + '執行狀況', { size: 9, min: 8 })
-        q.supplement(`${i + 1}. ${label}需求`, lines([['需求說明', service.needsDescription], ['服務內容', choiceText(service.options)]]))
-      }
+  if (t.noTransitionNeed) { await pdf.page(18, '伍、轉銜服務及離校後追蹤輔導'); return }
+  const services = await FormFlow.create(pdf, input, '伍、轉銜服務及離校後追蹤輔導')
+  for (const [key, title] of [['education', '升學輔導'], ['dailyLiving', '生活輔導'], ['employment', '就業輔導'], ['psychological', '心理輔導'], ['welfare', '福利服務'], ['professional', '相關專業服務']] as const) {
+    const service = t.services[key]
+    await services.heading(title)
+    const rows: FieldRow[] = [['需求評估', service.needStatus || '尚未評估／未填']]
+    if (service.needStatus === '有需求') rows.push(['服務內容', choiceText(service.options)], ['需求說明', service.needsDescription], ['開始日期', date(service.startDate)], ['結束日期', date(service.endDate)], ['受理單位／執行者', service.provider], ['執行狀況', service.progress])
+    await services.fields(rows, title)
+  }
+  if (t.followUp.enabled) {
+    await services.heading('離校後追蹤輔導（六個月）')
+    for (const [index, record] of t.followUp.records.entries()) {
+      await services.heading(`第 ${index + 1} 筆追蹤輔導紀錄`)
+      await services.fields([['追蹤日期', date(record.date)], ['追蹤方式', record.methods.join('、')], ['社群平台', record.methods.includes('社群平台') ? record.socialPlatform : ''], ['其他方式', record.methods.includes('其他') ? record.otherMethod : ''], ['輔導重點', record.focusAreas.join('、')], ['其他重點', record.focusAreas.includes('其他') ? record.otherFocus : ''], ['內容摘要', record.summary], ['服務處理', record.serviceDisposition], ['轉介／通報說明', record.serviceDisposition !== '適應良好' ? record.dispositionDetails : ''], ['受理單位聯繫', record.receivingUnitContact], ['特殊記載事項', record.specialNotes]], `第 ${index + 1} 筆追蹤輔導`)
     }
-    if (followUps.length) q.choices(['離校後追蹤輔導'], [31, 374, 525, 20])
-    followUps.slice(offset, offset + 2).forEach((record, index) => {
-      const delta = index * 163.4, label = `追蹤輔導 ${offset + index + 1}`
-      q.field([123, 398 + delta, 432, 14], date(record.date), label + '日期', { size: 10 })
-      q.choices(record.methods, [123, 413 + delta, 432, 17])
-      q.choices(record.focusAreas, [123, 429 + delta, 432, 17])
-      q.field([123, 447 + delta, 432, 43], record.summary, label + '內容摘要')
-      q.choices([record.serviceDisposition], [123, 491 + delta, 432, 17])
-      q.field([123, 510 + delta, 432, 14], record.receivingUnitContact, label + '受理單位聯繫', { size: 9, min: 8 })
-      q.field([123, 527 + delta, 432, 12], record.specialNotes, label + '特殊記載事項', { size: 8, min: 7 })
-      q.supplement(label + '方式及處理說明', lines([['追蹤方式', record.methods.join('、')], ['社群平台', record.methods.includes('社群平台') ? record.socialPlatform : ''], ['其他方式', record.methods.includes('其他') ? record.otherMethod : ''], ['輔導重點', record.focusAreas.join('、')], ['其他重點', record.focusAreas.includes('其他') ? record.otherFocus : ''], ['轉介／通報說明', record.serviceDisposition !== '適應良好' ? record.dispositionDetails : '']]))
-    })
   }
 }

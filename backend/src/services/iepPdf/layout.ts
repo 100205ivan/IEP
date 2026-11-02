@@ -42,36 +42,39 @@ export class PdfPainter {
   textWidth(value: string, size: number) { return this.measure(value) * size }
   wrap(value: string, width: number, size: number): string[] {
     const result: string[] = []
-    for (const paragraph of value.replace(/\r\n?/g, '\n').split('\n')) {
-      let line = '', length = 0
-      for (const char of paragraph.replace(/\t/g, '  ')) {
-        const advance = this.measure(char) * size
-        if (length + advance > width && line) { result.push(line); line = ''; length = 0 }
-        line += char; length += advance
+    for (const paragraph of value.replace(/\r\n?/g, '\n').replace(/\t/g, '  ').split('\n')) {
+      let line = ''
+      const add = (token: string) => {
+        if (!line && !token.trim()) return
+        if (line && this.measure(line + token) * size > width) { result.push(line.trimEnd()); line = token.trimStart() }
+        else line += token
       }
-      result.push(line)
+      for (const token of paragraph.match(/[（(][^（）()\n]{1,30}[）)]|[A-Za-z0-9]+(?:[./%_-][A-Za-z0-9]+)*[，。；：？！、]*|[ \t]+|.[，。；：？！、）)]*/gu) ?? []) {
+        if (this.measure(token) * size > width) for (const char of token) add(char)
+        else add(token)
+      }
+      result.push(line.trimEnd())
     }
     return result
   }
   field(box: Box, value: unknown, label: string, options: { size?: number; min?: number; clear?: boolean; align?: 'left' | 'center'; spill?: boolean } = {}) {
-    const text = typeof value === 'string' || typeof value === 'number' ? String(value) : ''
-    if (!text.trim()) return
+    const valueText = typeof value === 'string' || typeof value === 'number' ? String(value) : ''
+    if (!valueText.trim()) return
+    const [x, top, width, height] = box, size = Math.max(11, options.size ?? 11), leading = size * 1.2
+    const all = this.wrap(valueText, Math.max(1, width - 4), size)
+    const capacity = Math.max(0, Math.floor((height - 2 - size) / leading) + 1)
+    const overflow = all.length > capacity
+    if (overflow && options.spill === false) throw new PdfExportError(`「${label}」無法在指定欄位完整顯示。`)
+    if (overflow) this.supplement(label, valueText)
+    if (!capacity) return
     if (options.clear !== false) this.clear(box)
-    const [x, top, width, height] = box
-    let size = options.size ?? 10, lines = this.wrap(text, Math.max(1, width - 4), size)
-    const minimum = options.min ?? 8.5
-    while (lines.length * size * 1.14 > height - 2 && size > minimum) { size = Math.max(minimum, size - 0.5); lines = this.wrap(text, Math.max(1, width - 4), size) }
-    if (lines.length * size * 1.14 > height - 2) {
-      if (options.spill === false) throw new PdfExportError(`「${label}」無法在指定欄位完整顯示。`)
-      this.supplement(label, text)
-      const marker = width > 65 ? '內容詳本節續頁' : '詳續頁'
-      size = Math.min(9, Math.max(6, height - 3)); lines = this.wrap(marker, Math.max(1, width - 4), size)
-      if (lines.length * size * 1.14 > height - 2) lines = ['*']
+    const lines = all.slice(0, capacity)
+    if (overflow && lines.length) {
+      let last = lines[lines.length - 1]
+      while (last && this.measure(last + '…') * size > width - 4) last = Array.from(last).slice(0, -1).join('')
+      lines[lines.length - 1] = last + '…'
     }
-    lines.forEach((line, i) => {
-      const offset = options.align === 'center' ? Math.max(2, (width - this.measure(line) * size) / 2) : 2
-      this.text(x + offset, top + 1 + i * size * 1.14, line, size)
-    })
+    lines.forEach((line, i) => this.text(x + (options.align === 'center' ? Math.max(2, (width - this.measure(line) * size) / 2) : 2), top + 1 + i * leading, line, size))
   }
   check(x: number, top: number, size = 12) {
     this.line(x + 1.8, top + size * .55, x + size * .4, top + size * .78, .9)
@@ -144,12 +147,12 @@ export class IepPdfDocument {
     this.pages.push({ painter, section })
     return painter
   }
-  async blankPage(section: string): Promise<PdfPainter> {
+  async blankPage(section: string, continuation = true): Promise<PdfPainter> {
     const source = this.source.getPage(0)
     const page = this.document.addPage([source.getWidth(), source.getHeight()])
     const painter = new PdfPainter(page, this.font, { width: page.getWidth(), height: page.getHeight(), checks: [] }, this.measure)
     this.pages.push({ painter, section })
-    this.continuationPages++
+    if (continuation) this.continuationPages++
     return painter
   }
   async finish(studentName: string, academicYear: number) {
@@ -162,25 +165,28 @@ export class IepPdfDocument {
       const nextPage = () => {
         page = this.document.insertPage(index++, [painter.page.getWidth(), painter.page.getHeight()]); additions++
         writer = new PdfPainter(page, this.font, { width: page.getWidth(), height: page.getHeight(), checks: [] }, this.measure)
-        const heading = Array.from(section)
-        writer.text(36, 38, `${heading.slice(0, 36).join('')}${heading.length > 36 ? '…' : ''}（續頁）`, 12, rgb(1, 0, 0))
-        writer.text(36, 60, `${studentName}　${academicYear} 學年度`, 10)
-        cursor = 82
+        const heading = writer.wrap(section + '（續頁）', 520, 14)
+        heading.forEach((line, i) => writer.text(36, 34 + i * 18, line, 14, rgb(.78, 0, 0)))
+        const top = 34 + heading.length * 18 + 7
+        const subtitle = writer.wrap(`${studentName}　${academicYear} 學年度`, 520, 11)
+        subtitle.forEach((line, i) => writer.text(36, top + i * 15, line, 11))
+        const rule = top + subtitle.length * 15 + 7
+        writer.line(36, rule, 556, rule, .6)
+        cursor = rule + 13
       }
       nextPage()
       for (const supplement of painter.supplements) {
-        const lines = writer!.wrap(supplement.text, 400, 10)
+        const lines = painter.wrap(supplement.text, 506, 11)
         let offset = 0
         while (offset < lines.length) {
-          const titleHeight = writer!.wrap(supplement.title + (offset ? '（續）' : ''), 96, 9).length * 10.3 + 10
-          if (cursor > 700 || cursor + titleHeight > 746) nextPage()
-          const count = Math.min(lines.length - offset, Math.floor((746 - cursor - 9) / 13))
-          const height = Math.max(32, titleHeight, count * 13 + 9)
-          writer!.line(36, cursor, 556, cursor); writer!.line(36, cursor + height, 556, cursor + height)
-          writer!.line(36, cursor, 36, cursor + height); writer!.line(140, cursor, 140, cursor + height); writer!.line(556, cursor, 556, cursor + height)
-          writer!.field([38, cursor + 3, 100, height - 6], supplement.title + (offset ? '（續）' : ''), supplement.title, { size: 10, min: 8, spill: false })
-          lines.slice(offset, offset + count).forEach((line, i) => writer!.text(145, cursor + 4 + i * 13, line, 10))
-          offset += count; cursor += height
+          const heading = painter.wrap(supplement.title + (offset ? '（續）' : ''), 520, 12)
+          const titleHeight = heading.length * 17 + 10
+          if (cursor + titleHeight + 30 > 752) nextPage()
+          heading.forEach((line, i) => writer!.text(36, cursor + i * 17, line, 12))
+          cursor += titleHeight
+          const count = Math.min(lines.length - offset, Math.floor((752 - cursor) / 15))
+          lines.slice(offset, offset + count).forEach((line, i) => writer!.text(43, cursor + i * 15, line, 11))
+          offset += count; cursor += count * 15 + 18
           if (offset < lines.length) nextPage()
         }
       }

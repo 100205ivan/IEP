@@ -132,7 +132,7 @@ DB_PASSWORD=
 npm run dev
 ~~~
 
-程式會依序執行 migration 001 至 005，不需要手動逐一貼 SQL。backend/src/db/migrations/ 保存對應 SQL；目前真正由程式執行的 migration SQL 由 backend/src/db/migrate.ts 管理。
+程式會依序執行 migration 001 至 006，不需要手動逐一貼 SQL。`backend/src/db/migrate.ts` 管理啟動順序，006 的資料搬移邏輯位於 `backend/src/db/migrations/iepChapterMigration.ts`。同目錄的 `006_iep_chapter_tables.sql` 是建表參考；僅執行該 SQL 不會搬移資料，應啟動後端完成整個 migration。
 
 確認是否完成：
 
@@ -142,7 +142,7 @@ FROM schema_migrations
 ORDER BY version;
 ~~~
 
-正常應包含：001_initial、002_assessment_records、003_assessment_document_analyses、004_game_assessment_results、005_game_assessment_result_shape。
+正常應包含：001_initial、002_assessment_records、003_assessment_document_analyses、004_game_assessment_results、005_game_assessment_result_shape、006_iep_chapter_tables。
 
 ## 資料庫結構
 
@@ -157,6 +157,31 @@ Migration 追蹤表。主鍵為 version，另有 applied_at。
 ### ieps
 
 年度 IEP。主鍵 id；外鍵 student_id → students.id；重要欄位為 academic_year、content、created_at、updated_at。(student_id, academic_year) 唯一，刪除學生時 IEP 依外鍵設定 cascade。
+
+006 起，`content` 只保留沿用基本資料通知及未知／未來欄位等延伸資訊，壹到伍與會議紀錄的正式資料來源改為以下六張表。沒有延伸資訊時，`ieps.content` 為 `{}` 是正常狀態。
+
+### IEP 章節資料表
+
+| 資料表 | 章節 | JSON 欄位 |
+|---|---|---|
+| `iep_assessments` | 壹：學生現況、家庭及需求評估 | `student_family_form`、`assessment_selections`、`assessment_details`、`strength_weakness_summary` |
+| `iep_services` | 貳：特殊教育、相關服務與支持策略 | `special_education_support`、`inclusive_education_plan`、`curriculum_adjustment`、`course_plan_items`、`weekly_schedule` |
+| `iep_goals` | 參：學年／學期目標及達成情形 | `goal_domains`、`semester_goals`、`learning_notes` |
+| `iep_behavior_interventions` | 肆：行為介入及行政支援 | `behavior_intervention` |
+| `iep_transitions` | 伍：轉銜服務及追蹤 | `transition_support` |
+| `iep_meetings` | IEP 會議紀錄 | `meeting_records` |
+
+各表每份 IEP 各一列，以 `iep_id` 作為主鍵及外鍵，連到 `ieps.id`；另有 `created_at`、`updated_at`。子項目的勾選、巢狀明細與清單保留 JSON 結構。`students` 保存學生基本身分，`ieps` 保存年度歸屬，六張表透過 IEP 對應學生及學年度。評量紀錄、文件及遊戲仍使用原本三張評量資料表。
+
+SQL `NULL` 代表該 API 欄位未提供；JSON `null`、空字串及空陣列是不同的已提供值，讀回時會保持區別。新建空白年度 IEP 仍會建立六列章節資料，各欄位可為 SQL `NULL`。
+
+**既有資料搬移：** 升級前先備份資料庫。後端啟動時，006 先建立可重試的空表，再以同一個 transaction 搬移所有 IEP 的 15 個章節欄位，移除父表中的舊章節副本，最後記錄 migration 版本。搬移失敗會還原資料變更；空表會保留供重試。已完成的 migration 不會重跑覆寫新資料；如發現未記錄版本但章節表已有資料，會停止搬移以避免覆寫。
+
+**API 相容性：** 原有 IEP 新增、年度建立、查詢及更新 API 維持相同 `content` 格式。後端負責拆寫及組合六張表；一次儲存的學生、年度與所有章節在同一個 transaction 中完成。讀取會鎖住對應父層 IEP，避免同一回應混入不同次儲存的章節。沿用基本資料會從壹的資料表讀取來源。刪除 IEP 會連帶移除六列章節，但有評量資料時仍依原本的外鍵保護拒絕刪除。
+
+資料已搬移後，回復舊版程式也需要搭配變更前的資料庫備份；舊版無法從六張新表組合章節內容。
+
+在 `backend/` 執行 `npm run test:chapter-migration` 與 `npm run test:chapter-storage`，可驗證搬移、重跑、錯誤還原、API 相容性、跨年度、清空欄位、並行讀寫及刪除連動。測試使用獨立的 `eyeep_chapter_*_test_<隨機識別碼>` 資料庫並於結束移除，連線帳號需具備建立／刪除測試資料庫及建立測試 trigger 的權限。
 
 ### assessment_records
 
@@ -177,6 +202,12 @@ erDiagram
     students ||--o{ ieps : "擁有年度 IEP"
     students ||--o{ assessment_records : "學生評量"
     ieps ||--o{ assessment_records : "年度評量"
+    ieps ||--|| iep_assessments : "壹"
+    ieps ||--|| iep_services : "貳"
+    ieps ||--|| iep_goals : "參"
+    ieps ||--|| iep_behavior_interventions : "肆"
+    ieps ||--|| iep_transitions : "伍"
+    ieps ||--|| iep_meetings : "會議紀錄"
     assessment_records ||--o| assessment_document_analyses : "文件分析"
     assessment_records ||--o| game_assessment_results : "遊戲結果"
 
@@ -298,7 +329,7 @@ npm start
 
 ### 特殊教育及支持服務需求的儲存
 
-「貳 → 一、特殊教育及支持服務需求」使用頁面上方的「儲存 IEP」，透過既有的 IEP 新增／更新 API 寫入 `ieps.content.specialEducationSupport`，不需額外建立資料表或執行 migration。特殊教育服務、專業服務明細、家庭、人力、行政設備、交通及經濟支持均會保存；清空欄位或取消勾選後也需再次儲存。
+「貳 → 一、特殊教育及支持服務需求」使用頁面上方的「儲存 IEP」，透過既有的 IEP 新增／更新 API 寫入 `iep_services.special_education_support`（API 欄位為 `content.specialEducationSupport`）。特殊教育服務、專業服務明細、家庭、人力、行政設備、交通及經濟支持均會保存；清空欄位或取消勾選後也需再次儲存。
 
 後端允許保存尚未填完的草稿，會為缺少的欄位補上空值。人力支持時數須為非負數；專業服務日期須有效，已勾選服務的結束日期不可早於開始日期。取消勾選專業服務時會保留其明細草稿，但不會自動視為本年度仍需該服務。
 
@@ -306,7 +337,7 @@ npm start
 
 ### 融合教育規劃的儲存
 
-「貳 → 二、融合教育規劃」使用頁面上方的「儲存 IEP」，將年級、班級、參與方式、抽離課程、活動與支持策略等 13 個欄位保存至 `ieps.content.inclusiveEducationPlan`。沿用既有 IEP API，不需新增資料表或 migration。
+「貳 → 二、融合教育規劃」使用頁面上方的「儲存 IEP」，將年級、班級、參與方式、抽離課程、活動與支持策略等 13 個欄位保存至 `iep_services.inclusive_education_plan`。API 沿用 `content.inclusiveEducationPlan` 格式。
 
 後端驗證選項、欄位型別與文字長度，允許空白草稿，並保留隱藏欄位及未來欄位。取消勾選或清空後需再按「儲存 IEP」才會更新。前端讀取缺少本章或部分欄位的舊資料時會補上預設值。
 
@@ -314,7 +345,7 @@ npm start
 
 ### 課程調整、課程規劃與每週課表的儲存
 
-「貳 → 三、課程調整方式」「四、學生課程規劃表」「五、學生每週課表」均透過「儲存 IEP」保存，分別寫入 `ieps.content` 的 `curriculumAdjustment`、`coursePlanItems`、`weeklySchedule`，不需新增資料表或 migration。
+「貳 → 三、課程調整方式」「四、學生課程規劃表」「五、學生每週課表」均透過「儲存 IEP」保存，分別寫入 `iep_services` 的 `curriculum_adjustment`、`course_plan_items`、`weekly_schedule`；API 欄位維持 `curriculumAdjustment`、`coursePlanItems`、`weeklySchedule`。
 
 課程視窗的「儲存課程」、課表視窗的「儲存安排」會先更新目前畫面，完成後仍須按上方「儲存 IEP」才能寫入資料庫。刪除課程後儲存 IEP，會一併移除該課程的課表安排。課表以課程 ID 連結名稱、教師等資料，修改課程後會同步顯示新內容。
 
@@ -324,7 +355,7 @@ npm start
 
 ### 學年／學期教育目標與目標達成情形的儲存
 
-「參 → 一、領域與學年教育目標」「二、學期教育目標與評量」「三、目標達成情形」統一透過「儲存 IEP」保存至 `ieps.content.goalDomains`、`semesterGoals`、`learningNotes`，不需額外資料表或 migration。評量紀錄、教學決定及其說明保存在對應的學期目標內；目標達成摘要由目前學期／領域的目標與教學決定計算。
+「參 → 一、領域與學年教育目標」「二、學期教育目標與評量」「三、目標達成情形」統一透過「儲存 IEP」保存至 `iep_goals.goal_domains`、`semester_goals`、`learning_notes`；API 欄位維持 `goalDomains`、`semesterGoals`、`learningNotes`。評量紀錄、教學決定及其說明保存在對應的學期目標內；目標達成摘要由目前學期／領域的目標與教學決定計算。
 
 各視窗的「儲存」與教學決定選項會先更新目前畫面，完成後仍須按上方「儲存 IEP」才會寫入資料庫。刪除領域或學年目標時，畫面會一併移除相關學期目標及評量紀錄；API 也會拒絕保留失去父層關聯的學期目標。
 
@@ -334,7 +365,7 @@ npm start
 
 ### 行為介入與轉銜服務的儲存
 
-「肆、行為功能介入方案及行政支援」及「伍、轉銜輔導及服務內容」透過上方「儲存 IEP」，分別寫入 `ieps.content.behaviorIntervention` 與 `transitionSupport`，不需新增資料表或 migration。行為評估、各類策略、行政支援、執行成效、跨階段計畫、六類轉銜服務及追蹤紀錄都包含在其中。
+「肆、行為功能介入方案及行政支援」及「伍、轉銜輔導及服務內容」透過上方「儲存 IEP」，分別寫入 `iep_behavior_interventions.behavior_intervention` 與 `iep_transitions.transition_support`；API 欄位維持 `behaviorIntervention`、`transitionSupport`。行為評估、各類策略、行政支援、執行成效、跨階段計畫、六類轉銜服務及追蹤紀錄都包含在其中。
 
 切換為無需求、關閉跨階段計畫或追蹤輔導時會保留明細草稿；重新開啟後可繼續編輯。追蹤視窗的「儲存紀錄」及刪除會先更新畫面，仍須按「儲存 IEP」才會永久保存。
 
@@ -344,7 +375,7 @@ npm start
 
 ### IEP 會議紀錄的儲存
 
-「IEP 會議紀錄」透過上方「儲存 IEP」保存至 `ieps.content.meetingRecords`，不需新增資料表或 migration。每筆會議的基本資料、與會人員及出席狀態、九類討論事項、決議及臨時動議均會保存。會議視窗顯示目前學生與學年度，資料歸屬於開啟的那份年度 IEP。
+「IEP 會議紀錄」透過上方「儲存 IEP」保存至 `iep_meetings.meeting_records`，API 欄位維持 `content.meetingRecords`。每筆會議的基本資料、與會人員及出席狀態、九類討論事項、決議及臨時動議均會保存。會議視窗顯示目前學生與學年度，資料歸屬於開啟的那份年度 IEP。
 
 視窗內「儲存會議紀錄」、新增／編輯明細及刪除會先更新畫面，完成後仍須按上方「儲存 IEP」才會寫入資料庫。取消勾選討論事項或切換「無臨時動議」時，會保留其文字供後續編輯；刪除個別項目或清空會議列表後儲存，才會移除該資料。
 

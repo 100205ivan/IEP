@@ -23,6 +23,7 @@ import type { IepContent } from '../types/studentIep'
 import { normalizeCurriculumAdjustment, normalizeCoursePlanItems, normalizeWeeklySchedule } from '../services/curriculumPlanNormalization'
 import { normalizeGoalDomains, normalizeSemesterGoals } from '../services/educationGoalsNormalization'
 import { normalizeBehaviorIntervention, normalizeTransitionSupport } from '../services/behaviorTransitionNormalization'
+import { normalizeMeetingRecords } from '../services/meetingRecordsNormalization'
 
 const mainChapters: readonly MainChapter[] = [
   { id: 'assessment', label: '壹、學生能力現況、家庭狀況及需求評估' },
@@ -120,7 +121,7 @@ export function IepEditorPage() {
       setLearningNotes(typeof content.learningNotes === 'string' ? content.learningNotes : '')
       setBehaviorIntervention(normalizeBehaviorIntervention(content.behaviorIntervention))
       setTransitionSupport(normalizeTransitionSupport(content.transitionSupport))
-      if (content.meetingRecords) setMeetingRecords(content.meetingRecords as IepMeetingRecord[])
+      setMeetingRecords(normalizeMeetingRecords(content.meetingRecords))
       setSpecialEducationSupport(normalizeSpecialEducationSupport(content.specialEducationSupport))
       setInclusiveEducationPlan(normalizeInclusiveEducationPlan(content.inclusiveEducationPlan))
       setCurriculumAdjustment(normalizeCurriculumAdjustment(content.curriculumAdjustment))
@@ -213,7 +214,7 @@ export function IepEditorPage() {
         ) : activeMainChapter === 'transition' ? (
           <TransitionSupport value={transitionSupport} onChange={updateTransitionSupport} />
         ) : activeMainChapter === 'meeting' ? (
-          <IepMeetingRecords records={meetingRecords} setRecords={updateMeetingRecords} />
+          <IepMeetingRecords records={meetingRecords} setRecords={updateMeetingRecords} studentName={studentName} academicYear={academicYear} />
         ) : (
           <section className="content-panel unavailable-panel" id={`chapter-${activeMainChapter}`} role="tabpanel" aria-labelledby={`chapter-tab-${activeMainChapter}`}>
             <p>{activeMain?.label}尚未製作</p>

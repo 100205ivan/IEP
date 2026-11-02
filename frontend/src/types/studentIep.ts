@@ -7,6 +7,7 @@ import type { WeeklyScheduleEntry } from '../components/iep/StudentWeeklySchedul
 import type { GoalDomain, SemesterGoal } from '../components/iep/GoalsChapter'
 import type { BehaviorInterventionValue } from '../components/iep/BehaviorIntervention'
 import type { TransitionSupportValue } from '../components/iep/TransitionSupport'
+import type { IepMeetingRecord } from '../models/iepMeeting'
 
 export interface IepContent {
   studentFamilyForm: StudentFamilyFormValue
@@ -20,6 +21,7 @@ export interface IepContent {
   learningNotes?: string
   behaviorIntervention?: BehaviorInterventionValue
   transitionSupport?: TransitionSupportValue
+  meetingRecords?: IepMeetingRecord[]
   basicInfoReviewNotice?: {
     inheritedFromAcademicYear: number
     requiresReview: true

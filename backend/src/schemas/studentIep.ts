@@ -4,6 +4,7 @@ import { inclusiveEducationPlanSchema } from './inclusiveEducationPlan.js'
 import { curriculumAdjustmentSchema, coursePlanItemSchema, weeklyScheduleEntrySchema } from './curriculumPlan.js'
 import { goalDomainSchema, semesterGoalSchema, validateEducationGoalLinks } from './educationGoals.js'
 import { behaviorInterventionSchema, transitionSupportSchema } from './behaviorTransition.js'
+import { iepMeetingRecordsSchema } from './iepMeetingRecords.js'
 
 // Validate connected chapters without stripping data belonging to other chapters.
 export const iepContentSchema = z.object({
@@ -17,6 +18,7 @@ export const iepContentSchema = z.object({
   learningNotes: z.string().max(20_000, '學生學習狀況說明不可超過 20,000 字。').optional(),
   behaviorIntervention: behaviorInterventionSchema.optional(),
   transitionSupport: transitionSupportSchema.optional(),
+  meetingRecords: iepMeetingRecordsSchema.optional(),
 }).catchall(z.unknown()).superRefine((content, context) => {
   const courseIds = new Set<string>()
   for (const [index, course] of (content.coursePlanItems ?? []).entries()) {

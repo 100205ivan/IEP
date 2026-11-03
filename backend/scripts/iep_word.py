@@ -186,12 +186,17 @@ def filled_text(block, fields, checks):
         else:grouped.append([y,text])
     return '\n'.join(text for _,text in grouped)
 
-def fill(model, output):
-    from iep_word_fixed import fill as fixed_fill
-    fixed_fill(model,output,TEMPLATE,json.loads(GEOMETRY.read_text(encoding='utf-8')))
+def fill(model, output, layout='editable'):
+    geometry = json.loads(GEOMETRY.read_text(encoding='utf-8'))
+    if layout == 'reference':
+        from iep_word_fixed import fill as fixed_fill
+        fixed_fill(model,output,TEMPLATE,geometry)
+    else:
+        from iep_word_editable import fill as editable_fill
+        editable_fill(model,output,geometry)
     print(json.dumps({'output':str(output),'forms':len(model['pages'])}))
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--build-template',action='store_true');p.add_argument('--model');p.add_argument('--output');args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--build-template',action='store_true');p.add_argument('--model');p.add_argument('--output');p.add_argument('--layout',choices=['editable','reference'],default='editable');args=p.parse_args()
     if args.build_template:build_template()
-    else:fill(json.loads(Path(args.model).read_text(encoding='utf-8')),Path(args.output))
+    else:fill(json.loads(Path(args.model).read_text(encoding='utf-8')),Path(args.output),args.layout)

@@ -48,13 +48,13 @@ async function soffice() {
   ], '尚未設定 Word 轉 PDF 引擎。請設定 IEP_SOFFICE_PATH；仍可匯出 Word。')
 }
 
-export async function generateIepWord(input: IepPdfRequest, records: PdfAssessment[] = [], attachments: IepAttachment[] = []) {
+export async function generateIepWord(input: IepPdfRequest, records: PdfAssessment[] = [], attachments: IepAttachment[] = [], layout: 'editable' | 'reference' = 'editable') {
   const model = await buildIepWordModel(input, records, attachments)
   const directory = await mkdtemp(join(tmpdir(), 'eyeep-word-'))
   try {
     const modelPath = join(directory, 'data.json'), output = join(directory, 'IEP.docx')
     await writeFile(modelPath, JSON.stringify(model), { mode: 0o600 })
-    await run(await python(), [join(backend, 'scripts/iep_word.py'), '--model', modelPath, '--output', output], { timeout: 120_000, windowsHide: true, maxBuffer: 1024 * 1024 })
+    await run(await python(), [join(backend, 'scripts/iep_word.py'), '--model', modelPath, '--output', output, '--layout', layout], { timeout: 120_000, windowsHide: true, maxBuffer: 1024 * 1024 })
     return { bytes: await readFile(output), fileName: `${model.studentName}_${input.academicYear}學年度_IEP.docx`, formCount: model.pages.length }
   } catch (error) {
     if (error instanceof PdfExportError) throw error
@@ -64,7 +64,9 @@ export async function generateIepWord(input: IepPdfRequest, records: PdfAssessme
 
 export async function generateIepWordPdf(input: IepPdfRequest, records: PdfAssessment[] = [], attachments: IepAttachment[] = []) {
   const executable = await soffice()
-  const word = await generateIepWord(input, records, attachments)
+  // PDF retains the reference's fixed printing geometry. The downloadable Word
+  // uses normal flowing paragraphs/cells so it remains comfortable to edit.
+  const word = await generateIepWord(input, records, attachments, 'reference')
   const directory = await mkdtemp(join(tmpdir(), 'eyeep-word-pdf-'))
   try {
     await writeFile(join(directory, 'IEP.docx'), word.bytes, { mode: 0o600 })

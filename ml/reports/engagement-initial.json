@@ -1,0 +1,123 @@
+{
+  "task": "engagement",
+  "seed": 42,
+  "provenance": {
+    "dataset": "E-learning Student Engagement and Disengagement Image Dataset",
+    "source": "https://zenodo.org/records/16731734",
+    "license": "CC-BY-4.0",
+    "creators": [
+      "Parinita Chate",
+      "Kailas Patil"
+    ],
+    "split": "60/20/20, exact resized-pixel deduplication and disjoint dHash clusters; not subject-disjoint",
+    "limitations": [
+      "Subject identities not provided: cross-person leakage may remain.",
+      "Whole-image labels may reflect pose, scene and background shortcuts.",
+      "Dataset engagement labels are not measurements of internal attention."
+    ],
+    "removed_exact_duplicates": 3429
+  },
+  "classes": [
+    "disengaged",
+    "engaged"
+  ],
+  "split_counts": {
+    "train": 7452,
+    "validation": 2657,
+    "test": 2462
+  },
+  "validation": {
+    "accuracy": 0.9476853594279262,
+    "balanced_accuracy": 0.9480189294114314,
+    "macro_f1": 0.947683906954264,
+    "majority_baseline_accuracy": 0.5080918328942416,
+    "confusion_matrix": [
+      [
+        1266,
+        41
+      ],
+      [
+        98,
+        1252
+      ]
+    ],
+    "per_class": {
+      "disengaged": {
+        "precision": 0.9281524926686217,
+        "recall": 0.9686304514154552,
+        "f1-score": 0.9479595657057281,
+        "support": 1307.0
+      },
+      "engaged": {
+        "precision": 0.9682907965970611,
+        "recall": 0.9274074074074075,
+        "f1-score": 0.9474082482027999,
+        "support": 1350.0
+      },
+      "accuracy": 0.9476853594279262,
+      "macro avg": {
+        "precision": 0.9482216446328413,
+        "recall": 0.9480189294114314,
+        "f1-score": 0.947683906954264,
+        "support": 2657.0
+      },
+      "weighted avg": {
+        "precision": 0.9485464370808886,
+        "recall": 0.9476853594279262,
+        "f1-score": 0.9476794457851586,
+        "support": 2657.0
+      }
+    }
+  },
+  "test": {
+    "accuracy": 0.9378554021121039,
+    "balanced_accuracy": 0.9364947702899511,
+    "macro_f1": 0.9374870036342526,
+    "majority_baseline_accuracy": 0.5280259951259139,
+    "confusion_matrix": [
+      [
+        1249,
+        51
+      ],
+      [
+        102,
+        1060
+      ]
+    ],
+    "per_class": {
+      "disengaged": {
+        "precision": 0.924500370096225,
+        "recall": 0.9607692307692308,
+        "f1-score": 0.942285929837797,
+        "support": 1300.0
+      },
+      "engaged": {
+        "precision": 0.9540954095409541,
+        "recall": 0.9122203098106713,
+        "f1-score": 0.9326880774307084,
+        "support": 1162.0
+      },
+      "accuracy": 0.9378554021121039,
+      "macro avg": {
+        "precision": 0.9392978898185895,
+        "recall": 0.9364947702899511,
+        "f1-score": 0.9374870036342526,
+        "support": 2462.0
+      },
+      "weighted avg": {
+        "precision": 0.9384684593873603,
+        "recall": 0.9378554021121039,
+        "f1-score": 0.937755992999033,
+        "support": 2462.0
+      }
+    },
+    "accepted_fraction": 1.0,
+    "accepted_accuracy": 0.9378554021121039
+  },
+  "epochs_run": 10,
+  "seconds": 71.93853855133057,
+  "acceptance_threshold": 0.5,
+  "threshold_rule": "first validation threshold with >=70% accuracy and >=10% coverage; otherwise reject all",
+  "research_only": true,
+  "validated_on_target_students": false
+}

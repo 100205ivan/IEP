@@ -24,7 +24,18 @@ const ocrAssets = [
     path: fileURLToPath(new URL(`./node_modules/@tesseract.js-data/${language}/4.0.0_best_int/${language}.traineddata.gz`, import.meta.url)),
   })),
 ]
-const localAssets = [...pdfAssets, ...ocrAssets]
+const visionRoot = new URL('./node_modules/@mediapipe/tasks-vision/', import.meta.url)
+const visionAssets = [
+  { fileName: 'vision/tf.min.js', path: fileURLToPath(new URL('./node_modules/@tensorflow/tfjs/dist/tf.min.js', import.meta.url)) },
+  { fileName: 'vision/runtime.js', path: fileURLToPath(new URL('vision_bundle.cjs', visionRoot)) },
+  ...readdirSync(new URL('wasm/', visionRoot)).filter(name => !name.endsWith('.map')).map(name => ({
+    fileName: `vision/wasm/${name}`, path: fileURLToPath(new URL(`wasm/${name}`, visionRoot)),
+  })),
+  ...['ort.wasm.min.js', 'ort-wasm-simd-threaded.mjs', 'ort-wasm-simd-threaded.wasm'].map(name => ({
+    fileName: `vision/ort/${name}`, path: fileURLToPath(new URL(`./node_modules/onnxruntime-web/dist/${name}`, import.meta.url)),
+  })),
+]
+const localAssets = [...pdfAssets, ...ocrAssets, ...visionAssets]
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -40,7 +51,7 @@ export default defineConfig({
         const path = request.url?.split('?')[0]
         const asset = localAssets.find((item) => path === `${server.config.base}${item.fileName}`)
         if (!asset) return next()
-        response.setHeader('Content-Type', asset.fileName.endsWith('.wasm') ? 'application/wasm' : asset.fileName.endsWith('.js') ? 'text/javascript' : 'application/octet-stream')
+        response.setHeader('Content-Type', asset.fileName.endsWith('.wasm') ? 'application/wasm' : /\.m?js$/.test(asset.fileName) ? 'text/javascript' : 'application/octet-stream')
         response.end(readFileSync(asset.path))
       })
     },

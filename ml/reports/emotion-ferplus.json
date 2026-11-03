@@ -1,0 +1,641 @@
+{
+  "model": "Upstream ONNX Model Zoo Emotion FERPlus opset 8",
+  "training": "Upstream CNTK cross-entropy checkpoint; no local fine-tuning in this comparison",
+  "source": "https://github.com/onnx/models/tree/main/validated/vision/body_analysis/emotion_ferplus",
+  "labels_source": "https://github.com/microsoft/FERPlus",
+  "license": "MIT",
+  "model_sha256": "a2a2ba6a335a3b29c21acb6272f962bd3d47f84952aaffa03b60986e04efa61c",
+  "classes": [
+    "neutral",
+    "happy",
+    "surprise",
+    "sad",
+    "angry",
+    "disgust",
+    "fear",
+    "contempt"
+  ],
+  "exclusions": {
+    "unknown_or_nonface": 399,
+    "duplicates": 1240,
+    "upstream_split_overlap": 590
+  },
+  "threshold_applied_to_overall_accuracy": false,
+  "limitations": [
+    "No subject-disjoint guarantee: exact-pixel upstream split overlaps are excluded, near-duplicate identities may remain.",
+    "FER+ labels and original FER2013 labels define different evaluation tasks.",
+    "No evidence of accuracy on target students or internal emotion."
+  ],
+  "splits": {
+    "PublicTest": {
+      "ferplus_labels": {
+        "n": 3260,
+        "accuracy": 0.8266871165644172,
+        "balanced_accuracy": 0.578186626059666,
+        "macro_f1": 0.6101971962432566,
+        "confusion_matrix": [
+          [
+            1165,
+            37,
+            17,
+            57,
+            4,
+            1,
+            2,
+            0
+          ],
+          [
+            40,
+            803,
+            13,
+            2,
+            6,
+            0,
+            0,
+            0
+          ],
+          [
+            23,
+            18,
+            285,
+            3,
+            5,
+            0,
+            4,
+            0
+          ],
+          [
+            143,
+            15,
+            3,
+            198,
+            12,
+            0,
+            3,
+            0
+          ],
+          [
+            41,
+            19,
+            13,
+            7,
+            213,
+            4,
+            3,
+            0
+          ],
+          [
+            6,
+            0,
+            0,
+            4,
+            6,
+            7,
+            0,
+            1
+          ],
+          [
+            8,
+            0,
+            19,
+            4,
+            3,
+            0,
+            24,
+            0
+          ],
+          [
+            17,
+            0,
+            0,
+            2,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "per_class": {
+          "neutral": {
+            "precision": 0.8073458073458073,
+            "recall": 0.9080280592361653,
+            "f1-score": 0.8547322083639032,
+            "support": 1283.0
+          },
+          "happy": {
+            "precision": 0.9002242152466368,
+            "recall": 0.9293981481481481,
+            "f1-score": 0.9145785876993167,
+            "support": 864.0
+          },
+          "surprise": {
+            "precision": 0.8142857142857143,
+            "recall": 0.8431952662721893,
+            "f1-score": 0.8284883720930233,
+            "support": 338.0
+          },
+          "sad": {
+            "precision": 0.7148014440433214,
+            "recall": 0.5294117647058824,
+            "f1-score": 0.6082949308755761,
+            "support": 374.0
+          },
+          "angry": {
+            "precision": 0.8554216867469879,
+            "recall": 0.71,
+            "f1-score": 0.7759562841530054,
+            "support": 300.0
+          },
+          "disgust": {
+            "precision": 0.5833333333333334,
+            "recall": 0.2916666666666667,
+            "f1-score": 0.3888888888888889,
+            "support": 24.0
+          },
+          "fear": {
+            "precision": 0.6666666666666666,
+            "recall": 0.41379310344827586,
+            "f1-score": 0.5106382978723404,
+            "support": 58.0
+          },
+          "contempt": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 19.0
+          },
+          "accuracy": 0.8266871165644172,
+          "macro avg": {
+            "precision": 0.6677598584585585,
+            "recall": 0.578186626059666,
+            "f1-score": 0.6101971962432566,
+            "support": 3260.0
+          },
+          "weighted avg": {
+            "precision": 0.8176306371132828,
+            "recall": 0.8266871165644172,
+            "f1-score": 0.8178177720471889,
+            "support": 3260.0
+          }
+        }
+      },
+      "original_fer2013_labels_on_same_images": {
+        "n": 3260,
+        "accuracy": 0.5668711656441717,
+        "balanced_accuracy": 0.47753518328382966,
+        "macro_f1": 0.39726578722398115,
+        "confusion_matrix": [
+          [
+            515,
+            36,
+            5,
+            17,
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            88,
+            752,
+            18,
+            1,
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            31,
+            26,
+            228,
+            1,
+            5,
+            0,
+            2,
+            0
+          ],
+          [
+            407,
+            26,
+            10,
+            156,
+            23,
+            0,
+            2,
+            0
+          ],
+          [
+            176,
+            31,
+            24,
+            21,
+            166,
+            6,
+            5,
+            1
+          ],
+          [
+            14,
+            3,
+            0,
+            6,
+            14,
+            4,
+            0,
+            0
+          ],
+          [
+            212,
+            18,
+            65,
+            75,
+            37,
+            2,
+            27,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "per_class": {
+          "neutral": {
+            "precision": 0.3568953568953569,
+            "recall": 0.8956521739130435,
+            "f1-score": 0.5104063429137761,
+            "support": 575.0
+          },
+          "happy": {
+            "precision": 0.8430493273542601,
+            "recall": 0.8734030197444832,
+            "f1-score": 0.8579577866514546,
+            "support": 861.0
+          },
+          "surprise": {
+            "precision": 0.6514285714285715,
+            "recall": 0.7781569965870307,
+            "f1-score": 0.7091757387247278,
+            "support": 293.0
+          },
+          "sad": {
+            "precision": 0.5631768953068592,
+            "recall": 0.25,
+            "f1-score": 0.3462819089900111,
+            "support": 624.0
+          },
+          "angry": {
+            "precision": 0.6666666666666666,
+            "recall": 0.386046511627907,
+            "f1-score": 0.4889543446244477,
+            "support": 430.0
+          },
+          "disgust": {
+            "precision": 0.3333333333333333,
+            "recall": 0.0975609756097561,
+            "f1-score": 0.1509433962264151,
+            "support": 41.0
+          },
+          "fear": {
+            "precision": 0.75,
+            "recall": 0.06192660550458716,
+            "f1-score": 0.11440677966101695,
+            "support": 436.0
+          },
+          "contempt": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 0.0
+          },
+          "accuracy": 0.5668711656441717,
+          "macro avg": {
+            "precision": 0.520568768873131,
+            "recall": 0.41784328537335097,
+            "f1-score": 0.39726578722398115,
+            "support": 3260.0
+          },
+          "weighted avg": {
+            "precision": 0.6443879105828935,
+            "recall": 0.5668711656441717,
+            "f1-score": 0.5283356157989064,
+            "support": 3260.0
+          }
+        }
+      }
+    },
+    "PrivateTest": {
+      "ferplus_labels": {
+        "n": 3226,
+        "accuracy": 0.8115313081215128,
+        "balanced_accuracy": 0.5509709563025078,
+        "macro_f1": 0.5743654058381403,
+        "confusion_matrix": [
+          [
+            1107,
+            24,
+            13,
+            50,
+            8,
+            2,
+            2,
+            0
+          ],
+          [
+            43,
+            810,
+            15,
+            4,
+            10,
+            0,
+            1,
+            0
+          ],
+          [
+            30,
+            14,
+            256,
+            4,
+            10,
+            0,
+            4,
+            0
+          ],
+          [
+            154,
+            20,
+            4,
+            210,
+            14,
+            1,
+            7,
+            0
+          ],
+          [
+            44,
+            17,
+            14,
+            6,
+            202,
+            3,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            2,
+            2,
+            8,
+            3,
+            0,
+            0
+          ],
+          [
+            9,
+            0,
+            30,
+            9,
+            2,
+            0,
+            30,
+            0
+          ],
+          [
+            18,
+            0,
+            1,
+            2,
+            3,
+            1,
+            0,
+            0
+          ]
+        ],
+        "per_class": {
+          "neutral": {
+            "precision": 0.7873399715504978,
+            "recall": 0.917910447761194,
+            "f1-score": 0.8476263399693721,
+            "support": 1206.0
+          },
+          "happy": {
+            "precision": 0.9142212189616253,
+            "recall": 0.9173272933182333,
+            "f1-score": 0.9157716223855286,
+            "support": 883.0
+          },
+          "surprise": {
+            "precision": 0.764179104477612,
+            "recall": 0.8050314465408805,
+            "f1-score": 0.7840735068912711,
+            "support": 318.0
+          },
+          "sad": {
+            "precision": 0.7317073170731707,
+            "recall": 0.5121951219512195,
+            "f1-score": 0.6025824964131994,
+            "support": 410.0
+          },
+          "angry": {
+            "precision": 0.7859922178988327,
+            "recall": 0.7038327526132404,
+            "f1-score": 0.7426470588235294,
+            "support": 287.0
+          },
+          "disgust": {
+            "precision": 0.3,
+            "recall": 0.17647058823529413,
+            "f1-score": 0.2222222222222222,
+            "support": 17.0
+          },
+          "fear": {
+            "precision": 0.6666666666666666,
+            "recall": 0.375,
+            "f1-score": 0.48,
+            "support": 80.0
+          },
+          "contempt": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 25.0
+          },
+          "accuracy": 0.8115313081215128,
+          "macro avg": {
+            "precision": 0.6187633120785507,
+            "recall": 0.5509709563025078,
+            "f1-score": 0.5743654058381403,
+            "support": 3226.0
+          },
+          "weighted avg": {
+            "precision": 0.8009334771008043,
+            "recall": 0.8115313081215128,
+            "f1-score": 0.8005503381743494,
+            "support": 3226.0
+          }
+        }
+      },
+      "original_fer2013_labels_on_same_images": {
+        "n": 3226,
+        "accuracy": 0.5815251084934904,
+        "balanced_accuracy": 0.48942295689927795,
+        "macro_f1": 0.41286118837703,
+        "confusion_matrix": [
+          [
+            543,
+            22,
+            4,
+            17,
+            3,
+            0,
+            0,
+            0
+          ],
+          [
+            61,
+            756,
+            19,
+            3,
+            2,
+            0,
+            1,
+            0
+          ],
+          [
+            35,
+            34,
+            204,
+            3,
+            4,
+            0,
+            3,
+            0
+          ],
+          [
+            370,
+            20,
+            8,
+            151,
+            12,
+            0,
+            1,
+            0
+          ],
+          [
+            193,
+            23,
+            19,
+            26,
+            179,
+            1,
+            2,
+            0
+          ],
+          [
+            8,
+            4,
+            0,
+            7,
+            14,
+            5,
+            0,
+            0
+          ],
+          [
+            196,
+            27,
+            81,
+            80,
+            43,
+            4,
+            38,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "per_class": {
+          "neutral": {
+            "precision": 0.3862019914651494,
+            "recall": 0.9219015280135824,
+            "f1-score": 0.544360902255639,
+            "support": 589.0
+          },
+          "happy": {
+            "precision": 0.8532731376975169,
+            "recall": 0.8978622327790974,
+            "f1-score": 0.875,
+            "support": 842.0
+          },
+          "surprise": {
+            "precision": 0.608955223880597,
+            "recall": 0.7208480565371025,
+            "f1-score": 0.6601941747572816,
+            "support": 283.0
+          },
+          "sad": {
+            "precision": 0.5261324041811847,
+            "recall": 0.26868327402135234,
+            "f1-score": 0.35571260306242636,
+            "support": 562.0
+          },
+          "angry": {
+            "precision": 0.6964980544747081,
+            "recall": 0.4040632054176072,
+            "f1-score": 0.5114285714285715,
+            "support": 443.0
+          },
+          "disgust": {
+            "precision": 0.5,
+            "recall": 0.13157894736842105,
+            "f1-score": 0.20833333333333334,
+            "support": 38.0
+          },
+          "fear": {
+            "precision": 0.8444444444444444,
+            "recall": 0.08102345415778252,
+            "f1-score": 0.14785992217898833,
+            "support": 469.0
+          },
+          "contempt": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 0.0
+          },
+          "accuracy": 0.5815251084934904,
+          "macro avg": {
+            "precision": 0.55193815701795,
+            "recall": 0.42824508728686816,
+            "f1-score": 0.41286118837703,
+            "support": 3226.0
+          },
+          "weighted avg": {
+            "precision": 0.6625985049594101,
+            "recall": 0.5815251084934904,
+            "f1-score": 0.5418319383501038,
+            "support": 3226.0
+          }
+        }
+      }
+    }
+  },
+  "validation_selected_rejection_threshold": 0.5,
+  "seconds": 56.51262044906616
+}

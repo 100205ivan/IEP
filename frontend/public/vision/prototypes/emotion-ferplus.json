@@ -1,0 +1,28 @@
+{
+  "architecture": "onnx-ferplus-8",
+  "inputSize": 64,
+  "classes": [
+    "neutral",
+    "happy",
+    "surprise",
+    "sad",
+    "angry",
+    "disgust",
+    "fear",
+    "contempt"
+  ],
+  "modelFile": "emotion-ferplus-8.onnx",
+  "modelSha256": "a2a2ba6a335a3b29c21acb6272f962bd3d47f84952aaffa03b60986e04efa61c",
+  "threshold": 0.5,
+  "researchOnly": true,
+  "expectedSyntheticLogits": [
+    4.2269463539123535,
+    1.339064598083496,
+    -0.12309343367815018,
+    3.39342999458313,
+    -0.08137023448944092,
+    -3.197438955307007,
+    -2.4200217723846436,
+    -2.739102840423584
+  ]
+}

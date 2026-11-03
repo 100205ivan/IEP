@@ -161,6 +161,30 @@ test('assessment API persists records in MariaDB and isolates IEPs', async (t) =
       await request('DELETE', `/assessments/${saved.record.id}/game-result`, { iepId: current.iepId })
       await request('GET', `/assessments/${saved.record.id}/game-result?iepId=${current.iepId}`, undefined, 404)
     })
+    await t.test(`${game.gameType} camera statistics survive database reads and reject inconsistent sample counts`, async () => {
+      const durations = { durationMs: 1000, forwardMs: 500, turnedMs: 200, unknownMs: 300 }
+      const attention = {
+        ...durations, version: 1, model: 'mediapipe-face-landmarker', modelVersion: '0.10.32',
+        startedAt: '2026-11-04T00:00:00.000Z', calibrated: true, yawThresholdDegrees: 25, pitchThresholdDegrees: 20,
+        phases: game.gameType === 'monkey' ? { listening: durations } : { cpt: durations },
+        prototypes: { model: 'eyeep-vision-prototypes-v1', available: true, sampleCount: 2,
+          modelIds: { emotion: 'a'.repeat(64), engagement: 'b'.repeat(64) },
+          expressionCounts: { angry: 0, disgust: 0, fear: 0, happy: 1, sad: 0, surprise: 0, neutral: 1, contempt: 0, uncertain: 0 },
+          engagementCounts: { engaged: 1, disengaged: 0, uncertain: 1 } },
+      }
+      const input = { ...game, result: { ...game.result, attention }, resultId: randomUUID(), assessmentDate: '2026-11-04', completedAt: '2026-11-04T00:00:01.000Z', summary: '合成鏡頭統計保存測試', age: 10 }
+      const saved = await request<{ record: RecordResult }>('POST', `/ieps/${current.iepId}/game-results`, input, 201)
+      const stored = await request<{ result: { attention: unknown } }>('GET', `/assessments/${saved.record.id}/game-result?iepId=${current.iepId}`)
+      assert.deepEqual(stored.result.attention, attention)
+      const [rows] = await pool!.execute<RowDataPacket[]>('SELECT result_payload FROM game_assessment_results WHERE assessment_record_id = ?', [saved.record.id])
+      const raw = typeof rows[0].result_payload === 'string' ? JSON.parse(rows[0].result_payload) : rows[0].result_payload
+      assert.deepEqual(raw.result.attention, attention)
+      for (const iepId of foreignIeps) await request('GET', `/assessments/${saved.record.id}/game-result?iepId=${iepId}`, undefined, 404)
+      await request('POST', `/ieps/${current.iepId}/game-results`, {
+        ...input, resultId: randomUUID(), result: { ...input.result, attention: { ...attention, prototypes: { ...attention.prototypes, sampleCount: 99 } } },
+      }, 400)
+      await request('DELETE', `/assessments/${saved.record.id}/game-result`, { iepId: current.iepId })
+    })
   }
   await t.test('delete removes both the assessment index and its detail rows', async () => {
     await request('DELETE', `/assessments/${document.record.id}/document-analysis`, { iepId: current.iepId })

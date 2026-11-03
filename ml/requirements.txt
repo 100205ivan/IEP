@@ -1,0 +1,5 @@
+tensorflow==2.21.0
+numpy>=1.26,<3
+scikit-learn==1.5.1
+Pillow>=10
+onnxruntime==1.23.2

@@ -1,0 +1,289 @@
+{
+  "task": "emotion",
+  "seed": 42,
+  "provenance": {
+    "dataset": "FER2013",
+    "source": "https://www.kaggle.com/datasets/deadskull7/fer2013",
+    "license_as_listed_by_publisher": "CC0: Public Domain",
+    "split": "official Usage split with exact-pixel deduplication; no subject IDs available",
+    "removed_exact_duplicates": 1853
+  },
+  "classes": [
+    "angry",
+    "disgust",
+    "fear",
+    "happy",
+    "sad",
+    "surprise",
+    "neutral"
+  ],
+  "split_counts": {
+    "train": 26942,
+    "validation": 3520,
+    "test": 3572
+  },
+  "validation": {
+    "accuracy": 0.5181818181818182,
+    "balanced_accuracy": 0.5072367351694416,
+    "macro_f1": 0.4758112575500074,
+    "majority_baseline_accuracy": 0.2525568181818182,
+    "confusion_matrix": [
+      [
+        214,
+        29,
+        42,
+        20,
+        68,
+        26,
+        59
+      ],
+      [
+        8,
+        27,
+        4,
+        2,
+        6,
+        2,
+        5
+      ],
+      [
+        73,
+        15,
+        121,
+        26,
+        106,
+        83,
+        65
+      ],
+      [
+        60,
+        8,
+        28,
+        623,
+        58,
+        39,
+        73
+      ],
+      [
+        120,
+        22,
+        73,
+        45,
+        256,
+        28,
+        105
+      ],
+      [
+        23,
+        4,
+        29,
+        15,
+        13,
+        282,
+        16
+      ],
+      [
+        71,
+        9,
+        54,
+        43,
+        104,
+        17,
+        301
+      ]
+    ],
+    "per_class": {
+      "angry": {
+        "precision": 0.37609841827768015,
+        "recall": 0.4672489082969432,
+        "f1-score": 0.41674780915287246,
+        "support": 458.0
+      },
+      "disgust": {
+        "precision": 0.23684210526315788,
+        "recall": 0.5,
+        "f1-score": 0.32142857142857145,
+        "support": 54.0
+      },
+      "fear": {
+        "precision": 0.34472934472934474,
+        "recall": 0.2474437627811861,
+        "f1-score": 0.28809523809523807,
+        "support": 489.0
+      },
+      "happy": {
+        "precision": 0.8049095607235142,
+        "recall": 0.7007874015748031,
+        "f1-score": 0.7492483463619964,
+        "support": 889.0
+      },
+      "sad": {
+        "precision": 0.41898527004909986,
+        "recall": 0.39445300462249616,
+        "f1-score": 0.40634920634920635,
+        "support": 649.0
+      },
+      "surprise": {
+        "precision": 0.5911949685534591,
+        "recall": 0.7382198952879581,
+        "f1-score": 0.6565774155995343,
+        "support": 382.0
+      },
+      "neutral": {
+        "precision": 0.4823717948717949,
+        "recall": 0.5025041736227045,
+        "f1-score": 0.4922322158626329,
+        "support": 599.0
+      },
+      "accuracy": 0.5181818181818182,
+      "macro avg": {
+        "precision": 0.46501878035257865,
+        "recall": 0.5072367351694416,
+        "f1-score": 0.4758112575500074,
+        "support": 3520.0
+      },
+      "weighted avg": {
+        "precision": 0.527238187979754,
+        "recall": 0.5181818181818182,
+        "f1-score": 0.5183432658451473,
+        "support": 3520.0
+      }
+    }
+  },
+  "test": {
+    "accuracy": 0.5319148936170213,
+    "balanced_accuracy": 0.5377600745584228,
+    "macro_f1": 0.4963114317036509,
+    "majority_baseline_accuracy": 0.2458006718924972,
+    "confusion_matrix": [
+      [
+        226,
+        33,
+        48,
+        30,
+        65,
+        30,
+        55
+      ],
+      [
+        9,
+        35,
+        1,
+        3,
+        3,
+        2,
+        2
+      ],
+      [
+        90,
+        17,
+        146,
+        23,
+        100,
+        94,
+        53
+      ],
+      [
+        59,
+        11,
+        47,
+        614,
+        64,
+        26,
+        57
+      ],
+      [
+        102,
+        19,
+        82,
+        35,
+        233,
+        28,
+        93
+      ],
+      [
+        22,
+        6,
+        25,
+        21,
+        7,
+        311,
+        19
+      ],
+      [
+        69,
+        13,
+        35,
+        37,
+        115,
+        22,
+        335
+      ]
+    ],
+    "per_class": {
+      "angry": {
+        "precision": 0.39168110918544197,
+        "recall": 0.46406570841889117,
+        "f1-score": 0.424812030075188,
+        "support": 487.0
+      },
+      "disgust": {
+        "precision": 0.26119402985074625,
+        "recall": 0.6363636363636364,
+        "f1-score": 0.37037037037037035,
+        "support": 55.0
+      },
+      "fear": {
+        "precision": 0.3802083333333333,
+        "recall": 0.27915869980879543,
+        "f1-score": 0.3219404630650496,
+        "support": 523.0
+      },
+      "happy": {
+        "precision": 0.8047182175622543,
+        "recall": 0.6993166287015945,
+        "f1-score": 0.7483241925655089,
+        "support": 878.0
+      },
+      "sad": {
+        "precision": 0.3969335604770017,
+        "recall": 0.3935810810810811,
+        "f1-score": 0.39525021204410515,
+        "support": 592.0
+      },
+      "surprise": {
+        "precision": 0.6062378167641326,
+        "recall": 0.7566909975669099,
+        "f1-score": 0.6731601731601732,
+        "support": 411.0
+      },
+      "neutral": {
+        "precision": 0.5456026058631922,
+        "recall": 0.5351437699680511,
+        "f1-score": 0.5403225806451613,
+        "support": 626.0
+      },
+      "accuracy": 0.5319148936170213,
+      "macro avg": {
+        "precision": 0.4837965247194432,
+        "recall": 0.5377600745584228,
+        "f1-score": 0.4963114317036509,
+        "support": 3572.0
+      },
+      "weighted avg": {
+        "precision": 0.5420497107869248,
+        "recall": 0.5319148936170213,
+        "f1-score": 0.5323505667568132,
+        "support": 3572.0
+      }
+    },
+    "accepted_fraction": 0.4627659574468085,
+    "accepted_accuracy": 0.7307924984875983
+  },
+  "epochs_run": 12,
+  "seconds": 116.75506711006165,
+  "acceptance_threshold": 0.5,
+  "threshold_rule": "first validation threshold with >=70% accuracy and >=10% coverage; otherwise reject all",
+  "research_only": true,
+  "validated_on_target_students": false
+}

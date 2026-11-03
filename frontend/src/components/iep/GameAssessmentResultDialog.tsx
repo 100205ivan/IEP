@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react'
 import type { CptResults, MonkeyResults, StoredGameAssessmentResult } from '../../types/gameAssessment'
+import { AttentionSummary } from '../games/attention/AttentionSummary'
 
 export function GameAssessmentResultDialog({ result, onClose }: { result: StoredGameAssessmentResult; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => { const dialogNode = ref.current; dialogNode?.showModal(); return () => dialogNode?.close() }, [])
-  return <dialog className="assessment-record-dialog" ref={ref} onCancel={event => { event.preventDefault(); onClose() }}><header><h2>{result.gameType === 'monkey' ? 'Monkey 遊戲評量結果' : 'CPT 遊戲評量結果'}</h2><button className="text-button" type="button" onClick={onClose}>關閉</button></header><div className="assessment-record-dialog-body"><p>評量日期：{result.assessmentDate}</p><p>完成時間：{new Date(result.completedAt).toLocaleString('zh-TW')}</p><p>評量摘要：{result.summary}</p>{result.gameType === 'monkey' ? <MonkeyDetail result={result.result as MonkeyResults} /> : <CptDetail result={result.result as CptResults} />}</div></dialog>
+  return <dialog className="assessment-record-dialog" ref={ref} onCancel={event => { event.preventDefault(); onClose() }}><header><h2>{result.gameType === 'monkey' ? 'Monkey 遊戲評量結果' : 'CPT 遊戲評量結果'}</h2><button className="text-button" type="button" onClick={onClose}>關閉</button></header><div className="assessment-record-dialog-body"><p>評量日期：{result.assessmentDate}</p><p>完成時間：{new Date(result.completedAt).toLocaleString('zh-TW')}</p><p>評量摘要：{result.summary}</p>{result.gameType === 'monkey' ? <MonkeyDetail result={result.result as MonkeyResults} /> : <CptDetail result={result.result as CptResults} />}<AttentionSummary report={result.result.attention} /></div></dialog>
 }
 
 function MonkeyDetail({ result }: { result: MonkeyResults }) {

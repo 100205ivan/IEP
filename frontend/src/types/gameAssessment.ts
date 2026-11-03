@@ -1,3 +1,5 @@
+import type { AttentionReport } from './attention'
+
 export type MonkeyWord = '貓' | '狗' | '魚' | '月亮' | '房子' | '花' | '車子' | '蘋果' | '星星'
 
 export interface MonkeyQuestion {
@@ -15,6 +17,7 @@ export interface MonkeyQuestionResult extends MonkeyQuestion {
 }
 
 export interface MonkeyResults {
+  attention?: AttentionReport
   totalScore: number
   correctPositions: number
   totalPositions: number
@@ -45,6 +48,7 @@ export interface CptMetrics {
 }
 
 export interface CptResults {
+  attention?: AttentionReport
   testStartedAt: number
   testFinishedAt: number
   durationMs: number

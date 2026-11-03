@@ -7,11 +7,16 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test:attention": "node scripts/verify-attention.cjs",
+    "test:camera-startup": "node scripts/verify-camera-startup.cjs",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "0.10.32",
+    "@tensorflow/tfjs": "4.22.0",
     "@tesseract.js-data/chi_tra": "^1.0.0",
     "@tesseract.js-data/eng": "^1.0.0",
+    "onnxruntime-web": "1.23.2",
     "pdfjs-dist": "^6.3.289",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

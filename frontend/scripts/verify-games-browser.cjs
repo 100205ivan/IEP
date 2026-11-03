@@ -37,6 +37,8 @@ const clockScript = `(() => {
 })();`
 
 async function main() {
+  const attentionChecks = process.argv.includes('--attention')
+  const watchdog = setTimeout(() => { console.error('Browser checks timed out'); process.exit(1) }, 120000)
   const cache = path.join(root, 'node_modules/.cache')
   fs.mkdirSync(cache, { recursive: true })
   const profile = fs.mkdtempSync(path.join(cache, 'eyeep-browser-'))
@@ -77,14 +79,63 @@ async function main() {
     const navigate = async route => { await send('Page.navigate',{url:'http://127.0.0.1:4175'+route});await until(()=>evaluate('Boolean(document.querySelector("#root")?.children.length)'),route) }
     await send('Runtime.enable'); await send('Page.enable')
     await send('Page.addScriptToEvaluateOnNewDocument',{source:clockScript})
+    const checkRealModel = async (emotionOnly = false) => {
+      if (!emotionOnly) {
+      const sample = await evaluate(`new Promise((resolve,reject)=>{
+        const w=new (window.__NativeWorker||window.Worker)('/vision/attention-worker.js');let stage='starting';
+        const timeout=setTimeout(()=>{w.terminate();reject(Error('Real model timeout: '+stage))},30000);
+        w.onerror=e=>{clearTimeout(timeout);w.terminate();reject(Error(e.message))};
+        w.onmessage=async({data})=>{
+          if(data.type==='loading'){stage=data.stage;return}
+          if(data.type==='ready'){try{if(!data.prototypesAvailable)throw Error('Trained classifiers unavailable: '+stage);stage='inference';const c=new OffscreenCanvas(320,240);c.getContext('2d').fillRect(0,0,320,240);const b=await createImageBitmap(c);w.postMessage({type:'frame',bitmap:b,timestamp:1000},[b])}catch(error){clearTimeout(timeout);w.terminate();reject(error)}}
+          else{clearTimeout(timeout);w.terminate();data.type==='error'?reject(Error(data.message)):resolve(data)}
+        };
+        w.postMessage({type:'init',assetRoot:location.origin+'/vision/'});
+      })`)
+      assert.equal(sample.type,'sample');assert.equal(sample.faces,0);assert.equal(sample.yaw,null)
+      }
+      const parity = await evaluate(`new Promise((resolve,reject)=>{
+        const source=\`self.onmessage=async({data})=>{try{importScripts(data.root+'tf.min.js',data.root+'prototype-inference.js');await self.EyeEPPrototypes.load(data.root,data.names);postMessage(await self.EyeEPPrototypes.parity(data.root))}catch(e){postMessage({error:String(e)})}}\`;
+        const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
+        const worker=new (window.__NativeWorker||window.Worker)(url);
+        const timeout=setTimeout(()=>{worker.terminate();URL.revokeObjectURL(url);reject(Error('Parity timeout'))},30000);
+        worker.onmessage=({data})=>{clearTimeout(timeout);worker.terminate();URL.revokeObjectURL(url);data.error?reject(Error(data.error)):resolve(data)};
+        worker.postMessage({root:location.origin+'/vision/',names:${JSON.stringify(emotionOnly ? ['emotion'] : ['emotion','engagement'])}});
+      })`)
+      assert.ok(parity.emotion.maxError < 1e-4,JSON.stringify(parity.emotion))
+      if (!emotionOnly) assert.ok(parity.engagement.maxError < 1e-4,JSON.stringify(parity.engagement))
+      console.log('PASS Python/browser classifier parity: '+JSON.stringify({emotion:parity.emotion.maxError,engagement:parity.engagement?.maxError}))
+    }
+    if (process.argv.includes('--model-only') || process.argv.includes('--emotion-only')) {
+      await navigate('/iep/game-assessment')
+      await checkRealModel(process.argv.includes('--emotion-only'))
+      console.log('PASS real local model/WASM worker inference')
+      return
+    }
+    if (attentionChecks) await send('Page.addScriptToEvaluateOnNewDocument',{source:fs.readFileSync(path.join(__dirname,'attention-browser-fixture.js'),'utf8')})
+    const calibrateCamera = async () => {
+      const before = await evaluate('window.__cameraSamples')
+      await click('開啟偵測'); await waitText('校準正面朝向')
+      await click('校準正面朝向')
+      await until(()=>evaluate(`window.__cameraSamples >= ${before + 10}`),'calibration samples')
+      await evaluate('window.__gameClock.elapse(3000)')
+      await waitText('校準完成')
+    }
     await send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false})
-    await navigate('/iep')
-    await click('二、學生能力現況評量紀錄'); await click('EyeEP 遊戲評量')
+    if (attentionChecks) await navigate('/iep/game-assessment')
+    else { await navigate('/iep'); await click('二、學生能力現況評量紀錄'); await click('EyeEP 遊戲評量') }
     await waitText('Monkey Game')
     assert.equal(await evaluate('location.pathname'),'/iep/game-assessment')
     assert.equal(await evaluate('document.querySelectorAll(".game-selection-card").length'),2)
     await evaluate('document.querySelector(\'a[href="/iep/game-assessment/monkey"]\').click()')
-    await waitText('猴子工作記憶遊戲'); await click('開始遊戲'); await click('6歲')
+    await waitText('猴子工作記憶遊戲')
+    if (attentionChecks) {
+      assert.equal(await evaluate('window.__cameraRequests'),0)
+      await evaluate('window.__denyCamera=true'); await click('開啟偵測'); await waitText('攝影機權限未開啟')
+      await evaluate('window.__denyCamera=false'); await click('重試開啟偵測'); await waitText('校準正面朝向'); await click('關閉偵測')
+      await calibrateCamera()
+    }
+    await click('開始遊戲'); await click('6歲')
     for (let i=0;i<4;i++) {
       await waitText(`練習題 ${i+1} / 4`)
       const sequence=await evaluate('[...document.querySelectorAll(".sequence span")].map(s=>s.textContent)')
@@ -122,6 +173,11 @@ async function main() {
       assert.equal(await tick(),240)
     }
     await waitText('完成測驗！')
+    if (attentionChecks) {
+      await waitText('攝影機觀察結果'); assert.ok((await text()).includes('聆聽詞語')); assert.ok((await text()).includes('記憶作答'))
+      assert.ok((await text()).includes('表情與參與樣態 · 研究原型'))
+      assert.equal(await evaluate('window.__cameraStreams.every(s=>s.getTracks().every(t=>t.readyState==="ended"))'),true)
+    }
     assert.ok((await text()).includes('80 / 80 個位置'))
     assert.equal(await evaluate('document.querySelector(".score-box strong").textContent'),'100%')
     assert.deepEqual(await evaluate('[...document.querySelectorAll(".levels b")].map(b=>b.textContent)'),Array(5).fill('100%'))
@@ -130,7 +186,9 @@ async function main() {
     await click('← 返回遊戲選擇頁');await waitText('Monkey Game')
     console.log('PASS Browser Monkey: React Router, 4 practice + 20 test, reverse/order, undo/confirm, full speech/timing, score/norm/result/restart/return')
 
-    await evaluate('document.querySelector(\'a[href="/iep/game-assessment/cpt"]\').click()');await waitText('數字注意力挑戰');await click('開始練習')
+    await evaluate('document.querySelector(\'a[href="/iep/game-assessment/cpt"]\').click()');await waitText('數字注意力挑戰')
+    if (attentionChecks) await calibrateCamera()
+    await click('開始練習')
     const practice=[]
     for(let i=1;i<=10;i++){
       await waitText(`第 ${i} / 10 題`)
@@ -160,6 +218,11 @@ async function main() {
     assert.equal(targets,20);assert.equal(nonTargets,80)
     assert.ok(stimuli.every((n,i)=>n!==stimuli[i-1]))
     await waitText('持續注意力測驗結果')
+    if (attentionChecks) {
+      await waitText('攝影機觀察結果'); assert.ok((await text()).includes('數字作答'))
+      assert.ok((await text()).includes('表情與參與樣態 · 研究原型'))
+      assert.equal(await evaluate('window.__cameraStreams.every(s=>s.getTracks().every(t=>t.readyState==="ended"))'),true)
+    }
     const metrics=await evaluate('Object.fromEntries([...document.querySelectorAll(".metric")].map(d=>[d.querySelector("span").textContent,d.querySelector("strong").textContent]))')
     assert.deepEqual({...metrics,'測驗時間':undefined},{命中率:'50%',漏答:'10 次',漏答率:'50.0%',誤按:'20 次',誤按率:'25.0%',平均反應時間:'123 ms','反應時間 SD':'0 ms','測驗時間':undefined})
     assert.ok((await text()).includes('8 歲・共 100 題'));assert.ok((await text()).includes('Z-score'))
@@ -167,7 +230,7 @@ async function main() {
     await click('開始練習');await waitText('第 1 / 10 題');await click('← 返回遊戲選擇頁');await waitText('Monkey Game')
     assert.equal(await evaluate('window.__gameClock.pending.size'),0)
     await click('← 返回 IEP 評量紀錄');await waitText('（一）評量資料與紀錄')
-    assert.equal(await evaluate('document.querySelectorAll(".assessment-table-row").length'),6)
+    if (!attentionChecks) assert.equal(await evaluate('document.querySelectorAll(".assessment-table-row").length'),6)
     assert.equal(await evaluate('localStorage.length'),0)
     console.log('PASS Browser CPT: 10+100, target counts/adjacency, Button/Space/repeat/first response, 1000–2000ms, RT, all metrics, age/result/restart/return/cleanup; no IEP writes')
 
@@ -187,7 +250,27 @@ async function main() {
     assert.equal(await evaluate('window.__gameClock.pending.size'),0)
     assert.deepEqual(errors,[])
     console.log('PASS Browser: direct routes, mobile width 390, zero-hit CPT, no runtime/console errors')
+    if (attentionChecks) {
+      const captures = path.join(cache,'attention-screenshots');fs.mkdirSync(captures,{recursive:true})
+      for (const game of ['monkey','cpt']) {
+        await navigate(`/iep/game-assessment/${game}`);await waitText('開啟偵測')
+        await calibrateCamera()
+        const mobile = await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true})
+        fs.writeFileSync(path.join(captures,`${game}-mobile.png`),Buffer.from(mobile.data,'base64'))
+        await send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false})
+        const desktop = await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true})
+        fs.writeFileSync(path.join(captures,`${game}-desktop.png`),Buffer.from(desktop.data,'base64'))
+        await click('← 返回遊戲選擇頁');await waitText('Monkey Game')
+        assert.equal(await evaluate('window.__cameraStreams.every(s=>s.getTracks().every(t=>t.readyState==="ended"))'),true)
+        await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true})
+      }
+      // Run the real, local model/WASM in the real classic worker. Blank input
+      // validates assets + inference plumbing, not accuracy on real children.
+      await checkRealModel()
+      console.log('PASS camera: opt-in/denial/retry/calibration, both formal reports, finish/route cleanup, real local model + blank-frame inference; screenshots: '+captures)
+    }
   } finally {
+    clearTimeout(watchdog)
     socket?.close();browser?.kill();server.kill()
     // The dedicated temporary Chrome profile is deliberately retained under node_modules/.cache.
   }

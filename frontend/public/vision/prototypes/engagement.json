@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "architecture": "eyeep-small-cnn-v1",
+  "inputSize": 64,
+  "channels": 3,
+  "classes": [
+    "disengaged",
+    "engaged"
+  ],
+  "weightShapes": [
+    [
+      3,
+      3,
+      3,
+      16
+    ],
+    [
+      16
+    ],
+    [
+      3,
+      3,
+      16,
+      32
+    ],
+    [
+      32
+    ],
+    [
+      3,
+      3,
+      32,
+      64
+    ],
+    [
+      64
+    ],
+    [
+      4096,
+      64
+    ],
+    [
+      64
+    ],
+    [
+      64,
+      2
+    ],
+    [
+      2
+    ]
+  ],
+  "weightsFile": "engagement.weights.bin",
+  "weightsSha256": "6a2e7330269ceb87d7b990aa74faa76f67fe4cddedb158cf6b76228a3763dc1a",
+  "threshold": 0.5,
+  "researchOnly": true
+}

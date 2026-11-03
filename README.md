@@ -15,7 +15,7 @@ EyeEP 是以學生個別化教育計畫（IEP）為核心的教學與評量管�
 - Gemini AI 能力優弱勢與整體需求摘要：先預覽、修改草稿，再選擇欄位套用
 - Monkey 工作記憶遊戲與 CPT 持續注意力遊戲
 - Monkey／CPT 結果持久化至 MariaDB，支援查看、刪除與歷史紀錄
-- Word 使用原生段落及表格，可直接編輯並自動換行、增高及分頁；PDF 保留原表單定稿版面，兩者支援封面設定與證明文件附件
+- Word 與 PDF 都直接填入官方空白 IEP 表單（標楷體、填寫線與表格同原表單），Word 可直接編輯；兩者支援封面設定與證明文件附件
 - Word/PDF 匯出須設定 Python（python-docx）與本機 LibreOffice；詳見 [匯出設定](backend/assets/WORD-EXPORT.md)
 - 點擊頁面上方 EyeEP 標誌返回首頁
 - 七大能力向度相關評量參考面板已實作，但目前尚未完成完整實測

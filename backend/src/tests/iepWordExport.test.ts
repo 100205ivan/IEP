@@ -19,9 +19,9 @@ async function inspectWord(bytes: Uint8Array) {
 from lxml import etree as E
 x=E.fromstring(zipfile.ZipFile(sys.argv[1]).read('word/document.xml'))
 n={'w':'http://schemas.openxmlformats.org/wordprocessingml/2006/main','v':'urn:schemas-microsoft-com:vml','wp':'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing'}
-print(json.dumps(dict(text=''.join(x.xpath('//w:t/text()',namespaces=n)),paragraphs=[''.join(p.xpath('.//w:t/text()',namespaces=n)) for p in x.xpath('//w:p',namespaces=n)],textboxes=len(x.xpath('//w:txbxContent',namespaces=n)),floating=len(x.xpath('//v:rect|//v:shape|//wp:anchor',namespaces=n)),inlinePictures=len(x.xpath('//wp:inline',namespaces=n)),firstGrid=[int(c.get('{'+n['w']+'}w')) for c in x.xpath('(//w:tbl)[1]/w:tblGrid/w:gridCol',namespaces=n)],exactRows=len(x.xpath('//w:trHeight[@w:hRule="exact"]',namespaces=n)),minimumRows=len(x.xpath('//w:trHeight[@w:hRule="atLeast"]',namespaces=n)),emptyBreaks=len(x.xpath('//w:p[w:pPr/w:pageBreakBefore and not(.//w:t)]',namespaces=n)),tables=len(x.xpath('//w:tbl',namespaces=n)))))`
+print(json.dumps(dict(text=''.join(x.xpath('//w:t/text()',namespaces=n)),paragraphs=[''.join(p.xpath('.//w:t/text()',namespaces=n)) for p in x.xpath('//w:p',namespaces=n)],textboxes=len(x.xpath('//w:txbxContent',namespaces=n)),floating=len(x.xpath('//v:rect|//v:shape|//wp:anchor',namespaces=n)),inlinePictures=len(x.xpath('//wp:inline',namespaces=n)),firstGrid=[int(c.get('{'+n['w']+'}w')) for c in x.xpath('(//w:tbl)[1]/w:tblGrid/w:gridCol',namespaces=n)],exactRows=len(x.xpath('//w:trHeight[@w:hRule="exact"]',namespaces=n)),minimumRows=len(x.xpath('//w:trHeight[@w:hRule="atLeast"]',namespaces=n)),emptyBreaks=len(x.xpath('//w:p[w:pPr/w:pageBreakBefore and not(.//w:t)]',namespaces=n)),tables=len(x.xpath('//w:tbl',namespaces=n)),eastAsiaFonts=sorted(set(x.xpath('//w:rFonts/@w:eastAsia',namespaces=n))))))`
     const { stdout } = await promisify(execFile)(python, ['-X', 'utf8', '-c', code, file], { timeout: 30_000, windowsHide: true, maxBuffer: 4 * 1024 * 1024 })
-    return JSON.parse(stdout) as { text: string; paragraphs: string[]; textboxes: number; floating: number; inlinePictures: number; firstGrid: number[]; exactRows: number; minimumRows: number; emptyBreaks: number; tables: number }
+    return JSON.parse(stdout) as { text: string; paragraphs: string[]; textboxes: number; floating: number; inlinePictures: number; firstGrid: number[]; exactRows: number; minimumRows: number; emptyBreaks: number; tables: number; eastAsiaFonts: string[] }
   } finally { await rm(directory, { recursive: true, force: true }) }
 }
 
@@ -54,29 +54,42 @@ test('Word mappings retain full long text and do not change the saved input', as
   assert.equal(model.pages.find(p => p.source === 15)?.checks.length, 0, 'blank status must never tick every option')
 })
 
-test('Word export creates a real editable OOXML document', async () => {
+const blankForm = () => readFile(new URL('../../assets/iep-form-template.docx', import.meta.url)).then(inspectWord)
+
+test('Word export fills the official blank IEP form', async () => {
   const input = iepPdfExportSchema.parse({ academicYear: 115, content: { studentFamilyForm: { values: { studentName: '測試學生', guardianName: '測試家長', guardianPhone: '0912345678', guardianAge: '38' }, checks: {}, medications: [] } } })
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aZ1sAAAAASUVORK5CYII=', 'base64')
   const output = await generateIepWord(input, [], ['certificate-front', 'certificate-back'].map(kind => ({ kind: kind as 'certificate-front' | 'certificate-back', mimeType: 'image/png', fileName: 'test.png', bytes: png, updatedAt: '2026-11-03' })))
   assert.equal(output.bytes.subarray(0, 2).toString(), 'PK')
   assert.equal(output.fileName, '測試學生_115學年度_IEP.docx')
   assert.equal(output.formCount, 20)
-  assert.ok(output.bytes.length > 30_000)
-  const document = await inspectWord(output.bytes)
-  assert.equal(document.textboxes, 0, 'editing a field must not require selecting a text box')
-  assert.equal(document.floating, 0, 'the editable download has no floating page layers')
+  assert.equal(output.unplaced, 0, 'every value has its place in the form')
+  const [document, form] = await Promise.all([inspectWord(output.bytes), blankForm()])
+  assert.equal(document.textboxes, form.textboxes, 'values are ordinary text, never added text boxes')
   assert.equal(document.inlinePictures, 2, 'certificate images are ordinary inline pictures')
   assert.equal(document.exactRows, 0, 'Word owns row height when a value grows')
-  assert.ok(document.minimumRows > 0, 'source writing space is retained as a minimum row height')
-  assert.equal(document.emptyBreaks, 0, 'chapter breaks belong to real text, without blank break paragraphs')
-  assert.ok(document.tables >= 20, 'the source forms remain native Word tables')
+  assert.ok(document.tables >= 20, 'the form remains native Word tables')
   assert.ok(document.paragraphs.some(paragraph => paragraph.includes('0912345678') && paragraph.includes('電話')), 'telephone label and value are ordinary text in the same paragraph')
-  const geometry = JSON.parse(await readFile(new URL('../../assets/iep-word-template.json', import.meta.url), 'utf8')) as { blocks: { kind: string; xs: number[] }[] }[]
-  const source = geometry[0].blocks.find(block => block.kind === 'table')!
-  assert.deepEqual(document.firstGrid, source.xs.slice(1).map((right, i) => Math.round((right - source.xs[i]) * 20)), 'the cover retains the original PDF column widths')
+  assert.ok(document.text.includes('團隊合作方式訂定個別化教育計畫'), 'the official form wording is retained')
+  assert.ok(!document.text.includes('國-J-A2'), 'sample answers of the source form are never exported')
+  assert.deepEqual(document.eastAsiaFonts, ['標楷體'], 'Chinese text prints in 標楷體 as in the reference PDF')
 })
 
-test('editable Word retains full long cell content while reference export stays available for PDF', async () => {
+test('every field and check of a filled IEP reaches its place in the form', async () => {
+  const input = iepPdfExportSchema.parse(JSON.parse(await readFile(new URL('./fixtures/iep-word-sample.json', import.meta.url), 'utf8')))
+  const model = await buildIepWordModel(input)
+  const output = await generateIepWord(input)
+  assert.equal(output.unplaced, 0, 'nothing falls back to supplement paragraphs')
+  const [document, form] = await Promise.all([inspectWord(output.bytes), blankForm()])
+  const ticks = (text: string) => (text.match(/■/g) ?? []).length
+  const boxes = model.pages.reduce((sum, page) => sum + new Set(page.checks.map(check => `${check.x},${check.y}`)).size, 0)
+  assert.equal(ticks(document.text) - ticks(form.text), boxes, 'each ticked option becomes ■')
+  assert.ok(document.text.includes('擬訂日期：115年8月31日'), 'dates fill the printed 年月日 writing lines')
+  assert.ok(document.text.includes('第二學期目標'), 'a second semester repeats the goal rows with its own heading')
+  assert.ok(!/[☑☐]/.test(document.text), 'ticks use the form font rather than symbols it lacks')
+})
+
+test('Word retains full long cell content while reference export stays available for PDF', async () => {
   const long = '編輯測試起點' + '長文字須在原表格內完整保留。'.repeat(140) + '編輯測試終點'
   const input = iepPdfExportSchema.parse({ academicYear: 115, content: { studentFamilyForm: { values: { studentName: '測試學生', registeredAddress: long }, checks: {}, medications: [] } } })
   const before = JSON.stringify(input)

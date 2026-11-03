@@ -2,17 +2,25 @@
 
 Word 與 PDF 共用學生、IEP、評量及附件的欄位映射，提供不同的編輯與列印用途。匯出不修改已儲存資料，也不將學生文件送到線上轉檔服務。
 
-## Word 正常編輯版
+## Word 填寫版
 
-按「下載 Word」取得 `.docx`，可直接點進正文或表格儲存格打字、刪字及貼上內容。正文、學生資料與電話等欄位都是一般 Word 文字，不使用浮動文字框、整頁畫布或背景截圖。欄位標籤和資料位於相同段落，圖片為行內圖片。
+按「下載 Word」取得 `.docx`：直接把資料填進官方空白表單 `iep-form-template.docx`，標楷體、底線填空、紅藍字標示、表格與章節編號都沿用原表單，可直接在 Word 修改。
 
-`iep_word_editable.py` 依 `iep-word-template.json` 的原表單欄寬、合併關係、格線及選項建立 A4 原生 Word 表格；文字採正常行距，填寫內容至少 11pt，封面法規註記使用 10pt。原列高作為最小書寫空間，長內容會在原儲存格完整換行、增高並跨頁，不以省略號取代。章節以實際標題分頁，同章內容連續流動，不插入空白分頁段落；可重複的表頭會於跨頁時保留。封面沿用原表單欄寬，姓名超過一行時正常換行，簽名欄維持空白。
+`iep_word_form.py` 將原 PDF 版面文字（`iep-word-template.json`）與空白表單逐字對齊，再依欄位在 PDF 上的位置找到 Word 中對應的標籤或儲存格：
 
-Word 適合後續修改，頁數會隨文字與字型調整，可能和 PDF 不同。原表單沒有對應欄位的擴充資訊，以正常段落接在該章之後。未啟用的分支仍不匯出。
+- 標籤後的值接在冒號之後；底線 Tab 保留為填寫線（表單靠它換行），值本身加底線。
+- 「＿年＿月＿日」拆成年、月、日分別填寫；「國中＿年級」等單位保留，值寫在填寫線上。
+- 空白儲存格以同列標籤或上方欄名定位；勾選的 □ 改為 ■（沿用表單字型，不使用字型缺字的 ☑）。
+- 每個領域的學年目標、每學期的學期目標與每次會議各自複製一份表單頁，說明清單編號重新起算。
+- 原表單沒有位置的擴充資訊，以「補充資料」段落接在該頁之後；`generateIepWord` 回傳 `unplaced` 筆數。
+
+Word 適合後續修改，頁數會隨文字與字型調整，可能和 PDF 不同。未啟用的分支仍不匯出。
 
 ## PDF 定稿版
 
-按「產生 PDF 預覽」或下載 PDF，仍使用 `iep_word_fixed.py` 和 `iep-word-template.docx` 保留原 PDF 的固定欄位、框線及列印座標，放不下的完整文字列於該章續表。此內部列印範本使用固定座標文字層，並在本機經 LibreOffice 轉成 PDF；不作為「下載 Word」的編輯檔。這次 Word 編輯修正不改動 PDF 的定稿排版。
+按「產生 PDF 預覽」或下載 PDF，先產生與「下載 Word」相同的填寫版，再在本機經 LibreOffice 轉成 PDF，因此 PDF 與 Word 內容、樣式一致。範本建置時已將原表單的中文字型統一為標楷體（英文與數字維持 Times New Roman），與原參考 PDF 相同；長內容在原儲存格內換行增高，不截斷、不另產生續頁。
+
+`iep_word_fixed.py` 與 `iep-word-template.docx` 的固定座標版面仍可用 `--layout reference` 產生，但匯出 API 已不使用。
 
 ## 本機依賴
 
@@ -26,9 +34,10 @@ Word 適合後續修改，頁數會隨文字與字型調整，可能和 PDF 不�
 ## 維護與驗證
 
 - `python scripts/iep_word.py --build-template`：從已清理範例答案的 `iep-reference.pdf` 重建兩個範本資產；會覆蓋手動範本修改。
-- `python scripts/iep_word.py --model data.json --output editable.docx`：產生正常編輯版 Word，預設為 `--layout editable`。
+- `python scripts/iep_word.py --build-form-template <官方空白表單.docx>`：清除原表單第 13～14 頁目標表的範例答案、將中文字型統一為標楷體，重建 `iep-form-template.docx`。表單改版時須同步檢查 `iep_word_form.py` 的 `PARTS`（各 PDF 頁對應的 Word 段落與表格列）。
+- `python scripts/iep_word.py --model data.json --output form.docx`：產生 Word 填寫版，預設為 `--layout form`；無法放入表單的欄位會列於 stderr。
 - `--layout reference`：僅供 PDF 定稿流程使用，保留固定列印版面。
-- `npx tsx --test src/tests/iepWordExport.test.ts`：檢查長內容完整保留、未啟用資料排除、空白選項不誤勾、電話標籤與資料在同一段落，以及編輯檔沒有文字框、浮動物件、固定列高或空白分頁段落。
+- `npx tsx --test src/tests/iepWordExport.test.ts`：以 `src/tests/fixtures/iep-word-sample.json`（虛構測試資料）檢查每個欄位與勾選都放入表單、日期填入年月日、第二學期目標頁、不含範例答案，以及長內容完整保留、沒有固定列高。
 - `npm run build`：後端型別檢查。
 - 變更範本後用實際資料與長文字產生 Word 及 PDF，逐頁檢查文字邊界、表格分頁、勾選及簽名欄。
 

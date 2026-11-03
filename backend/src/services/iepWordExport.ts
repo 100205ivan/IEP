@@ -48,14 +48,16 @@ async function soffice() {
   ], '尚未設定 Word 轉 PDF 引擎。請設定 IEP_SOFFICE_PATH；仍可匯出 Word。')
 }
 
-export async function generateIepWord(input: IepPdfRequest, records: PdfAssessment[] = [], attachments: IepAttachment[] = [], layout: 'editable' | 'reference' = 'editable') {
+export async function generateIepWord(input: IepPdfRequest, records: PdfAssessment[] = [], attachments: IepAttachment[] = [], layout: 'form' | 'reference' = 'form') {
   const model = await buildIepWordModel(input, records, attachments)
   const directory = await mkdtemp(join(tmpdir(), 'eyeep-word-'))
   try {
     const modelPath = join(directory, 'data.json'), output = join(directory, 'IEP.docx')
     await writeFile(modelPath, JSON.stringify(model), { mode: 0o600 })
-    await run(await python(), [join(backend, 'scripts/iep_word.py'), '--model', modelPath, '--output', output, '--layout', layout], { timeout: 120_000, windowsHide: true, maxBuffer: 1024 * 1024 })
-    return { bytes: await readFile(output), fileName: `${model.studentName}_${input.academicYear}學年度_IEP.docx`, formCount: model.pages.length }
+    const { stdout } = await run(await python(), [join(backend, 'scripts/iep_word.py'), '--model', modelPath, '--output', output, '--layout', layout], { timeout: 120_000, windowsHide: true, maxBuffer: 1024 * 1024 })
+    // Values the blank form has no place for are kept as supplement paragraphs.
+    const unplaced = Number(JSON.parse(stdout.trim().split('\n').pop() || '{}').unplaced ?? 0)
+    return { bytes: await readFile(output), fileName: `${model.studentName}_${input.academicYear}學年度_IEP.docx`, formCount: model.pages.length, unplaced }
   } catch (error) {
     if (error instanceof PdfExportError) throw error
     throw new PdfExportError('Word 產生失敗，請檢查 Python、requirements-word.txt 套件與範本字型設定。')
@@ -64,16 +66,17 @@ export async function generateIepWord(input: IepPdfRequest, records: PdfAssessme
 
 export async function generateIepWordPdf(input: IepPdfRequest, records: PdfAssessment[] = [], attachments: IepAttachment[] = []) {
   const executable = await soffice()
-  // PDF retains the reference's fixed printing geometry. The downloadable Word
-  // uses normal flowing paragraphs/cells so it remains comfortable to edit.
-  const word = await generateIepWord(input, records, attachments, 'reference')
+  // The PDF prints the same filled official form as the Word download, so both
+  // keep the original form's styling without fixed-position text overlays.
+  const word = await generateIepWord(input, records, attachments)
   const directory = await mkdtemp(join(tmpdir(), 'eyeep-word-pdf-'))
   try {
     await writeFile(join(directory, 'IEP.docx'), word.bytes, { mode: 0o600 })
     await convertOffice(executable, [`-env:UserInstallation=${pathToFileURL(resolve(directory, 'profile')).href}`, '--headless', '--norestore', '--convert-to', 'pdf:writer_pdf_Export', '--outdir', directory, join(directory, 'IEP.docx')])
     const bytes = await readFile(join(directory, 'IEP.pdf'))
     const pdf = await PDFDocument.load(bytes), pageCount = pdf.getPageCount()
-    return { bytes, pageCount, supplementPageCount: Math.max(0, pageCount - word.formCount), fileName: word.fileName.replace(/\.docx$/, '.pdf') }
+    // Long values flow within the form, so there are no continuation pages.
+    return { bytes, pageCount, supplementPageCount: 0, fileName: word.fileName.replace(/\.docx$/, '.pdf') }
   } catch (error) {
     if (error instanceof PdfExportError) throw error
     throw new PdfExportError('Word 轉 PDF 失敗，請檢查本機 LibreOffice 排版引擎；可先匯出 Word。')

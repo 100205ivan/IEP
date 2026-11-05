@@ -1,4 +1,4 @@
-import type { AttentionDurations, AttentionPhase, AttentionReport, HeadObservation, PrototypeReport } from '../../../types/attention'
+import type { AttentionDurations, AttentionPhase, AttentionReport, EngagementLabel, ExpressionLabel, HeadObservation, PrototypeReport } from '../../../types/attention'
 
 export const MODEL_VERSION = '0.10.32'
 export const YAW_THRESHOLD = 25
@@ -11,11 +11,29 @@ export function emptyPrototypeReport(): PrototypeReport {
     engagementCounts: { disengaged: 0, engaged: 0, uncertain: 0 } }
 }
 
+// Short names for summaries, where the 表情／參與樣態 heading already says what is counted.
+export const expressionShortLabels: Record<ExpressionLabel, string> = { angry: '生氣', disgust: '厭惡', fear: '害怕', happy: '開心', sad: '難過', surprise: '驚訝', neutral: '中性', contempt: '輕蔑', uncertain: '不確定' }
+export const engagementShortLabels: Record<EngagementLabel, string> = { engaged: '參與', disengaged: '未參與', uncertain: '不確定' }
+
+/** Non-zero classes only, most frequent first: e.g. 中性 134 次 or 未參與 72 次、參與 62 次. */
+export function countsText<T extends string>(counts: Record<T, number>, labels: Record<T, string>) {
+  return (Object.entries(counts) as [T, number][]).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]).map(([label, count]) => `${labels[label]} ${count} 次`).join('、')
+}
+
+/** One sentence for the assessment summary: what a teacher needs, with zero
+ * counts left out and the caveat stated once. Details stay in the result. */
 export function attentionSummaryText(report?: AttentionReport) {
   if (!report) return ''
   const seconds = (ms: number) => `${(ms / 1000).toFixed(1)} 秒`
+  const parts = [report.calibrated ? `面向螢幕 ${seconds(report.forwardMs)}、轉頭 ${seconds(report.turnedMs)}、無法判讀 ${seconds(report.unknownMs)}` : '未完成正面校準，無法判讀頭部朝向']
   const prototype = report.prototypes
-  return ` 攝影機頭部朝向觀察：面向螢幕 ${seconds(report.forwardMs)}、轉頭 ${seconds(report.turnedMs)}、資料不足 ${seconds(report.unknownMs)}；不作為專注度分數。` + (prototype ? ` 表情／參與樣態研究原型：${prototype.sampleCount} 次取樣，表情不確定 ${prototype.expressionCounts.uncertain} 次，參與樣態不確定 ${prototype.engagementCounts.uncertain} 次。` : '')
+  if (prototype?.available && prototype.sampleCount > 0) {
+    const expression = countsText(prototype.expressionCounts, expressionShortLabels)
+    const engagement = countsText(prototype.engagementCounts, engagementShortLabels)
+    if (expression) parts.push(`表情：${expression}`)
+    if (engagement) parts.push(`參與樣態：${engagement}`)
+  }
+  return ` 攝影機觀察（僅供參考，非專注度或情緒判斷）：${parts.join('；')}。`
 }
 
 export function headAngles(matrix: number[]): { yaw: number; pitch: number } | null {

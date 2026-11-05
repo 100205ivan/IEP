@@ -21,10 +21,15 @@
 .attention-summary table { width: 100%; border-collapse: collapse; font-size: .85rem; font-variant-numeric: tabular-nums; }
 .attention-summary caption { text-align: left; margin-bottom: 8px; }
 .attention-summary th, .attention-summary td { text-align: left; padding: 10px 6px; border-bottom: 1px solid #d6deeb; white-space: nowrap; }
-.prototype-summary { margin-top: 24px; padding-top: 20px; border-top: 1px solid #bbc6dc; }
-.prototype-summary summary { padding: 10px 0; cursor: pointer; font-weight: 600; }
-.prototype-summary summary:focus-visible { outline: 3px solid #315dbc; outline-offset: 2px; }
-.prototype-counts { display: grid; gap: 8px; font-size: .9rem; font-variant-numeric: tabular-nums; }
+.attention-summary .attention-subheading { margin: 20px 0 8px; font-size: .95rem; }
+.attention-lines { display: grid; gap: 6px; margin: 0; font-size: .9rem; font-variant-numeric: tabular-nums; }
+.attention-lines > div { display: grid; grid-template-columns: 5em 1fr; gap: 12px; }
+.attention-lines dt { color: #445573; }
+.attention-lines dd { margin: 0; font-weight: 600; }
+.attention-details { margin-top: 8px; }
+.attention-details summary { padding: 10px 0; cursor: pointer; font-weight: 600; }
+.attention-details summary:focus-visible { outline: 3px solid #315dbc; outline-offset: 2px; }
+.prototype-counts { display: grid; gap: 8px; margin: 12px 0; font-size: .9rem; font-variant-numeric: tabular-nums; }
 .prototype-counts > div { display: flex; justify-content: space-between; gap: 16px; }
 .prototype-counts dd { margin: 0; }
 .monkey-game .app:has(> .attention-panel:not([hidden])) { align-content: center; }

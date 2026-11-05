@@ -74,6 +74,9 @@ async function main() {
     const text = () => evaluate('document.body.innerText')
     const waitText = value => until(async () => (await text()).includes(value), value)
     const click = async label => { await evaluate(`(()=>{const b=[...document.querySelectorAll('button,a')].find(b=>b.textContent.trim()===${JSON.stringify(label)});if(!b||b.disabled)throw Error('Missing/enabled control: '+${JSON.stringify(label)});b.click()})()`); await pause(10) }
+    // The camera summary shows key figures; phases and all counts sit in 詳細資料.
+    const openAttentionDetails = () => evaluate('document.querySelector(".attention-details").open = true')
+    const zeroClassesHidden = () => evaluate('[...document.querySelectorAll(".attention-lines dd")].every(d => !/(^|、)\\S+ 0 次/.test(d.textContent))')
     const clickWord = word => evaluate(`(()=>{const b=[...document.querySelectorAll('.word')].find(b=>[...b.childNodes].some(n=>n.nodeType===3&&n.textContent===${JSON.stringify(word)}));if(!b||b.disabled)throw Error('word disabled');b.click()})()`)
     const tick = async () => { const delay=await evaluate('window.__gameClock.next()');await pause(10);return delay }
     const navigate = async route => { await send('Page.navigate',{url:'http://127.0.0.1:4175'+route});await until(()=>evaluate('Boolean(document.querySelector("#root")?.children.length)'),route) }
@@ -174,8 +177,8 @@ async function main() {
     }
     await waitText('完成測驗！')
     if (attentionChecks) {
-      await waitText('攝影機觀察結果'); assert.ok((await text()).includes('聆聽詞語')); assert.ok((await text()).includes('記憶作答'))
-      assert.ok((await text()).includes('表情與參與樣態 · 研究原型'))
+      await waitText('攝影機觀察'); assert.ok((await text()).includes('表情與參與樣態 · 研究原型')); assert.ok(await zeroClassesHidden())
+      await openAttentionDetails(); assert.ok((await text()).includes('聆聽詞語')); assert.ok((await text()).includes('記憶作答'))
       assert.equal(await evaluate('window.__cameraStreams.every(s=>s.getTracks().every(t=>t.readyState==="ended"))'),true)
     }
     assert.ok((await text()).includes('80 / 80 個位置'))
@@ -219,8 +222,8 @@ async function main() {
     assert.ok(stimuli.every((n,i)=>n!==stimuli[i-1]))
     await waitText('持續注意力測驗結果')
     if (attentionChecks) {
-      await waitText('攝影機觀察結果'); assert.ok((await text()).includes('數字作答'))
-      assert.ok((await text()).includes('表情與參與樣態 · 研究原型'))
+      await waitText('攝影機觀察'); assert.ok((await text()).includes('表情與參與樣態 · 研究原型')); assert.ok(await zeroClassesHidden())
+      await openAttentionDetails(); assert.ok((await text()).includes('數字作答'))
       assert.equal(await evaluate('window.__cameraStreams.every(s=>s.getTracks().every(t=>t.readyState==="ended"))'),true)
     }
     const metrics=await evaluate('Object.fromEntries([...document.querySelectorAll(".metric")].map(d=>[d.querySelector("span").textContent,d.querySelector("strong").textContent]))')

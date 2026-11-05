@@ -11,7 +11,7 @@ export function AttentionPanel({ tracker, playing, recording = false, finished =
         : !playing && <button type="button" className="attention-control" onClick={() => void start()}>{status === 'error' ? '重試開啟偵測' : '開啟偵測'}</button>}
     </div>
     <video className="attention-preview" ref={videoRef} autoPlay muted playsInline hidden={!on || playing || status === 'calibrated'} aria-label="攝影機預覽" />
-    <p role="status">{playing ? (!on ? '偵測未開啟，可繼續完成遊戲。' : status !== 'calibrated' ? '尚未完成校準；正式測驗期間將記為資料不足。' : recording ? '正在背景記錄頭部朝向。' : '校準已完成；正式測驗開始後才會記錄。') : message || '開啟並校準後，可記錄面向螢幕與轉頭的時間。'}</p>
+    <p role="status">{playing ? (!on ? '偵測未開啟，可繼續完成遊戲。' : status !== 'calibrated' ? '尚未完成校準；正式測驗期間將記為無法判讀。' : recording ? '正在背景記錄頭部朝向。' : '校準已完成；正式測驗開始後才會記錄。') : message || '開啟並校準後，可記錄面向螢幕與轉頭的時間。'}</p>
     {!playing && on && status !== 'loading' && <button type="button" className="attention-control" onClick={calibrate} disabled={status === 'calibrating'}>{status === 'calibrating' ? '校準中…' : '校準正面朝向'}</button>}
     {!playing && status === 'calibrated' && <p>預覽：{observation === 'forward' ? '面向螢幕' : observation === 'turned' ? '頭部轉向' : '暫時無法追蹤'}</p>}
     {!playing && on && <p className="attention-help">表情／參與樣態研究原型：{prototypeStatus === 'ready' ? '已載入；可先查看即時分類，正式統計會在遊戲完成後顯示。' : prototypeStatus === 'loading' ? '載入中…' : '暫時無法載入，仍可使用頭部追蹤。'}</p>}

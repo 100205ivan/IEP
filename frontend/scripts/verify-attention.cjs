@@ -48,3 +48,10 @@ const latency = delayed.finish(2000, true)
 assert.equal(latency.forwardMs, 300)
 assert.equal(latency.unknownMs, 700)
 console.log('PASS slow inference uses capture freshness, not result arrival time')
+const { attentionSummaryText } = sandbox.exports
+const zero = { angry: 0, disgust: 0, fear: 0, happy: 0, sad: 0, surprise: 0, neutral: 0, contempt: 0, uncertain: 0 }
+const camera = { ...result, forwardMs: 151100, turnedMs: 1600, unknownMs: 200, prototypes: { model: 'eyeep-vision-prototypes-v1', available: true, sampleCount: 134, expressionCounts: { ...zero, neutral: 134 }, engagementCounts: { disengaged: 72, engaged: 62, uncertain: 0 } } }
+assert.equal(attentionSummaryText(camera), ' 攝影機觀察（僅供參考，非專注度或情緒判斷）：面向螢幕 151.1 秒、轉頭 1.6 秒、無法判讀 0.2 秒；表情：中性 134 次；參與樣態：未參與 72 次、參與 62 次。')
+assert.equal(attentionSummaryText({ ...second, prototypes: { ...camera.prototypes, available: false } }), ' 攝影機觀察（僅供參考，非專注度或情緒判斷）：未完成正面校準，無法判讀頭部朝向。')
+assert.equal(attentionSummaryText(undefined), '')
+console.log('PASS summary keeps head time and non-zero classes with a single caveat')

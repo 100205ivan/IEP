@@ -37,7 +37,9 @@ iepPdfExportRouter.post(['/iep-export/pdf', '/iep-export/word'], async (request,
       return response.send(word.bytes)
     }
     const pdf = await generateIepWordPdf(input, assessments, attachments)
-    response.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="IEP.pdf"; filename*=UTF-8''${encodeURIComponent(pdf.fileName)}`, 'Cache-Control': 'no-store', 'X-IEP-PDF-Pages': String(pdf.pageCount), 'X-IEP-PDF-Supplements': String(pdf.supplementPageCount) })
+    // The layout check rides along with the PDF; at most 20 issues fit a header.
+    const layout = pdf.layout ? { checked: true, issues: pdf.layout.issues.slice(0, 20), more: Math.max(0, pdf.layout.issues.length - 20) } : { checked: false, issues: [], more: 0 }
+    response.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="IEP.pdf"; filename*=UTF-8''${encodeURIComponent(pdf.fileName)}`, 'Cache-Control': 'no-store', 'X-IEP-PDF-Pages': String(pdf.pageCount), 'X-IEP-PDF-Supplements': String(pdf.supplementPageCount), 'X-IEP-Layout': encodeURIComponent(JSON.stringify(layout)) })
     return response.send(Buffer.from(pdf.bytes))
   } catch (error) {
     if (error instanceof PdfExportError) return response.status(422).json({ ok: false, error: { code: 'PDF_EXPORT_FAILED', message: error.message } })

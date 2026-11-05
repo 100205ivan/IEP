@@ -40,6 +40,19 @@ PARTS = {
 }
 GOALS_TABLE, FINAL_ELEMENT = 83, 129
 TAB_STOP = 720  # w:defaultTabStop of the form, in twips
+# The semester goals table prints ten two-row goal blocks. Blank blocks after
+# the last filled one are dropped, leaving this many for handwritten goals.
+MIN_GOAL_BLOCKS = 3
+# Columns such as 方式／標準／支持 are about 32pt wide on the form. Values there
+# print at 10pt; one needing more than NARROW_LINES lines becomes a ※ mark
+# with its full text in the page's supplement.
+NARROW_WIDTH, NARROW_SIZE, NARROW_LINES = 45, 20, 3
+# The weekly timetables (page 11) keep the reference PDF's fixed cell sizes:
+# rows are exact heights and a course and its teacher print as two 9pt lines.
+TIMETABLE_SOURCE, TIMETABLE_SIZE, TIMETABLE_LINE = 11, 18, 200
+# The cover is one page by design; extra air in its team table pushes the
+# statute note off the page, so its cells keep the form's spacing.
+COMPACT_SOURCES = {1}
 # A further domain continues chapter 參 without repeating its numbered
 # heading, which would advance the 壹、貳、參 chapter numbering.
 REPEAT_SKIP = {13: {81}}
@@ -227,6 +240,18 @@ def _text_width(text, properties):
     return sum(em if unicodedata.east_asian_width(ch) in 'WF' else em // 2 for ch in text)
 
 
+_written = []  # runs written by the filler; their table paragraphs get reading room
+
+
+def _roomy(paragraph):
+    """Line spacing and a little air around a value written into a cell."""
+    spacing = paragraph.get_or_add_pPr().get_or_add_spacing()
+    for name in ('beforeLines', 'afterLines', 'beforeAutospacing', 'afterAutospacing'):
+        spacing.attrib.pop(qn('w:' + name), None)
+    for name, value in (('before', 60), ('after', 60), ('line', 300), ('lineRule', 'auto')):
+        spacing.set(qn('w:' + name), str(value))
+
+
 def _value_runs(text, properties):
     runs = []
     for index, line in enumerate(str(text).replace('\r\n', '\n').split('\n')):
@@ -235,6 +260,7 @@ def _value_runs(text, properties):
             run.append(OxmlElement('w:br'))
         t = OxmlElement('w:t'); t.set(XML_SPACE, 'preserve'); t.text = line
         run.append(t); runs.append(run)
+    _written.extend(runs)
     return runs
 
 
@@ -277,14 +303,17 @@ def _note_paragraph(pieces, indent, before=0, keep_next=False):
     return paragraph
 
 
+NOTE_STEP = 480  # two 12pt characters per outline level
+
+
 def _notes(section, notes, indent):
-    """「…補充資料」 heading, then 標題：內容 lines; further lines of one note
-    are indented two characters beneath their title."""
+    """「…補充資料」 heading; each 標題：內容 two characters in from it, and
+    further lines of one note two more characters in."""
     paragraphs = [_note_paragraph([(f'{section}補充資料', True)], indent, before=120, keep_next=True)]
     for note in notes:
         lines = [line for line in str(note['text']).replace('\r\n', '\n').split('\n') if line.strip()] or ['']
-        paragraphs.append(_note_paragraph([(note['title'] + '：', True), (lines[0], False)], indent))
-        paragraphs += [_note_paragraph([(line, False)], indent + 480) for line in lines[1:]]
+        paragraphs.append(_note_paragraph([(note['title'] + '：', True), (lines[0], False)], indent + NOTE_STEP))
+        paragraphs += [_note_paragraph([(line, False)], indent + 2 * NOTE_STEP) for line in lines[1:]]
     return paragraphs
 
 
@@ -327,6 +356,11 @@ class FormFiller:
                 if t.text and not _blank(n):
                     self.docx_chars.append((n, ei, ti))
         self.pages = _pdf_chars(geometry)
+        timetable = next(page for page in geometry if page['source'] == TIMETABLE_SOURCE)
+        self.timetable_rows = [[round((b - a) * 20) for a, b in zip(block['ys'], block['ys'][1:])]
+                               for block in sorted(timetable['blocks'], key=lambda b: b['top']) if block['kind'] == 'table']
+        self.fixed_tables = []
+        self.compact = []
         pdf_sequence, owners = [], []
         for source in sorted(self.pages):
             for ch in self.pages[source]['chars']:
@@ -386,6 +420,43 @@ class FormFiller:
                         new.add_lvlOverride(ilvl=int(level.get(qn('w:ilvl')))).add_startOverride(int(start.get(qn('w:val'))) if start is not None else 1)
                     replaced[old] = str(new.numId)
                 num_id.set(qn('w:val'), replaced[old])
+
+    @staticmethod
+    def _fix_timetable(table, heights):
+        """Exact row heights from the reference PDF; course entries in 9pt."""
+        for row, height in zip(table.findall(W_TR), heights):
+            properties = row.find(qn('w:trPr'))
+            if properties is None:
+                properties = OxmlElement('w:trPr'); row.insert(0, properties)
+            row_height = properties.find(qn('w:trHeight'))
+            if row_height is None:
+                row_height = OxmlElement('w:trHeight'); properties.append(row_height)
+            row_height.set(qn('w:val'), str(height)); row_height.set(qn('w:hRule'), 'exact')
+        written = set(_written)
+        for paragraph in table.iter(W_P):
+            runs = [run for run in paragraph.iter(W_R) if run in written]
+            if not runs:
+                continue
+            spacing = paragraph.get_or_add_pPr().get_or_add_spacing()
+            for name, value in (('before', 0), ('after', 0), ('line', TIMETABLE_LINE), ('lineRule', 'exact')):
+                spacing.set(qn('w:' + name), str(value))
+            for run in runs:
+                run.find(W_RPR).get_or_add_sz().set(qn('w:val'), str(TIMETABLE_SIZE))
+
+    @staticmethod
+    def _trim_goal_blocks(table):
+        """Keep the filled semester goals and at least MIN_GOAL_BLOCKS blocks."""
+        rows = table.findall(W_TR)
+        row_text = lambda row: ''.join(t.text or '' for t in row.iter(W_T)).strip()
+        heading = next((i for i, row in enumerate(rows) if '方式' in row_text(row) and '標準' in row_text(row)), None)
+        if heading is None:
+            return
+        # Each goal is a vMerge restart row followed by its continuation row.
+        blocks = [rows[i:i + 2] for i in range(heading + 1, len(rows) - 1, 2)]
+        filled = max((i + 1 for i, block in enumerate(blocks) if any(row_text(row) for row in block)), default=0)
+        for block in blocks[max(filled, MIN_GOAL_BLOCKS):]:
+            for row in block:
+                table.remove(row)
 
     def _run(self, texts, ch):
         if ch is None or ch['index'] is None or ch['index'] not in self.mapping:
@@ -583,7 +654,31 @@ class FormFiller:
                 start.addprevious(new)
         return True
 
-    def place_field(self, page, texts, field):
+    def place_field(self, page, texts, field, references=None):
+        """Narrow form columns get a smaller value, or a ※ mark for long text."""
+        width = field['box'][2]
+        if width >= NARROW_WIDTH:
+            return self._place_field(page, texts, field)
+        properties = OxmlElement('w:rPr')
+        sz = OxmlElement('w:sz'); sz.set(qn('w:val'), str(NARROW_SIZE)); properties.append(sz)
+        usable = width * 20 - 216  # Word's default cell padding, both sides
+        if references is not None and _text_width(field['value'], properties) > usable * NARROW_LINES:
+            mark = f'※{len(references) + 1}'
+            references.append(dict(title=f"{mark}（{field['label'].split('：')[-1].strip()}）", text=field['value']))
+            field = dict(field, value=mark)
+        start = len(_written)
+        placed = self._place_field(page, texts, field)
+        if not placed and field['value'].startswith('※') and references:
+            references.pop()  # the caller keeps the full value as a supplement
+        for run in _written[start:]:
+            rpr = run.find(W_RPR)
+            rpr.get_or_add_sz().set(qn('w:val'), str(NARROW_SIZE))
+            complex_size = rpr.find(qn('w:szCs'))
+            if complex_size is not None:
+                complex_size.set(qn('w:val'), str(NARROW_SIZE))
+        return placed
+
+    def _place_field(self, page, texts, field):
         x, y, width, height = field['box']
         box = [x, y, x + width, y + height]
         value = field['value']
@@ -754,6 +849,7 @@ class FormFiller:
         return True
 
     def fill(self, model, output):
+        _written.clear()
         final = self.originals[FINAL_ELEMENT]
         for element in self.originals[:FINAL_ELEMENT]:
             self.body.remove(element)
@@ -770,14 +866,22 @@ class FormFiller:
             for check in page_model['checks']:
                 if not self.place_check(page, texts, check):
                     self.unplaced.append((source, 'check', f"{check['x']:.0f},{check['y']:.0f}"))
-            notes = []
+            notes, references = [], []
             for field in sorted(page_model['fields'], key=lambda f: (f['box'][1], f['box'][0])):
-                if not self.place_field(page, texts, field):
+                if not self.place_field(page, texts, field, references):
                     self.unplaced.append((source, 'field', field['label']))
                     notes.append(dict(title=field['label'], text=field['value']))
+            notes += references
             for image in page_model['images']:
                 if not self.place_image(page, texts, image):
                     self.unplaced.append((source, 'image', ''))
+            if source == 14:
+                self._trim_goal_blocks(texts[GOALS_TABLE][0])
+            if source == TIMETABLE_SOURCE:
+                tables = [node for node in nodes if node.tag == qn('w:tbl')]
+                self.fixed_tables += list(zip(tables, self.timetable_rows))
+            if source in COMPACT_SOURCES:
+                self.compact += nodes
             placed_values = {field['value'] for field in page_model['fields']}
             for note in page_model['notes']:
                 if note['text'] not in placed_values and note not in notes:
@@ -795,11 +899,23 @@ class FormFiller:
                         holder.addprevious(paragraph)
                     else:
                         nodes[-1].addnext(paragraph); nodes[-1] = paragraph
+        fixed = {table for table, _ in self.fixed_tables}
+        keep = fixed | set(self.compact)
+        for paragraph in {next((a for a in run.iterancestors() if a.tag == W_P), None) for run in _written}:
+            if paragraph is not None and any(a.tag == W_TC for a in paragraph.iterancestors()) and not any(a in keep for a in paragraph.iterancestors()):
+                _roomy(paragraph)
+        for table, heights in self.fixed_tables:
+            self._fix_timetable(table, heights)
         for node in self.body:
             for row_height in node.iter(qn('w:trHeight')):
-                # Printed row heights are writing space, never a clipping limit.
-                if row_height.get(qn('w:hRule')) == 'exact':
+                # Printed row heights are writing space, never a clipping limit,
+                # except in the timetables, which keep fixed cells.
+                if row_height.get(qn('w:hRule')) == 'exact' and not any(a in fixed for a in row_height.iterancestors()):
                     row_height.set(qn('w:hRule'), 'atLeast')
+            for spacing in node.iter(qn('w:spacing')):
+                # Exact line heights were set for 細明體; 標楷體 needs them as minimums.
+                if spacing.getparent().tag == qn('w:pPr') and spacing.get(qn('w:lineRule')) == 'exact' and any(a.tag == W_TC for a in spacing.iterancestors()) and not any(a in fixed for a in spacing.iterancestors()):
+                    spacing.set(qn('w:lineRule'), 'atLeast')
             _merge(node)
         properties = self.document.core_properties
         properties.title = f'{model["studentName"]} {model["academicYear"]}學年度 個別化教育計畫'

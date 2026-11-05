@@ -5,10 +5,32 @@ import type { IepPdfOptions } from '../../models/iepPdfOptions'
 import { IepCertificateFields, IepTeamFields } from './IepExportExtras'
 
 interface Props { content: IepContent; options: IepPdfOptions; onOptionsChange: (value: IepPdfOptions) => void; academicYear: number; studentName: string; studentId?: string; iepId?: string; disabled: boolean }
+interface LayoutIssue { level: 'error' | 'warning'; page: number | null; kind: string; detail: string }
+interface LayoutCheck { checked: boolean; issues: LayoutIssue[]; more: number }
+
+function readLayout(header: string | null): LayoutCheck {
+  try { return header ? JSON.parse(decodeURIComponent(header)) as LayoutCheck : { checked: false, issues: [], more: 0 } } catch { return { checked: false, issues: [], more: 0 } }
+}
+
+/** The automatic layout check that runs with every PDF export. */
+function LayoutCheckNotice({ layout, onPage }: { layout: LayoutCheck; onPage: (page: number) => void }) {
+  if (!layout.checked) return <p className="layout-check layout-check--skipped" role="status">版面檢查未能執行，請自行逐頁確認。</p>
+  if (!layout.issues.length) return <p className="layout-check layout-check--ok" role="status">✓ 版面檢查：未發現擠壓、溢出或空白頁。</p>
+  const errors = layout.issues.filter(issue => issue.level === 'error').length
+  return <div className={`layout-check ${errors ? 'layout-check--error' : 'layout-check--warning'}`} role="status">
+    <strong>版面檢查：{errors ? `${errors} 個需要修正` : ''}{errors && layout.issues.length > errors ? '、' : ''}{layout.issues.length > errors ? `${layout.issues.length - errors} 個提醒` : ''}</strong>
+    <ul>{layout.issues.map((issue, index) => <li key={index}>
+      <span className="layout-check-kind">{issue.level === 'error' ? '需修正' : '提醒'}・{issue.kind}</span>
+      {issue.page ? <button type="button" className="text-button" onClick={() => onPage(issue.page!)}>第 {issue.page} 頁</button> : null}
+      <span>{issue.detail}</span>
+    </li>)}</ul>
+    {layout.more > 0 && <p>另有 {layout.more} 個項目未列出。</p>}
+  </div>
+}
 
 export function IepPdfExport({ content, options, onOptionsChange, academicYear, studentName, studentId, iepId, disabled }: Props) {
   const [busy, setBusy] = useState(false), [wordBusy, setWordBusy] = useState(false), [error, setError] = useState('')
-  const [preview, setPreview] = useState<{ document: PDFDocumentProxy; close: () => void; url: string; pages: number; supplements: number; filename: string } | null>(null)
+  const [preview, setPreview] = useState<{ document: PDFDocumentProxy; close: () => void; url: string; pages: number; supplements: number; filename: string; layout: LayoutCheck } | null>(null)
   const [page, setPage] = useState(1), [rendering, setRendering] = useState(false)
   const canvas = useRef<HTMLCanvasElement>(null), current = useRef(preview), controller = useRef<AbortController | null>(null)
   const [renderError, setRenderError] = useState('')
@@ -50,7 +72,7 @@ export function IepPdfExport({ content, options, onOptionsChange, academicYear, 
       let document: PDFDocumentProxy
       try { document = await task.promise; abort.signal.throwIfAborted() } catch (reason) { cancel(); throw reason } finally { abort.signal.removeEventListener('abort', cancel) }
       const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }))
-      const result = { document, close: cancel, url, pages: document.numPages, supplements: Number(response.headers.get('X-IEP-PDF-Supplements') || 0), filename: `${studentName}_${academicYear}學年度_IEP.pdf` }
+      const result = { document, close: cancel, url, pages: document.numPages, supplements: Number(response.headers.get('X-IEP-PDF-Supplements') || 0), filename: `${studentName}_${academicYear}學年度_IEP.pdf`, layout: readLayout(response.headers.get('X-IEP-Layout')) }
       const previous = current.current; current.current = result
       setPreview(result); setPage(1)
       if (previous) { URL.revokeObjectURL(previous.url); previous.close() }
@@ -90,6 +112,6 @@ export function IepPdfExport({ content, options, onOptionsChange, academicYear, 
     {wordNotice && <p role="status">{wordNotice}</p>}
     {!preview && !busy && !wordBusy && <p className="pdf-export-empty">產生後可在這裡逐頁檢查，再下載 PDF。</p>}
     {(busy || wordBusy) && <p role="status">{wordBusy ? '正在建立可編輯的 Word 文件…' : '正在將 Word 表格排版為 PDF，請稍候…'}</p>}
-    {preview && <section className="pdf-preview" aria-label="PDF 預覽"><div className="pdf-preview-toolbar"><span role="status">共 {preview.pages} 頁{preview.supplements ? `，含 ${preview.supplements} 頁續頁` : ''}</span><div><button className="button button--secondary" type="button" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>上一頁</button><label>第 <select aria-label="預覽頁碼" value={page} onChange={e => setPage(Number(e.target.value))}>{Array.from({ length: preview.pages }, (_, i) => <option key={i + 1}>{i + 1}</option>)}</select> 頁</label><button className="button button--secondary" type="button" disabled={page >= preview.pages} onClick={() => setPage(p => p + 1)}>下一頁</button></div></div>{renderError && <p role="alert">{renderError}</p>}<div className="pdf-preview-paper" aria-busy={rendering}><canvas ref={canvas} role="img" aria-label={`IEP PDF 第 ${page} 頁`} /></div><p className="pdf-preview-note">預覽為最近一次產生的內容；修改表單或設定後，請重新產生。</p></section>}
+    {preview && <section className="pdf-preview" aria-label="PDF 預覽"><LayoutCheckNotice layout={preview.layout} onPage={setPage} /><div className="pdf-preview-toolbar"><span role="status">共 {preview.pages} 頁{preview.supplements ? `，含 ${preview.supplements} 頁續頁` : ''}</span><div><button className="button button--secondary" type="button" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>上一頁</button><label>第 <select aria-label="預覽頁碼" value={page} onChange={e => setPage(Number(e.target.value))}>{Array.from({ length: preview.pages }, (_, i) => <option key={i + 1}>{i + 1}</option>)}</select> 頁</label><button className="button button--secondary" type="button" disabled={page >= preview.pages} onClick={() => setPage(p => p + 1)}>下一頁</button></div></div>{renderError && <p role="alert">{renderError}</p>}<div className="pdf-preview-paper" aria-busy={rendering}><canvas ref={canvas} role="img" aria-label={`IEP PDF 第 ${page} 頁`} /></div><p className="pdf-preview-note">預覽為最近一次產生的內容；修改表單或設定後，請重新產生。</p></section>}
   </section>
 }

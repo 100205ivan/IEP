@@ -19,9 +19,9 @@ async function inspectWord(bytes: Uint8Array) {
 from lxml import etree as E
 x=E.fromstring(zipfile.ZipFile(sys.argv[1]).read('word/document.xml'))
 n={'w':'http://schemas.openxmlformats.org/wordprocessingml/2006/main','v':'urn:schemas-microsoft-com:vml','wp':'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing'}
-print(json.dumps(dict(text=''.join(x.xpath('//w:t/text()',namespaces=n)),paragraphs=[''.join(p.xpath('.//w:t/text()',namespaces=n)) for p in x.xpath('//w:p',namespaces=n)],textboxes=len(x.xpath('//w:txbxContent',namespaces=n)),floating=len(x.xpath('//v:rect|//v:shape|//wp:anchor',namespaces=n)),inlinePictures=len(x.xpath('//wp:inline',namespaces=n)),firstGrid=[int(c.get('{'+n['w']+'}w')) for c in x.xpath('(//w:tbl)[1]/w:tblGrid/w:gridCol',namespaces=n)],exactRows=len(x.xpath('//w:trHeight[@w:hRule="exact"]',namespaces=n)),minimumRows=len(x.xpath('//w:trHeight[@w:hRule="atLeast"]',namespaces=n)),emptyBreaks=len(x.xpath('//w:p[w:pPr/w:pageBreakBefore and not(.//w:t)]',namespaces=n)),tables=len(x.xpath('//w:tbl',namespaces=n)),eastAsiaFonts=sorted(set(x.xpath('//w:rFonts/@w:eastAsia',namespaces=n))))))`
+print(json.dumps(dict(text=''.join(x.xpath('//w:t/text()',namespaces=n)),paragraphs=[''.join(p.xpath('.//w:t/text()',namespaces=n)) for p in x.xpath('//w:p',namespaces=n)],textboxes=len(x.xpath('//w:txbxContent',namespaces=n)),floating=len(x.xpath('//v:rect|//v:shape|//wp:anchor',namespaces=n)),inlinePictures=len(x.xpath('//wp:inline',namespaces=n)),firstGrid=[int(c.get('{'+n['w']+'}w')) for c in x.xpath('(//w:tbl)[1]/w:tblGrid/w:gridCol',namespaces=n)],exactRows=len(x.xpath('//w:trHeight[@w:hRule="exact"]',namespaces=n)),minimumRows=len(x.xpath('//w:trHeight[@w:hRule="atLeast"]',namespaces=n)),emptyBreaks=len(x.xpath('//w:p[w:pPr/w:pageBreakBefore and not(.//w:t)]',namespaces=n)),tables=len(x.xpath('//w:tbl',namespaces=n)),eastAsiaFonts=sorted(set(x.xpath('//w:rFonts/@w:eastAsia',namespaces=n))),goalRows=[len(r)-1-[i for i,w in enumerate(r) if '方式' in w and '標準' in w][0] for r in [[''.join(tr.xpath('.//w:t/text()',namespaces=n)) for tr in t.xpath('w:tr',namespaces=n)] for t in x.xpath('//w:tbl',namespaces=n)] if any('起訖日期' in w for w in r)])))`
     const { stdout } = await promisify(execFile)(python, ['-X', 'utf8', '-c', code, file], { timeout: 30_000, windowsHide: true, maxBuffer: 4 * 1024 * 1024 })
-    return JSON.parse(stdout) as { text: string; paragraphs: string[]; textboxes: number; floating: number; inlinePictures: number; firstGrid: number[]; exactRows: number; minimumRows: number; emptyBreaks: number; tables: number; eastAsiaFonts: string[] }
+    return JSON.parse(stdout) as { text: string; paragraphs: string[]; textboxes: number; floating: number; inlinePictures: number; firstGrid: number[]; exactRows: number; minimumRows: number; emptyBreaks: number; tables: number; eastAsiaFonts: string[]; goalRows: number[] }
   } finally { await rm(directory, { recursive: true, force: true }) }
 }
 
@@ -55,6 +55,7 @@ test('Word mappings retain full long text and do not change the saved input', as
 })
 
 const blankForm = () => readFile(new URL('../../assets/iep-form-template.docx', import.meta.url)).then(inspectWord)
+const TIMETABLE_ROWS = 24 // two semester timetables of 12 fixed rows each
 
 test('Word export fills the official blank IEP form', async () => {
   const input = iepPdfExportSchema.parse({ academicYear: 115, content: { studentFamilyForm: { values: { studentName: '測試學生', guardianName: '測試家長', guardianPhone: '0912345678', guardianAge: '38' }, checks: {}, medications: [] } } })
@@ -67,7 +68,7 @@ test('Word export fills the official blank IEP form', async () => {
   const [document, form] = await Promise.all([inspectWord(output.bytes), blankForm()])
   assert.equal(document.textboxes, form.textboxes, 'values are ordinary text, never added text boxes')
   assert.equal(document.inlinePictures, 2, 'certificate images are ordinary inline pictures')
-  assert.equal(document.exactRows, 0, 'Word owns row height when a value grows')
+  assert.equal(document.exactRows, TIMETABLE_ROWS, 'only the weekly timetables keep fixed rows; Word grows every other row')
   assert.ok(document.tables >= 20, 'the form remains native Word tables')
   assert.ok(document.paragraphs.some(paragraph => paragraph.includes('0912345678') && paragraph.includes('電話')), 'telephone label and value are ordinary text in the same paragraph')
   assert.ok(document.text.includes('團隊合作方式訂定個別化教育計畫'), 'the official form wording is retained')
@@ -86,6 +87,9 @@ test('every field and check of a filled IEP reaches its place in the form', asyn
   assert.equal(ticks(document.text) - ticks(form.text), boxes, 'each ticked option becomes ■')
   assert.ok(document.text.includes('擬訂日期：115年8月31日'), 'dates fill the printed 年月日 writing lines')
   assert.ok(document.text.includes('第二學期目標'), 'a second semester repeats the goal rows with its own heading')
+  // Two rows per goal; the fixture's semesters hold 2, 1 and 1 goals.
+  assert.deepEqual(document.goalRows, [6, 6, 6], 'blank goal blocks beyond the filled goals and three for handwriting are dropped')
+  assert.ok(document.text.includes('※1（達成標準）：【測試資料】依情境觀察紀錄判斷。'), 'long text in a narrow column moves to a ※ note')
   assert.ok(!/[☑☐]/.test(document.text), 'ticks use the form font rather than symbols it lacks')
 })
 
@@ -95,7 +99,7 @@ test('Word retains full long cell content while reference export stays available
   const before = JSON.stringify(input)
   const document = await inspectWord((await generateIepWord(input)).bytes)
   assert.ok(document.text.includes(long), 'the original cell contains the complete value without ellipsis')
-  assert.equal(document.exactRows, 0)
+  assert.equal(document.exactRows, TIMETABLE_ROWS)
   assert.equal(JSON.stringify(input), before)
   const reference = await inspectWord((await generateIepWord(input, [], [], 'reference')).bytes)
   assert.ok(reference.textboxes > 0, 'the fixed source layout remains isolated to the PDF path')

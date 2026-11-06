@@ -17,6 +17,19 @@ export interface Medication {
 
 const relationships = ['父親', '母親', '祖父', '祖母', '外祖父', '外祖母', '兄', '姊', '其他親屬', '其他']
 const educationLevels = ['國小', '國中', '高中／高職', '專科', '大學', '研究所以上', '其他']
+/** The eight ICF categories on Taiwan's disability certificate (身心障礙者權益保障法第 5 條). */
+const icfCategories: [string, string][] = [
+  ['b1', '第一類：神經系統構造及精神、心智功能'],
+  ['b2', '第二類：眼、耳及相關構造與感官功能及疼痛'],
+  ['b3', '第三類：涉及聲音與言語構造及其功能'],
+  ['b4', '第四類：循環、造血、免疫與呼吸系統構造及其功能'],
+  ['b5', '第五類：消化、新陳代謝與內分泌系統相關構造及其功能'],
+  ['b6', '第六類：泌尿與生殖系統相關構造及其功能'],
+  ['b7', '第七類：神經、肌肉、骨骼之移動相關構造及其功能'],
+  ['b8', '第八類：皮膚與相關構造及其功能'],
+]
+/** Values saved by the earlier three-option list, still shown for old records. */
+const legacyIcfCategories: Record<string, string> = { physical: '肢體功能相關', sensory: '感官功能相關', mental: '心智／心理功能相關' }
 const disabilityCategories = ['智能障礙', '視覺障礙', '聽覺障礙', '語言障礙', '肢體障礙', '身體病弱', '情緒行為障礙', '學習障礙', '自閉症', '其他']
 const severityLevels = ['輕度', '中度', '重度', '極重度']
 const serviceOptions = [
@@ -146,7 +159,7 @@ export function StudentFamilyForm({ value, onChange }: { value: StudentFamilyFor
             </div></article>
             <article className="assessment-group"><h4>有效身心障礙證明</h4><div className="iep-table-grid">
               <div className="field-group"><label>鑑定日期<input type="date" {...control('proofAssessmentDate')} /></label></div><div className="field-group"><label>重鑑日期<input type="date" {...control('proofReassessmentDate')} /></label></div>
-              <div className="field-group"><label htmlFor="icf-category">ICF 類別</label><select id="icf-category" {...control('icfCategory')}><option value="">請選擇（待依正式資料確認）</option><option value="physical">肢體功能相關（待確認）</option><option value="sensory">感官功能相關（待確認）</option><option value="mental">心智／心理功能相關（待確認）</option><option value="other">其他</option></select>{values.icfCategory === 'other' && <input type="text" placeholder="請輸入其他 ICF 類別" {...control('icfOther')} />}</div>
+              <div className="field-group"><label htmlFor="icf-category">ICF 類別</label><select id="icf-category" {...control('icfCategory')}><option value="">請選擇</option>{icfCategories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}{legacyIcfCategories[values.icfCategory] && <option value={values.icfCategory}>{legacyIcfCategories[values.icfCategory]}</option>}<option value="other">其他（請說明）</option></select>{values.icfCategory === 'other' && <input type="text" placeholder="請輸入其他 ICF 類別" {...control('icfOther')} />}</div>
               <div className="field-group"><label>證明所載 ICF 類別（完整文字）<input type="text" value={values.icfCategoryDetail ?? ''} onChange={e => updateValue('icfCategoryDetail', e.target.value)} /></label><small>依證明填寫；匯出時優先使用此欄。</small></div><div className="field-group"><label htmlFor="icf-level">程度</label><select id="icf-level" {...control('icfLevel')}><option value="">請選擇</option>{severityLevels.map((option) => <option key={option}>{option}</option>)}</select></div><div className="field-group field-group--full"><label>ICD 診斷<input type="text" {...control('icdDiagnosis')} /></label></div>
             </div></article>
           </div>

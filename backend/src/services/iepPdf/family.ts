@@ -3,6 +3,9 @@ import { IepPdfDocument } from './layout.js'
 import { date, lines, object, records, text } from './format.js'
 import { drawTeam } from './team.js'
 
+/** Official ICF categories (身心障礙者權益保障法第 5 條), plus the earlier three values for old records. */
+const icfCategoryLabels: Record<string, string> = { b1: '第一類：神經系統構造及精神、心智功能', b2: '第二類：眼、耳及相關構造與感官功能及疼痛', b3: '第三類：涉及聲音與言語構造及其功能', b4: '第四類：循環、造血、免疫與呼吸系統構造及其功能', b5: '第五類：消化、新陳代謝與內分泌系統相關構造及其功能', b6: '第六類：泌尿與生殖系統相關構造及其功能', b7: '第七類：神經、肌肉、骨骼之移動相關構造及其功能', b8: '第八類：皮膚與相關構造及其功能', physical: '肢體功能相關', sensory: '感官功能相關', mental: '心智／心理功能相關' }
+
 export async function drawFamily(pdf: IepPdfDocument, input: IepPdfRequest) {
   const family = object(input.content.studentFamilyForm), values = object(family.values), checks = object(family.checks)
   const v = (key: string) => text(values[key])
@@ -39,7 +42,7 @@ export async function drawFamily(pdf: IepPdfDocument, input: IepPdfRequest) {
   put([200, 212, 83, 15], 'committeeReassessmentDate', '重鑑日期', true)
   p.field([405, 212, 139, 15], [v('committeeDisabilityCategory'), v('committeeSeverity')].filter(Boolean).join('／'), '鑑定障礙類別及程度')
   put([200, 231, 83, 15], 'proofAssessmentDate', '證明鑑定日期', true)
-  p.field([405, 231, 139, 15], [v('icfCategoryDetail') || (v('icfCategory') === 'other' ? v('icfOther') : ({ physical: '肢體功能相關', sensory: '感官功能相關', mental: '心智／心理功能相關' } as Record<string, string>)[v('icfCategory')] || v('icfCategory')), v('icfLevel')].filter(Boolean).join('／'), 'ICF 類別及程度')
+  p.field([405, 231, 139, 15], [v('icfCategoryDetail') || (v('icfCategory') === 'other' ? v('icfOther') : icfCategoryLabels[v('icfCategory')] || v('icfCategory')), v('icfLevel')].filter(Boolean).join('／'), 'ICF 類別及程度')
   put([200, 249, 83, 15], 'proofReassessmentDate', '證明重鑑日期', true)
   put([360, 249, 184, 15], 'icdDiagnosis', 'ICD 診斷')
   const binary = (key: string, area: readonly [number, number, number, number]) => { if (v(key)) p.choices([v(key) === 'has' ? '有' : '無'], area) }

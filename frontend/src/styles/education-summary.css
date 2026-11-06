@@ -3,17 +3,17 @@
 .education-summary-assistant p { margin: 8px 0 14px; color: var(--color-muted); }
 .summary-assistant-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin: 14px 0; }
 .summary-assistant-source { margin-top: 16px; }
-.summary-assistant-source summary { cursor: pointer; color: var(--color-primary-dark); font-weight: 600; }
+.summary-assistant-source summary { cursor: pointer; color: var(--color-primary-dark); font-weight: var(--weight-medium); }
 .summary-assistant-source pre { max-height: 320px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: 16px; border: 1px solid var(--color-border); background: var(--color-page); font: inherit; line-height: 1.7; }
 .education-summary-assistant .summary-assistant-error { color: #a52626; }
 .education-summary-assistant .summary-assistant-notice { color: var(--color-success); }
 .summary-assistant-draft { margin-top: 24px; padding: 22px; border: 1px solid var(--color-border); border-left: 3px solid var(--color-primary); background: #f8fcfb; }
 .summary-assistant-field { margin-top: 20px; }
 .summary-assistant-field label { display: block; }
-.summary-assistant-field .summary-assistant-choice { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: 600; }
+.summary-assistant-field .summary-assistant-choice { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: var(--weight-medium); }
 .summary-assistant-choice input { width: auto; min-height: auto; accent-color: var(--color-primary); }
 .summary-assistant-field textarea { width: 100%; padding: 12px; resize: vertical; border: 1px solid #bacdcb; border-radius: 5px; background: #fff; color: var(--color-text); font: inherit; line-height: 1.7; }
-.summary-assistant-label { display: block; margin-bottom: 6px; color: var(--color-muted); font-size: .9rem; }
+.summary-assistant-label { display: block; margin-bottom: 6px; color: var(--color-muted); font-size: var(--text-base); }
 .summary-assistant-warnings { margin: 16px 0; padding: 14px 18px; border-left: 3px solid #b38636; background: #fff9ee; color: #71511b; }
 .summary-assistant-warnings ul { margin: 8px 0 0; padding-left: 22px; }
 @media (max-width: 680px) { .summary-assistant-draft { padding: 16px; } .summary-assistant-actions { align-items: stretch; flex-direction: column; } }

@@ -15,7 +15,7 @@
   margin:0;
   min-height:100vh;
   color:var(--ink);
-  font-family:"Microsoft JhengHei","Noto Sans TC",Arial,sans-serif;
+  font-family:var(--font-sans);
   background:linear-gradient(145deg,#e8f7ff 0%,#f8edff 56%,#fff5db 100%);
   overflow-x:hidden;
 }
@@ -63,7 +63,7 @@
   font-size:clamp(1.7rem,4vw,2.3rem);
 }
 .cpt-game .lead {
-  font-size:1.2rem;
+  font-size:var(--text-lg);
   line-height:1.7;
 }
 .cpt-game .lead strong {
@@ -76,7 +76,7 @@
   color:#6257b9;
   background:#eeeaff;
   border-radius:999px;
-  font-weight:bold;
+  font-weight:var(--weight-bold);
 }
 .cpt-game .rules {
   margin:26px auto;
@@ -98,7 +98,7 @@
   cursor:pointer;
   color:white;
   font:inherit;
-  font-weight:bold;
+  font-weight:var(--weight-bold);
   transition:transform .15s,filter .15s;
   touch-action:manipulation;
 }
@@ -115,7 +115,7 @@
   padding:15px 34px;
   border-radius:999px;
   background:linear-gradient(135deg,#7567cf,#917add);
-  font-size:1.1rem;
+  font-size:var(--text-lg);
   box-shadow:0 8px 0 #5a4eaa;
 }
 .cpt-game .primary-btn:active {
@@ -140,7 +140,7 @@
   border-radius:16px;
   cursor:pointer;
   font:inherit;
-  font-weight:bold;
+  font-weight:var(--weight-bold);
 }
 .cpt-game .age-btn.selected {
   background:#7567cf;
@@ -155,7 +155,7 @@
   display:flex;
   justify-content:space-between;
   padding:12px 6px;
-  font-weight:bold;
+  font-weight:var(--weight-bold);
   color:#57627c;
 }
 .cpt-game .stimulus-card {
@@ -171,7 +171,7 @@
 }
 .cpt-game .stimulus {
   font-size:clamp(8rem,30vw,15rem);
-  font-weight:800;
+  font-weight:var(--weight-bold);
   line-height:1;
   color:#3d4d6a;
 }
@@ -180,7 +180,7 @@
   padding:19px 20px 15px;
   border-radius:24px;
   background:linear-gradient(135deg,#ff859f,#fa7193);
-  font-size:1.7rem;
+  font-size:var(--text-2xl);
   box-shadow:0 8px 0 #d65e79;
 }
 .cpt-game .response-btn:active {
@@ -190,8 +190,8 @@
 .cpt-game .response-btn small {
   display:block;
   margin-top:3px;
-  font-size:.72rem;
-  font-weight:normal;
+  font-size:var(--text-sm);
+  font-weight:var(--weight-regular);
   opacity:.9;
 }
 .cpt-game .keyboard-note {
@@ -201,8 +201,8 @@
 .cpt-game .practice-feedback {
   height:27px;
   margin:0 0 7px;
-  font-size:1.08rem;
-  font-weight:bold;
+  font-size:var(--text-lg);
+  font-weight:var(--weight-bold);
 }
 .cpt-game .feedback-good {
   color:#2c9e79;
@@ -229,13 +229,13 @@
 .cpt-game .metric span {
   display:block;
   color:#68748b;
-  font-size:.9rem;
+  font-size:var(--text-base);
 }
 .cpt-game .metric strong {
   display:block;
   margin-top:4px;
   color:#51469b;
-  font-size:1.35rem;
+  font-size:var(--text-xl);
 }
 .cpt-game .comparison {
   padding:20px;
@@ -253,7 +253,7 @@
 }
 .cpt-game .note {
   margin:20px 0;
-  font-size:.86rem;
+  font-size:var(--text-sm);
 }
 .cpt-game .star {
   position:fixed;
@@ -269,7 +269,7 @@
 .cpt-game .star-b {
   top:25%;
   right:12%;
-  font-size:1.4rem;
+  font-size:var(--text-xl);
 }
 .cpt-game .star-c {
   bottom:13%;
@@ -334,8 +334,8 @@
 /* Demo (展示版) */
 .cpt-game .demo-purpose { margin:0 auto 22px; max-width:420px; color:#52658c; line-height:1.7; }
 .cpt-game .demo-metrics { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:22px 0; }
-.cpt-game .demo-metrics small { display:block; margin-top:6px; color:#68748b; font-size:.85rem; line-height:1.4; }
-.cpt-game .demo-full-link { display:block; margin-top:14px; color:#52658c; font-weight:700; }
+.cpt-game .demo-metrics small { display:block; margin-top:6px; color:#68748b; font-size:var(--text-sm); line-height:1.4; }
+.cpt-game .demo-full-link { display:block; margin-top:14px; color:#52658c; font-weight:var(--weight-bold); }
 @media (max-width:480px) { .cpt-game .demo-metrics { grid-template-columns:1fr; } }
 
 /* Norm comparison (Kanaka et al., 2008) and AI comment */

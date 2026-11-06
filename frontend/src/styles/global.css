@@ -7,10 +7,23 @@ body {
   background: var(--color-page);
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
 }
 
-button { font: inherit; cursor: pointer; }
+h1, h2, h3, h4 { line-height: var(--leading-tight); font-weight: var(--weight-bold); text-wrap: balance; }
+h1 { font-size: var(--text-2xl); }
+h2 { font-size: var(--text-xl); }
+h3 { font-size: var(--text-lg); }
+h4 { font-size: var(--text-base); }
+
+p { text-wrap: pretty; }
+small { font-size: var(--text-sm); }
+
+/* Form controls do not inherit the page font by default. */
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+
+td, th { font-variant-numeric: tabular-nums; }
 
 button:focus-visible { outline: 3px solid #91c8c5; outline-offset: -3px; }

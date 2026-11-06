@@ -16,17 +16,18 @@
 .brand { display: flex; align-items: baseline; gap: 12px; width: fit-content; min-height: 44px; text-decoration: none; }
 .brand:hover .brand-name { color: var(--color-primary); }
 .brand:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 4px; border-radius: 4px; }
-.brand-name { color: var(--color-primary-dark); font-size: 1.45rem; font-weight: 750; letter-spacing: .02em; }
-.brand-subtitle { color: var(--color-muted); font-size: .94rem; }
-.student-summary { display: flex; align-items: center; gap: 18px; color: var(--color-muted); font-size: .94rem; white-space: nowrap; }
-.student-name { color: var(--color-text); font-size: 1.05rem; font-weight: 700; }
+.brand-name { color: var(--color-primary-dark); font-size: var(--text-xl); font-weight: var(--weight-bold); letter-spacing: .02em; }
+.brand-subtitle { color: var(--color-muted); font-size: var(--text-base); }
+.student-summary { display: flex; align-items: center; gap: 18px; color: var(--color-muted); font-size: var(--text-base); white-space: nowrap; }
+.student-name { color: var(--color-text); font-size: var(--text-base); font-weight: var(--weight-bold); }
+.school-year-editor input { width: 4.5em; margin-left: 4px; padding: 4px 6px; border: 1px solid #c9d5d5; border-radius: 6px; background: var(--color-surface); color: var(--color-text); text-align: center; }
 .header-actions { justify-self: end; display: flex; align-items: center; gap: 14px; white-space: nowrap; }
-.save-status { display: flex; align-items: center; gap: 8px; color: var(--color-muted); font-size: .9rem; }
-.iep-save-button { flex: 0 0 auto; min-height: 38px; padding: 8px 16px; white-space: nowrap; }
+.save-status { display: flex; align-items: center; gap: 8px; color: var(--color-muted); font-size: var(--text-base); }
+.iep-save-button { flex: 0 0 auto; margin-top: 0; min-height: 38px; padding: 8px 16px; white-space: nowrap; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); }
 
 .main-navigation { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
-.tab-scroll-area { overflow-x: auto; scrollbar-width: thin; }
+.tab-scroll-area { overflow-x: auto; scrollbar-width: thin; mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent); }
 .main-tabs, .sub-tabs { display: flex; width: max-content; }
 
 .main-tab {
@@ -37,8 +38,8 @@
   border: 0;
   background: transparent;
   color: #526466;
-  font-size: .94rem;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
   white-space: nowrap;
 }
 
@@ -51,19 +52,19 @@
 .iep-inherited-basic-notice { margin-top: 16px; margin-bottom: 0; padding: 12px 16px; border: 1px solid #c8ddd9; border-radius: 8px; background: var(--color-primary-soft); color: var(--color-primary-dark); }
 .content-panel { min-height: 420px; }
 .section-heading { margin-bottom: 26px; }
-.section-heading h1 { margin: 3px 0 8px; color: #203234; font-size: clamp(1.45rem, 2vw, 1.85rem); line-height: 1.35; }
+.section-heading h1 { margin: 3px 0 8px; color: #203234; font-size: var(--text-2xl); line-height: 1.35; }
 .section-heading p { margin: 0; color: var(--color-muted); }
-.eyebrow { color: var(--color-primary) !important; font-size: .88rem; font-weight: 700; letter-spacing: .08em; }
+.eyebrow { color: var(--color-primary) !important; font-size: var(--text-sm); font-weight: var(--weight-bold); letter-spacing: .08em; }
 
 .sub-navigation { margin: 0 0 24px; border-bottom: 1px solid var(--color-border); overflow-x: auto; }
 .sub-tabs { gap: 8px; padding-bottom: 10px; }
-.sub-tab { flex: 0 0 auto; padding: 9px 14px; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); color: #506164; font-size: .94rem; white-space: nowrap; }
+.sub-tab { flex: 0 0 auto; padding: 9px 14px; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); color: #506164; font-size: var(--text-base); white-space: nowrap; }
 .sub-tab:hover { border-color: #8cbab8; background: #f5f9f8; color: var(--color-primary-dark); }
-.sub-tab.is-active { border-color: var(--color-primary); background: var(--color-primary-soft); color: var(--color-primary-dark); font-weight: 700; }
+.sub-tab.is-active { border-color: var(--color-primary); background: var(--color-primary-soft); color: var(--color-primary-dark); font-weight: var(--weight-bold); }
 
 .placeholder-section, .unavailable-panel { border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
 .placeholder-section { padding: 30px 32px; }
-.placeholder-section h2 { margin: 0 0 10px; font-size: 1.2rem; }
+.placeholder-section h2 { margin: 0 0 10px; font-size: var(--text-lg); }
 .placeholder-section p, .unavailable-panel p { margin: 0; color: var(--color-muted); }
 .unavailable-panel { display: grid; min-height: 300px; place-items: center; padding: 32px; }
 
@@ -80,13 +81,13 @@
   .brand-subtitle { display: block; margin-top: -3px; }
   .header-content { gap: 12px; }
   .header-actions { gap: 10px; }
-  .save-status { font-size: .78rem; }
-  .iep-save-button { min-height: 36px; padding: 7px 12px; font-size: .88rem; }
+  .save-status { font-size: var(--text-sm); }
+  .iep-save-button { min-height: 36px; padding: 7px 12px; font-size: var(--text-sm); }
   .student-summary { flex-wrap: wrap; gap: 4px 12px; }
   .main-content { padding-top: 26px; }
-  .main-tab { min-height: 56px; padding: 9px 14px; font-size: .88rem; }
+  .main-tab { min-height: 56px; padding: 9px 14px; font-size: var(--text-sm); }
   .main-tab::after { right: 14px; left: 14px; }
-  .sub-tab { font-size: .88rem; }
+  .sub-tab { font-size: var(--text-sm); }
   .placeholder-section { padding: 24px; }
 }
 

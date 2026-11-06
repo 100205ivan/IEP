@@ -1,7 +1,7 @@
 /* HTML prototype styles, scoped to the React game. */
 .monkey-game { line-height: normal; }
 .monkey-game {
-  font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  font-family:var(--font-sans);
   color:#263a60;
   background:#e9f6ff;
   font-synthesis:none;
@@ -33,7 +33,7 @@
   margin:6px 0 12px;
 }
 .monkey-game h2 {
-  font-size:1.15rem;
+  font-size:var(--text-lg);
   margin:25px 0 12px;
 }
 .monkey-game p {
@@ -45,7 +45,7 @@
   line-height:1;
 }
 .monkey-game .lead {
-  font-size:1.1rem;
+  font-size:var(--text-lg);
 }
 .monkey-game .rules {
   display:grid;
@@ -59,7 +59,7 @@
 .monkey-game .primary, .monkey-game .age, .monkey-game .secondary {
   border:0;
   font:inherit;
-  font-weight:800;
+  font-weight:var(--weight-bold);
   cursor:pointer;
 }
 .monkey-game .primary {
@@ -68,7 +68,7 @@
   background:linear-gradient(135deg,#6878f5,#9b65e8);
   box-shadow:0 5px 0 #594fc4;
   color:white;
-  font-size:1.08rem;
+  font-size:var(--text-lg);
 }
 .monkey-game .primary:active {
   transform:translateY(3px);
@@ -90,7 +90,7 @@
   background:transparent;
   color:#6276a3;
   font:inherit;
-  font-weight:700;
+  font-weight:var(--weight-bold);
   cursor:pointer;
   margin-top:24px;
 }
@@ -106,21 +106,21 @@
   border-radius:17px;
   background:#f9fbff;
   color:#50628a;
-  font-size:1.65rem;
+  font-size:var(--text-2xl);
 }
 .monkey-game .age:hover {
   border-color:#7986ed;
   background:#eef0ff;
 }
 .monkey-game .age small {
-  font-size:.8rem;
+  font-size:var(--text-sm);
   margin-left:2px;
 }
 .monkey-game .meta {
   display:flex;
   justify-content:space-between;
   color:#6878a4;
-  font-weight:800;
+  font-weight:var(--weight-bold);
 }
 .monkey-game .bar {
   height:9px;
@@ -147,7 +147,7 @@
   color:#876324;
   border-radius:12px;
   padding:9px 16px;
-  font-weight:800;
+  font-weight:var(--weight-bold);
 }
 .monkey-game .grid {
   display:grid;
@@ -164,7 +164,7 @@
   background:#fbfdff;
   color:#3c5077;
   font:inherit;
-  font-weight:800;
+  font-weight:var(--weight-bold);
   cursor:pointer;
   display:flex;
   flex-direction:column;
@@ -181,7 +181,7 @@
   cursor:default;
 }
 .monkey-game .word .emoji {
-  font-size:1.75rem;
+  font-size:var(--text-2xl);
 }
 .monkey-game .word b {
   position:absolute;
@@ -192,7 +192,7 @@
   border-radius:50%;
   background:#7782ef;
   color:#fff;
-  font-size:.78rem;
+  font-size:var(--text-sm);
   display:grid;
   place-items:center;
 }
@@ -207,7 +207,7 @@
   background:#f4f7ff;
   border-radius:13px;
   color:#60729a;
-  font-weight:700;
+  font-weight:var(--weight-bold);
 }
 .monkey-game .answer-preview span {
   padding:5px 10px;
@@ -246,7 +246,7 @@
   animation:monkey-game-pulse 1.15s ease-in-out infinite;
 }
 .monkey-game .answer-count {
-  font-weight:700;
+  font-weight:var(--weight-bold);
 }
 .monkey-game .score-box {
   background:linear-gradient(135deg,#6878f5,#9b65e8);
@@ -292,10 +292,10 @@
 }
 .monkey-game .note {
   color:#9a5d22;
-  font-weight:800;
+  font-weight:var(--weight-bold);
 }
 .monkey-game .fine {
-  font-size:.78rem;
+  font-size:var(--text-sm);
 }
 @keyframes monkey-game-pulse {50%{transform:scale(1.12);opacity:.7}}
 @media(max-width:440px) {
@@ -312,7 +312,7 @@
 }
 
 /* Demo (展示版) */
-.monkey-game .demo-badge { display:inline-block; margin:0 0 6px; padding:4px 12px; border-radius:999px; background:#eef0ff; color:#586be1; font-weight:700; font-size:.9rem; }
+.monkey-game .demo-badge { display:inline-block; margin:0 0 6px; padding:4px 12px; border-radius:999px; background:#eef0ff; color:#586be1; font-weight:var(--weight-bold); font-size:var(--text-base); }
 .monkey-game .demo-purpose { margin:0 auto 20px; max-width:440px; color:#52658c; line-height:1.7; }
 .monkey-game .feedback p { flex-basis:100%; margin:4px 0 0; line-height:1.7; }
-.monkey-game .demo-full-link { display:block; margin-top:14px; color:#52658c; font-weight:700; }
+.monkey-game .demo-full-link { display:block; margin-top:14px; color:#52658c; font-weight:var(--weight-bold); }

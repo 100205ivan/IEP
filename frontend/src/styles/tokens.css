@@ -8,5 +8,19 @@
   --color-primary-dark: #10585c;
   --color-primary-soft: #e5f1f0;
   --color-success: #33805b;
-  --font-sans: "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+  --font-sans: "Noto Sans TC Variable", "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif;
+
+  /* Type scale: five roles only. Pick by role, never by eye. */
+  --text-sm: .875rem;   /* 輔助：表頭、提示、徽章、時間等次要資訊 */
+  --text-base: 1rem;    /* 內文：段落、欄位標籤、輸入框、按鈕、分頁 */
+  --text-lg: 1.125rem;  /* 區塊標題：卡片、表單區段 h3 */
+  --text-xl: 1.375rem;  /* 章節標題：h2、對話框標題 */
+  --text-2xl: 1.75rem;  /* 頁面標題：h1、重點數字 */
+
+  --weight-regular: 400;
+  --weight-medium: 600;
+  --weight-bold: 700;
+
+  --leading-tight: 1.35;
+  --leading-body: 1.6;
 }

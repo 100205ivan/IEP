@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource-variable/noto-sans-tc": "^5.3.1",
     "@mediapipe/tasks-vision": "0.10.32",
     "@tensorflow/tfjs": "4.22.0",
     "@tesseract.js-data/chi_tra": "^1.0.0",

@@ -39,7 +39,7 @@
 .domain-bottom-right {
   display: grid;
   gap: 8px;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 
 .domain-bottom-left textarea,
@@ -54,8 +54,8 @@
 
 .domain-bottom-right > span {
   color: var(--color-muted);
-  font-size: .85rem;
-  font-weight: 400;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
 }
 
 .needs-domain-card--core .domain-top-left,

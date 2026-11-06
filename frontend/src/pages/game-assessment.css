@@ -5,3 +5,6 @@
 .game-return { position: relative; z-index: 2; padding: 16px 24px 0; }
 .game-return a { color: #52658c; font: 700 16px/1.6 'Microsoft JhengHei', system-ui, sans-serif; }
 @media (max-width: 680px) { .game-selection-grid { grid-template-columns: 1fr; } }
+
+.game-demo-heading { margin-top: 36px; }
+.game-demo-card { background: #f8fafa; border-style: dashed; }

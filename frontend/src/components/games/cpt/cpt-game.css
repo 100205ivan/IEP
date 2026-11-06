@@ -330,3 +330,10 @@
     padding:12px 6px;
   }
 }
+
+/* Demo (展示版) */
+.cpt-game .demo-purpose { margin:0 auto 22px; max-width:420px; color:#52658c; line-height:1.7; }
+.cpt-game .demo-metrics { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:22px 0; }
+.cpt-game .demo-metrics small { display:block; margin-top:6px; color:#68748b; font-size:.85rem; line-height:1.4; }
+.cpt-game .demo-full-link { display:block; margin-top:14px; color:#52658c; font-weight:700; }
+@media (max-width:480px) { .cpt-game .demo-metrics { grid-template-columns:1fr; } }

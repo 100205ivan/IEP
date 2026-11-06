@@ -72,8 +72,17 @@ export class CptSession {
   private phase: CptPhase = 'practice'
   private testStartedAt = 0
   private callbacks: Callbacks
+  private testTrials: number
+  private testFeedback: boolean
 
-  constructor(callbacks: Callbacks) { this.callbacks = callbacks }
+  /** The demo uses a short test with practice-style feedback. */
+  constructor(callbacks: Callbacks, options: { testTrials?: number; testFeedback?: boolean } = {}) {
+    this.callbacks = callbacks
+    this.testTrials = options.testTrials ?? TOTAL_TRIALS
+    this.testFeedback = options.testFeedback ?? false
+  }
+
+  private get showFeedback() { return this.phase === 'practice' || this.testFeedback }
 
   reset() {
     clearTimeout(this.trialTimer)
@@ -93,7 +102,7 @@ export class CptSession {
     this.phase = 'test'
     this.trials = []
     this.testStartedAt = Date.now()
-    this.runSequence(buildStimuli(TOTAL_TRIALS, Math.round(TOTAL_TRIALS * TARGET_RATIO)))
+    this.runSequence(buildStimuli(this.testTrials, Math.round(this.testTrials * TARGET_RATIO)))
   }
 
   respond() {
@@ -103,10 +112,10 @@ export class CptSession {
     trial.reactionTime = Math.round(performance.now() - trial.startTime)
     if (trial.isTarget) {
       trial.hit = true
-      if (this.phase === 'practice') this.callbacks.onFeedback('正確！你抓到 7 了！', 'good')
+      if (this.showFeedback) this.callbacks.onFeedback('正確！你抓到 7 了！', 'good')
     } else {
       trial.commission = true
-      if (this.phase === 'practice') this.callbacks.onFeedback('誤按：這不是 7 喔！', 'bad')
+      if (this.showFeedback) this.callbacks.onFeedback('誤按：這不是 7 喔！', 'bad')
     }
   }
 
@@ -144,14 +153,18 @@ export class CptSession {
     // preserving the HTML order: timestamp -> DOM stimulus -> setTimeout.
     this.callbacks.onTrial({ phase: this.phase, index, total, stimulus })
     this.trialTimer = setTimeout(() => {
+      let message: [string, 'good' | 'bad'] | null = null
       if (!trial.responded) {
         if (trial.isTarget) {
           trial.omission = true
-          if (this.phase === 'practice') this.callbacks.onFeedback('漏按：看到 7 要按下喔！', 'bad')
-        } else if (this.phase === 'practice') this.callbacks.onFeedback('正確，其他數字不用按！', 'good')
+          message = ['漏按：剛剛的 7 要按下喔！', 'bad']
+        } else message = ['正確，其他數字不用按！', 'good']
       }
       this.active = false
       done()
+      // After done(): the next number clears feedback when it appears, so a
+      // message about the number that just ended is shown alongside the next one.
+      if (message && this.showFeedback) this.callbacks.onFeedback(...message)
     }, randomDuration())
   }
 }

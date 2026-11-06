@@ -23,7 +23,7 @@
 .school-year-editor input { width: 4.5em; margin-left: 4px; padding: 4px 6px; border: 1px solid #c9d5d5; border-radius: 6px; background: var(--color-surface); color: var(--color-text); text-align: center; }
 .header-actions { justify-self: end; display: flex; align-items: center; gap: 14px; white-space: nowrap; }
 .save-status { display: flex; align-items: center; gap: 8px; color: var(--color-muted); font-size: var(--text-base); }
-.iep-save-button { flex: 0 0 auto; margin-top: 0; min-height: 38px; padding: 8px 16px; white-space: nowrap; }
+.header-actions .iep-save-button { flex: 0 0 auto; margin-top: 0; min-height: 38px; padding: 8px 16px; white-space: nowrap; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); }
 
 .main-navigation { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }

@@ -4,6 +4,13 @@ let detector
 let prototypesAvailable = false
 let prototypeModelIds
 let lastPrototypeTime = -Infinity
+// Each face's extent from its landmarks, as fractions of the frame, so the
+// page can outline the face on its own preview at any size.
+function faceBox(landmarks) {
+  const xs = landmarks.map(p => p.x), ys = landmarks.map(p => p.y)
+  const x = Math.max(0, Math.min(...xs)), y = Math.max(0, Math.min(...ys))
+  return { x, y, width: Math.min(1, Math.max(...xs)) - x, height: Math.min(1, Math.max(...ys)) - y }
+}
 self.onmessage = async ({ data }) => {
   try {
     if (data.type === 'init') {
@@ -40,10 +47,10 @@ self.onmessage = async ({ data }) => {
         try {
           prototypes = faces === 1 ? await self.EyeEPPrototypes.predict(data.bitmap, result.faceLandmarks[0]) : null
         } catch { prototypes = null }
-        prototypes ??= { emotion: { label: 'uncertain', confidence: 0 }, engagement: { label: 'uncertain', confidence: 0 } }
+        prototypes ??= { emotion: { label: 'uncertain', confidence: 0 } }
       }
       self.postMessage({
-        type: 'sample', capturedAt: data.timestamp, faces, prototypes,
+        type: 'sample', capturedAt: data.timestamp, faces, prototypes, boxes: result.faceLandmarks.map(faceBox),
         yaw: valid ? Math.atan2(m[8], m[10]) * 180 / Math.PI : null,
         pitch: valid ? Math.atan2(-m[9], Math.hypot(m[8], m[10])) * 180 / Math.PI : null,
       })

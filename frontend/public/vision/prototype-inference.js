@@ -13,7 +13,7 @@
     model.add(tf.layers.dense({ units: config.classes.length, activation: 'softmax' }))
     return model
   }
-  async function load(root, names = ['emotion', 'engagement']) {
+  async function load(root, names = ['emotion']) {
     await tf.setBackend('cpu')
     await tf.ready()
     for (const name of names) {
@@ -97,7 +97,6 @@
     if (face.width < 20 || face.height < 20) return null
     return {
       emotion: await predictImage('emotion', bitmap, face),
-      engagement: await predictImage('engagement', bitmap, { x: 0, y: 0, width: bitmap.width, height: bitmap.height }),
     }
   }
   async function parity(root) {

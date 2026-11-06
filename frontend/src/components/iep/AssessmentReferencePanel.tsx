@@ -57,7 +57,7 @@ const documentDomainMap: Record<AbilityDomain, AbilityDomain> = {
 }
 
 export function AssessmentReferencePanel({ domain }: { domain: AbilityDomain }) {
-  const { documents, games, loading, error, retry } = useAssessmentReferences()
+  const { records, documents, games, loading, error, retry } = useAssessmentReferences()
   const [documentToView, setDocumentToView] = useState<StoredDocumentAnalysis | null>(null)
   const [gameToView, setGameToView] = useState<StoredGameAssessmentResult | null>(null)
   const domainDocuments = documents.filter(document => document.domains[documentDomainMap[domain]]?.hasEvidence)
@@ -74,7 +74,7 @@ export function AssessmentReferencePanel({ domain }: { domain: AbilityDomain }) 
     })}
     {domainGames.map(game => <GameReferenceItem key={game.assessmentRecordId} game={game} onView={() => setGameToView(game)} />)}
     {documentToView && <DocumentAnalysisResultDialog analysis={documentToView} onClose={() => setDocumentToView(null)} />}
-    {gameToView && <GameAssessmentResultDialog result={gameToView} onClose={() => setGameToView(null)} />}
+    {gameToView && <GameAssessmentResultDialog result={gameToView} record={records.find(record => record.id === gameToView.assessmentRecordId)} onClose={() => setGameToView(null)} />}
   </section>
 }
 

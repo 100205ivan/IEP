@@ -16,13 +16,6 @@ FER+ annotations: Emad Barsoum, Cha Zhang, Cristian Canton Ferrer, Zhengyou Zhan
 Training Deep Networks for Facial Expression Recognition with Crowd-Sourced Label Distribution (ICMI 2016).
 https://github.com/microsoft/FERPlus
 
-Engagement training data: Parinita Chate and Kailas Patil.
-E-learning Student Engagement and Disengagement Image Dataset for Educational Research.
-DOI: 10.5281/zenodo.16731734, CC BY 4.0.
-https://zenodo.org/records/16731734
-Modified by EyeEP: resized images, grouped image splits, trained a small CNN.
-Original training images are not redistributed with the application.
-
-The classifiers predict published dataset labels, not internal emotion,
+The classifier predicts published dataset labels, not internal emotion,
 attention, disability, diagnosis, or IEP attainment. See ml/reports for the
 specific evaluation protocol and limitations. No target-student validation.

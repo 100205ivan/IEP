@@ -15,10 +15,11 @@ test('camera observations validate durations and preserve optional reports in bo
   assert.equal(attentionReportSchema.safeParse({ ...attention, calibrated: false }).success, false)
   assert.equal(attentionReportSchema.safeParse({ ...attention, durationMs: Infinity }).success, false)
   const prototypes = { model: 'eyeep-vision-prototypes-v1', available: true, sampleCount: 2,
-    expressionCounts: { angry: 0, disgust: 0, fear: 0, happy: 1, sad: 0, surprise: 0, neutral: 0, contempt: 0, uncertain: 1 },
-    engagementCounts: { engaged: 1, disengaged: 0, uncertain: 1 } }
+    expressionCounts: { angry: 0, disgust: 0, fear: 0, happy: 1, sad: 0, surprise: 0, neutral: 0, contempt: 0, uncertain: 1 } }
   assert.equal(attentionReportSchema.safeParse({ ...attention, prototypes }).success, true)
   assert.equal(attentionReportSchema.safeParse({ ...attention, prototypes: { ...prototypes, sampleCount: 10 } }).success, false)
+  // Reports saved while the engagement classifier existed stay valid.
+  assert.equal(attentionReportSchema.safeParse({ ...attention, prototypes: { ...prototypes, engagementCounts: { engaged: 1, disengaged: 0, uncertain: 1 } } }).success, true)
   const base = { resultId: '7f0c15ee-0709-4ab7-b911-d81a3c45264c', assessmentDate: '2026-11-03', completedAt: '2026-11-03T00:01:00.000Z', summary: '測試資料', age: 8 }
   const games = [
     { gameType: 'monkey', result: { totalScore: 1, correctPositions: 1, totalPositions: 1, levelScores: [1], questionResults: [] } },

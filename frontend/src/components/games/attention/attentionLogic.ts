@@ -1,4 +1,4 @@
-import type { AttentionDurations, AttentionPhase, AttentionReport, EngagementLabel, ExpressionLabel, HeadObservation, PrototypeReport } from '../../../types/attention'
+import type { AttentionDurations, AttentionPhase, AttentionReport, ExpressionLabel, HeadObservation, PrototypeReport } from '../../../types/attention'
 
 export const MODEL_VERSION = '0.10.32'
 export const YAW_THRESHOLD = 25
@@ -7,15 +7,13 @@ export const SAMPLE_FRESH_MS = 700
 const empty = (): AttentionDurations => ({ durationMs: 0, forwardMs: 0, turnedMs: 0, unknownMs: 0 })
 export function emptyPrototypeReport(): PrototypeReport {
   return { model: 'eyeep-vision-prototypes-v1', available: false, sampleCount: 0,
-    expressionCounts: { angry: 0, disgust: 0, fear: 0, happy: 0, sad: 0, surprise: 0, neutral: 0, contempt: 0, uncertain: 0 },
-    engagementCounts: { disengaged: 0, engaged: 0, uncertain: 0 } }
+    expressionCounts: { angry: 0, disgust: 0, fear: 0, happy: 0, sad: 0, surprise: 0, neutral: 0, contempt: 0, uncertain: 0 } }
 }
 
-// Short names for summaries, where the 表情／參與樣態 heading already says what is counted.
+// Short names for summaries, where the 表情 heading already says what is counted.
 export const expressionShortLabels: Record<ExpressionLabel, string> = { angry: '生氣', disgust: '厭惡', fear: '害怕', happy: '開心', sad: '難過', surprise: '驚訝', neutral: '中性', contempt: '輕蔑', uncertain: '不確定' }
-export const engagementShortLabels: Record<EngagementLabel, string> = { engaged: '參與', disengaged: '未參與', uncertain: '不確定' }
 
-/** Non-zero classes only, most frequent first: e.g. 中性 134 次 or 未參與 72 次、參與 62 次. */
+/** Non-zero classes only, most frequent first: e.g. 中性 134 次、難過 2 次. */
 export function countsText<T extends string>(counts: Record<T, number>, labels: Record<T, string>) {
   return (Object.entries(counts) as [T, number][]).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]).map(([label, count]) => `${labels[label]} ${count} 次`).join('、')
 }
@@ -29,9 +27,7 @@ export function attentionSummaryText(report?: AttentionReport) {
   const prototype = report.prototypes
   if (prototype?.available && prototype.sampleCount > 0) {
     const expression = countsText(prototype.expressionCounts, expressionShortLabels)
-    const engagement = countsText(prototype.engagementCounts, engagementShortLabels)
     if (expression) parts.push(`表情：${expression}`)
-    if (engagement) parts.push(`參與樣態：${engagement}`)
   }
   return ` 攝影機觀察（僅供參考，非專注度或情緒判斷）：${parts.join('；')}。`
 }

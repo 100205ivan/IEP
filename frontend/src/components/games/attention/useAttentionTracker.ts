@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { AttentionPhase, AttentionReport, HeadObservation, PrototypePrediction, TrackerMessage } from '../../../types/attention'
+import type { AttentionPhase, AttentionReport, FaceBox, HeadObservation, PrototypePrediction, TrackerMessage } from '../../../types/attention'
 import { AttentionRecorder, classifyHead, emptyPrototypeReport, SAMPLE_FRESH_MS } from './attentionLogic'
 
 type Status = 'off' | 'loading' | 'ready' | 'calibrating' | 'calibrated' | 'error'
@@ -18,12 +18,13 @@ export function useAttentionTracker() {
   const recorder = useRef(new AttentionRecorder())
   const sessionCalibrated = useRef(false)
   const prototypeReport = useRef(emptyPrototypeReport())
-  const modelIds = useRef<{ emotion: string; engagement: string } | undefined>(undefined)
+  const modelIds = useRef<{ emotion: string } | undefined>(undefined)
   const [prototypeStatus, setPrototypeStatus] = useState<'off' | 'loading' | 'ready' | 'unavailable'>('off')
   const [status, setStatus] = useState<Status>('off')
   const [observation, setObservation] = useState<HeadObservation>('unknown')
   const [message, setMessage] = useState('')
   const [previewPrediction, setPreviewPrediction] = useState<PrototypePrediction | null>(null)
+  const [faceBoxes, setFaceBoxes] = useState<FaceBox[]>([])
 
   const release = useCallback(() => {
     generation.current++
@@ -37,6 +38,7 @@ export function useAttentionTracker() {
     baseline.current = null
     calibration.current = null
     setPreviewPrediction(null)
+    setFaceBoxes([])
     recorder.current.observe(performance.now(), 'unknown')
   }, [])
 
@@ -117,17 +119,17 @@ export function useAttentionTracker() {
           const now = performance.now()
           const capturedAt = data.capturedAt ?? now
           const fresh = now - capturedAt <= SAMPLE_FRESH_MS && (!active.current || capturedAt >= sessionStarted.current)
-          if (!active.current) {
-            if (!fresh || document.hidden || data.faces !== 1) setPreviewPrediction(null)
-            else if (data.prototypes) setPreviewPrediction(data.prototypes)
-          }
+          // The live face outline and expression also run during the test,
+          // for the teacher's camera view beside the game.
+          setFaceBoxes(fresh && !document.hidden ? data.boxes ?? [] : [])
+          if (!fresh || document.hidden || data.faces !== 1) setPreviewPrediction(null)
+          else if (data.prototypes) setPreviewPrediction(data.prototypes)
           if (active.current && fresh && !document.hidden && data.prototypes) {
             const stats = prototypeReport.current
             stats.available = true
             stats.modelIds = modelIds.current
             stats.sampleCount++
             stats.expressionCounts[data.prototypes.emotion.label]++
-            stats.engagementCounts[data.prototypes.engagement.label]++
           }
           let value: HeadObservation = 'unknown'
           const valid = fresh && !document.hidden && data.faces === 1 && data.yaw !== null && data.pitch !== null
@@ -185,7 +187,7 @@ export function useAttentionTracker() {
     return attempted.current ? report : undefined
   }
   const reset = () => { active.current = false; attempted.current = false; recorder.current.finish(performance.now(), false); stop() }
-  return { videoRef, status, prototypeStatus, observation, message, previewPrediction, start, stop, calibrate, begin, setPhase, finish, reset }
+  return { videoRef, status, prototypeStatus, observation, message, previewPrediction, faceBoxes, start, stop, calibrate, begin, setPhase, finish, reset }
 }
 
 export type AttentionTracker = ReturnType<typeof useAttentionTracker>

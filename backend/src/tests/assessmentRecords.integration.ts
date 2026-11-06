@@ -168,9 +168,8 @@ test('assessment API persists records in MariaDB and isolates IEPs', async (t) =
         startedAt: '2026-11-04T00:00:00.000Z', calibrated: true, yawThresholdDegrees: 25, pitchThresholdDegrees: 20,
         phases: game.gameType === 'monkey' ? { listening: durations } : { cpt: durations },
         prototypes: { model: 'eyeep-vision-prototypes-v1', available: true, sampleCount: 2,
-          modelIds: { emotion: 'a'.repeat(64), engagement: 'b'.repeat(64) },
-          expressionCounts: { angry: 0, disgust: 0, fear: 0, happy: 1, sad: 0, surprise: 0, neutral: 1, contempt: 0, uncertain: 0 },
-          engagementCounts: { engaged: 1, disengaged: 0, uncertain: 1 } },
+          modelIds: { emotion: 'a'.repeat(64) },
+          expressionCounts: { angry: 0, disgust: 0, fear: 0, happy: 1, sad: 0, surprise: 0, neutral: 1, contempt: 0, uncertain: 0 } },
       }
       const input = { ...game, result: { ...game.result, attention }, resultId: randomUUID(), assessmentDate: '2026-11-04', completedAt: '2026-11-04T00:00:01.000Z', summary: '合成鏡頭統計保存測試', age: 10 }
       const saved = await request<{ record: RecordResult }>('POST', `/ieps/${current.iepId}/game-results`, input, 201)

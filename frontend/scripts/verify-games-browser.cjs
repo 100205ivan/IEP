@@ -103,11 +103,10 @@ async function main() {
         const worker=new (window.__NativeWorker||window.Worker)(url);
         const timeout=setTimeout(()=>{worker.terminate();URL.revokeObjectURL(url);reject(Error('Parity timeout'))},30000);
         worker.onmessage=({data})=>{clearTimeout(timeout);worker.terminate();URL.revokeObjectURL(url);data.error?reject(Error(data.error)):resolve(data)};
-        worker.postMessage({root:location.origin+'/vision/',names:${JSON.stringify(emotionOnly ? ['emotion'] : ['emotion','engagement'])}});
+        worker.postMessage({root:location.origin+'/vision/',names:['emotion']});
       })`)
       assert.ok(parity.emotion.maxError < 1e-4,JSON.stringify(parity.emotion))
-      if (!emotionOnly) assert.ok(parity.engagement.maxError < 1e-4,JSON.stringify(parity.engagement))
-      console.log('PASS Python/browser classifier parity: '+JSON.stringify({emotion:parity.emotion.maxError,engagement:parity.engagement?.maxError}))
+      console.log('PASS Python/browser classifier parity: '+JSON.stringify({emotion:parity.emotion.maxError}))
     }
     if (process.argv.includes('--model-only') || process.argv.includes('--emotion-only')) {
       await navigate('/iep/game-assessment')
@@ -177,7 +176,7 @@ async function main() {
     }
     await waitText('完成測驗！')
     if (attentionChecks) {
-      await waitText('攝影機觀察'); assert.ok((await text()).includes('表情與參與樣態 · 研究原型')); assert.ok(await zeroClassesHidden())
+      await waitText('攝影機觀察'); assert.ok((await text()).includes('表情 · 研究原型')); assert.ok(await zeroClassesHidden())
       await openAttentionDetails(); assert.ok((await text()).includes('聆聽詞語')); assert.ok((await text()).includes('記憶作答'))
       assert.equal(await evaluate('window.__cameraStreams.every(s=>s.getTracks().every(t=>t.readyState==="ended"))'),true)
     }
@@ -206,6 +205,22 @@ async function main() {
     const space=repeat=>evaluate(`document.dispatchEvent(new KeyboardEvent('keydown',{code:'Space',repeat:${repeat},bubbles:true,cancelable:true}))`)
     for(let i=1;i<=100;i++){
       await waitText(`第 ${i} / 100 題`)
+      if (attentionChecks && i===1) {
+        // Only the camera picture stays beside the game during the test, still
+        // showing the same stream, with no buttons the child's Space could press;
+        // the face is outlined and labelled with its live expression.
+        assert.equal(await evaluate('getComputedStyle(document.querySelector(".attention-monitor")).position'),'fixed')
+        assert.equal(await evaluate('document.querySelector(".attention-monitor video").hidden'),false)
+        assert.equal(await evaluate('document.querySelector(".attention-monitor video").srcObject?.active'),true)
+        assert.equal(await evaluate('document.querySelectorAll(".attention-monitor button").length'),0)
+        await until(()=>evaluate('document.querySelectorAll(".attention-monitor .attention-face").length===1'),'face outline')
+        await until(()=>evaluate('document.querySelector(".attention-monitor").innerText.trim()==="開心"'),'live expression label').catch(async error => { console.log('DEBUG monitor', await evaluate('document.querySelector(".attention-monitor").innerHTML')); throw error })
+        // The preview is mirrored, so a face at x 35–65% of the frame is outlined at 35–65% from the right.
+        assert.equal(await evaluate('document.querySelector(".attention-face").style.left'),'35%')
+        const captures = path.join(cache,'attention-screenshots');fs.mkdirSync(captures,{recursive:true})
+        const monitor = await send('Page.captureScreenshot',{format:'png'})
+        fs.writeFileSync(path.join(captures,'cpt-monitor-desktop.png'),Buffer.from(monitor.data,'base64'))
+      }
       const stimulus=await evaluate('Number(document.querySelector(".stimulus").textContent)');stimuli.push(stimulus)
       const respond=stimulus===7?(++targets%2===0):(++nonTargets%4===0)
       await space(true) // repeated keydown must not respond, even before first reaction
@@ -222,7 +237,7 @@ async function main() {
     assert.ok(stimuli.every((n,i)=>n!==stimuli[i-1]))
     await waitText('持續注意力測驗結果')
     if (attentionChecks) {
-      await waitText('攝影機觀察'); assert.ok((await text()).includes('表情與參與樣態 · 研究原型')); assert.ok(await zeroClassesHidden())
+      await waitText('攝影機觀察'); assert.ok((await text()).includes('表情 · 研究原型')); assert.ok(await zeroClassesHidden())
       await openAttentionDetails(); assert.ok((await text()).includes('數字作答'))
       assert.equal(await evaluate('window.__cameraStreams.every(s=>s.getTracks().every(t=>t.readyState==="ended"))'),true)
     }

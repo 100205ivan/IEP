@@ -4,7 +4,7 @@ window.__cameraRequests = 0
 window.__cameraSamples = 0
 window.__cameraStreams = []
 window.__denyCamera = false
-window.__pose = { faces: 1, yaw: 0, pitch: 0, prototypes: { emotion: { label: 'happy', confidence: .9 }, engagement: { label: 'engaged', confidence: .9 } } }
+window.__pose = { faces: 1, yaw: 0, pitch: 0, boxes: [{ x: .35, y: .25, width: .3, height: .45 }], prototypes: { emotion: { label: 'happy', confidence: .9 } } }
 navigator.mediaDevices.getUserMedia = async () => {
   window.__cameraRequests++
   if (window.__denyCamera) throw new DOMException('Test denial', 'NotAllowedError')
@@ -28,7 +28,7 @@ window.Worker = class {
     if (message.type === 'frame') message.bitmap.close()
     setTimeout(() => {
       if (this.terminated) return
-      if (message.type === 'init') this.onmessage?.({ data: { type: 'ready', prototypesAvailable: true, prototypeModelIds: { emotion: 'a'.repeat(64), engagement: 'b'.repeat(64) } } })
+      if (message.type === 'init') this.onmessage?.({ data: { type: 'ready', prototypesAvailable: true, prototypeModelIds: { emotion: 'a'.repeat(64) } } })
       else { window.__cameraSamples++; this.onmessage?.({ data: { type: 'sample', ...window.__pose } }) }
     }, 0)
   }

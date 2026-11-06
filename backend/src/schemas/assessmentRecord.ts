@@ -27,10 +27,11 @@ const observationDurations = z.object({
 }).refine(row => Math.abs(row.durationMs - row.forwardMs - row.turnedMs - row.unknownMs) < 1, '觀察時間合計不一致。')
 const prototypeReportSchema = z.object({
   model: z.literal('eyeep-vision-prototypes-v1'), available: z.boolean(), sampleCount: z.number().int().nonnegative(),
-  modelIds: z.object({ emotion: z.string().regex(/^[a-f0-9]{64}$/), engagement: z.string().regex(/^[a-f0-9]{64}$/) }).optional(),
+  modelIds: z.object({ emotion: z.string().regex(/^[a-f0-9]{64}$/), engagement: z.string().regex(/^[a-f0-9]{64}$/).optional() }).optional(),
   expressionCounts: z.record(z.enum(['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral', 'contempt', 'uncertain']), z.number().int().nonnegative()),
-  engagementCounts: z.record(z.enum(['disengaged', 'engaged', 'uncertain']), z.number().int().nonnegative()),
-}).refine(report => [report.expressionCounts, report.engagementCounts].every(counts => Object.values(counts).reduce((a, b) => a + b, 0) === report.sampleCount), '模型分類次數合計不一致。')
+  // Legacy: reports saved before the engagement classifier was removed still carry it.
+  engagementCounts: z.record(z.enum(['disengaged', 'engaged', 'uncertain']), z.number().int().nonnegative()).optional(),
+}).refine(report => [report.expressionCounts, report.engagementCounts ?? report.expressionCounts].every(counts => Object.values(counts).reduce((a, b) => a + b, 0) === report.sampleCount), '模型分類次數合計不一致。')
 export const attentionReportSchema = observationDurations.safeExtend({
   prototypes: prototypeReportSchema.optional(),
   version: z.literal(1), model: z.literal('mediapipe-face-landmarker'), modelVersion: z.string().max(30),

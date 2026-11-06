@@ -9,6 +9,13 @@
 .attention-control:focus-visible { outline: 3px solid #315dbc; outline-offset: 3px; }
 .attention-control:disabled { opacity: .65; cursor: wait; }
 .attention-preview { width: 160px; max-width: 100%; aspect-ratio: 4 / 3; display: block; object-fit: cover; border-radius: 8px; margin-top: 16px; transform: scaleX(-1); }
+/* Face outline and expression drawn over the mirrored preview (4:3, like the analysed frame). */
+.attention-camera { position: relative; width: fit-content; max-width: 100%; }
+.attention-faces { position: absolute; left: 0; right: 0; bottom: 0; aspect-ratio: 4 / 3; pointer-events: none; }
+.attention-face { position: absolute; border: 2px solid #3ddc97; border-radius: 6px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .35); transition: left .18s linear, top .18s linear, width .18s linear, height .18s linear; }
+.attention-face-label { position: absolute; left: -2px; bottom: 100%; margin-bottom: 3px; padding: 1px 7px; border-radius: 5px; background: #3ddc97; color: #0f2a1f; font-size: .78rem; font-weight: 700; line-height: 1.5; white-space: nowrap; }
+.attention-face-label--inside { bottom: auto; top: 2px; left: 2px; margin: 0; }
+@media (prefers-reduced-motion: reduce) { .attention-face { transition: none; } }
 .attention-panel .attention-help, .attention-summary .attention-help, p.attention-help { font-size: .82rem; color: #445573; line-height: 1.7; }
 .attention-panel--playing { margin-bottom: 12px; padding-block: 12px; }
 .attention-model-preview { margin-top: 12px; padding-inline-start: 14px; border-inline-start: 3px solid #bbc6dc; }
@@ -32,6 +39,14 @@
 .prototype-counts { display: grid; gap: 8px; margin: 12px 0; font-size: .9rem; font-variant-numeric: tabular-nums; }
 .prototype-counts > div { display: flex; justify-content: space-between; gap: 16px; }
 .prototype-counts dd { margin: 0; }
+/* During practice and the test: only the camera picture, beside the game. */
+/* As wide as the space beside the (at most 720px) game allows, 260–440px. */
+.attention-monitor { position: fixed; top: 88px; right: 16px; width: clamp(260px, calc((100vw - 720px) / 2 - 24px), 440px); z-index: 50; border-radius: 12px; overflow: hidden; border: 2px solid #fff; box-shadow: 0 8px 24px rgba(38, 58, 96, .2); background: #1f2a3d; }
+.attention-monitor[hidden] { display: none; }
+.attention-monitor .attention-camera { width: 100%; }
+.attention-monitor .attention-preview { width: 100%; margin: 0; border-radius: 0; }
+/* Narrower screens: a small picture in the corner that keeps clear of the game. */
+@media (max-width: 1180px) { .attention-monitor { top: auto; bottom: 12px; right: 12px; width: 220px; } }
 .monkey-game .app:has(> .attention-panel:not([hidden])) { align-content: center; }
 .cpt-game .app-shell:has(> .attention-panel:not([hidden])) { align-content: center; }
 @media (max-width: 480px) { .attention-panel { padding: 14px; } .attention-panel-heading { align-items: flex-start; } }

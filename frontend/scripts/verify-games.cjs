@@ -66,10 +66,19 @@ const cptSource = fs.readFileSync(path.join(refs, 'game/Continuous Performance T
 const cptReference = { Math: Object.create(Math) }
 vm.runInNewContext(cptSource.slice(0, cptSource.indexOf('const $')) + ['buildStimuli', 'randomDuration', 'rateLabel'].map(name => functionText(cptSource, name)).join('\n') + '\nglobalThis.api={norms,buildStimuli,randomDuration,rateLabel}', cptReference)
 const cpt = load('src/components/games/cpt/cptGameLogic.ts')
-assert.deepEqual(json(load('src/components/games/cpt/cptNorms.ts').exports.CPT_NORMS), json(cptReference.api.norms))
+// Reference values are Kanaka et al. (2008), Tables 1 and 2: all 10 parameters for ages 5–12.
+const cptNorms = load('src/components/games/cpt/cptNorms.ts').exports
+assert.deepEqual(Object.keys(cptNorms.CPT_NORMS).map(Number), [5, 6, 7, 8, 9, 10, 11, 12])
+for (const norm of Object.values(cptNorms.CPT_NORMS)) assert.equal(Object.keys(norm).length, 10)
+assert.deepEqual(json(cptNorms.CPT_NORMS[5].omission), { mean: 22.74, sd: 16.45 })
+assert.deepEqual(json(cptNorms.CPT_NORMS[8].rt), { mean: 598.74, sd: 66.2 })
+assert.deepEqual(json(cptNorms.CPT_NORMS[11].rt), { mean: 418.68, sd: 52.43 }) // as published
+assert.deepEqual(json(cptNorms.CPT_NORMS[12].dPrime), { mean: 5, sd: .31 })
+// The earlier reference norms (hit/omission/commission) are the same published values.
+for (const age of [5, 6, 7, 8, 9, 10, 11, 12]) for (const key of ['hit', 'omission', 'commission']) assert.deepEqual(json(cptNorms.CPT_NORMS[age][key]), json(cptReference.api.norms[age][key]))
 for (let seed = 1; seed <= 1000; seed++) {
   cpt.sandbox.Math.random = random(seed); cptReference.Math.random = random(seed)
-  for (const [total, targets] of [[10, 3], [100, 20]]) {
+  for (const [total, targets] of [[10, 3], [100, 20], [400, 80]]) {
     const stimuli = cpt.exports.buildStimuli(total, targets)
     assert.deepEqual(json(stimuli), json(cptReference.api.buildStimuli(total, targets)))
     assert.equal(stimuli.length, total)
@@ -102,9 +111,30 @@ for (const trials of [
   [trial(true, 100), trial(true, 300), trial(true, null, true), trial(false, 200), trial(false, null)],
   [trial(true, null, true), trial(false, null)],
   [trial(true, 123), trial(false, null)],
-]) assert.deepEqual(json(cpt.exports.summarizeTrials(trials)), json(originalMetrics(trials)))
+]) {
+  // The original metrics are unchanged; the Kanaka parameters are added alongside.
+  const original = originalMetrics(trials), metrics = json(cpt.exports.summarizeTrials(trials))
+  assert.deepEqual(Object.fromEntries(Object.keys(original).map(key => [key, metrics[key]])), json(original))
+}
+{
+  // 80 targets / 320 non-targets: 40 hits, 1 T-cancel, 39 omissions, 80 commissions, 2 N-cancels.
+  const many = (n, make) => Array.from({ length: n }, make)
+  const trials = [...many(40, () => trial(true, 300)), { ...trial(true, 90), hit: false, anticipatory: true }, ...many(39, () => trial(true, null, true)),
+    ...many(80, () => trial(false, 400)), ...many(2, () => ({ ...trial(false, 80), commission: false, anticipatory: true })), ...many(238, () => trial(false, null))]
+  const m = cpt.exports.summarizeTrials(trials)
+  assert.equal(m.hitRate, .5); assert.equal(m.omissionCount, 39); assert.equal(m.commissionCount, 80)
+  assert.equal(m.targetCancelCount, 1); assert.equal(m.nonTargetCancelCount, 2)
+  assert.equal(m.falseAlarmRate, 82 / 320); assert.equal(m.cvrt, 0)
+  const zf = cpt.exports.inverseNormal(82 / 320)
+  assert.ok(Math.abs(m.dPrime - (0 - zf)) < 1e-12); assert.ok(Math.abs(m.lnBeta - zf ** 2 / 2) < 1e-12)
+  assert.ok(Math.abs(cpt.exports.inverseNormal(.975) - 1.959963985) < 1e-8)
+  // Perfect rates use the 1/(2N) correction, so d′ stays finite.
+  const perfect = cpt.exports.summarizeTrials([...many(80, () => trial(true, 400)), ...many(320, () => trial(false, null))])
+  assert.ok(Math.abs(perfect.dPrime - (cpt.exports.inverseNormal(1 - 1 / 160) - cpt.exports.inverseNormal(1 / 640))) < 1e-12)
+  assert.equal(cpt.exports.summarizeTrials([trial(true, 300), trial(true, 500)]).cvrt, 100 / 400 * 100)
+}
 assert.equal(cpt.exports.summarizeTrials([trial(true,100),trial(true,300),trial(false,null)]).reactionTimeSD, 100)
-console.log('PASS CPT: 1000 seeded HTML-equivalent practice/test sequences, adjacency, timing, norms, metrics, population RT SD, zero-hit case')
+console.log('PASS CPT: 1000 seeded HTML-equivalent sequences (10/100/400), adjacency, timing, Kanaka 2008 norms, metrics, T/N-cancel, False, CVRT, d′, lnβ, zero-hit case')
 
 // Controlled clock verifies the real controller and speech helper without waiting minutes.
 function clock() {
@@ -132,23 +162,32 @@ for (let i = 1; i <= 10; i++) { assert.equal(frame.index, i); assert.equal(frame
 assert.ok(practiceComplete)
 session.beginTest()
 let hitIndex = 0, nonTargetIndex = 0
-for (let i = 1; i <= 100; i++) {
-  assert.equal(frame.index, i); assert.equal(frame.total, 100)
+for (let i = 1; i <= 400; i++) {
+  assert.equal(frame.index, i); assert.equal(frame.total, 400)
   const shouldRespond = frame.stimulus === 7 ? (++hitIndex % 2 === 0) : (++nonTargetIndex % 4 === 0)
-  if (shouldRespond) { time.elapse(100.4); session.respond(); time.elapse(20); session.respond(); assert.equal(frame.index, i) }
+  if (shouldRespond) { time.elapse(300.4); session.respond(); time.elapse(20); session.respond(); assert.equal(frame.index, i) }
   time.next()
 }
-assert.equal(completed.trials.length, 100)
+assert.equal(completed.trials.length, 400)
 assert.equal(completed.metrics.hitRate, .5)
-assert.equal(completed.metrics.omissionCount, 10)
-assert.equal(completed.metrics.commissionCount, 20)
-assert.equal(completed.metrics.meanReactionTime, 100)
+assert.equal(completed.metrics.omissionCount, 40)
+assert.equal(completed.metrics.commissionCount, 80)
+assert.equal(completed.metrics.meanReactionTime, 300)
 assert.equal(completed.metrics.reactionTimeSD, 0)
 assert.equal(completed.durationMs, completed.testFinishedAt - completed.testStartedAt)
 assert.equal(feedbackCount, 10) // practice only
 assert.equal(time.pending.size, 0)
 session.beginPractice(); session.reset(); assert.equal(time.pending.size, 0)
-console.log('PASS CPT controller: 10+100 trials, no response-driven advancement, first response, RT rounding, counts, feedback, cleanup')
+{
+  // A press within 150 ms is anticipatory: neither hit nor commission, and not an omission.
+  const quick = new runtime.exports.CptSession({ onTrial: v => { frame = v }, onFeedback: () => {}, onPracticeComplete: () => {}, onTestComplete: r => completed = r }, { testTrials: 20 })
+  quick.beginTest(); time.elapse(149); quick.respond(); const first = frame.stimulus
+  for (let i = 1; i <= 20; i++) time.next()
+  const t = completed.trials[0]
+  assert.equal(t.anticipatory, true); assert.equal(t.hit || t.commission || t.omission, false)
+  assert.equal(first === 7 ? completed.metrics.targetCancelCount : completed.metrics.nonTargetCancelCount, 1)
+}
+console.log('PASS CPT controller: 10+400 trials (Kanaka 2008), 150 ms anticipatory responses, no response-driven advancement, first response, RT rounding, counts, feedback, cleanup')
 
 for (const error of [false, true]) {
   const time = clock(), spoken = []

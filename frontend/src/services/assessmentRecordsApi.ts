@@ -19,3 +19,6 @@ export function deleteDocumentAnalysis(assessmentId: string, iepId: string) { re
 export function createGameAssessment(iepId: string, result: GameAssessmentPayload) { return request<{ record: AssessmentRecord; result: StoredGameAssessmentResult }>(`/api/ieps/${iepId}/game-results`, { method: 'POST', body: JSON.stringify(result) }) }
 export function getGameAssessmentResult(assessmentId: string, iepId: string) { return request<StoredGameAssessmentResult>(`/api/assessments/${assessmentId}/game-result?iepId=${encodeURIComponent(iepId)}`) }
 export function deleteGameAssessment(assessmentId: string, iepId: string) { return request<{ id: string }>(`/api/assessments/${assessmentId}/game-result`, { method: 'DELETE', body: JSON.stringify({ iepId }) }) }
+
+/** A short AI comment on a CPT result, from the de-identified norm comparison only. */
+export function requestCptComment(body: { age: number; rows: { label: string; value: string; reference: string; z: number | null; level: string }[] }) { return request<{ comment: string }>('/api/cpt-comment', { method: 'POST', body: JSON.stringify(body) }) }

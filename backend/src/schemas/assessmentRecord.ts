@@ -58,8 +58,11 @@ const monkeyResultSchema = z.object({
 const cptResultSchema = z.object({
   attention: attentionReportSchema.optional(),
   testStartedAt: z.number().finite(), testFinishedAt: z.number().finite(), durationMs: z.number().finite().nonnegative(),
-  metrics: z.object({ hitRate: z.number().finite(), omissionCount: z.number().int().nonnegative(), omissionRate: z.number().finite(), commissionCount: z.number().int().nonnegative(), commissionRate: z.number().finite(), meanReactionTime: z.number().finite(), reactionTimeSD: z.number().finite() }),
-  trials: z.array(z.object({ trialIndex: z.number().int(), stimulus: z.number().int(), isTarget: z.boolean(), responded: z.boolean(), hit: z.boolean(), omission: z.boolean(), commission: z.boolean(), reactionTime: z.number().finite().nullable(), startTime: z.number().finite() })),
+  metrics: z.object({ hitRate: z.number().finite(), omissionCount: z.number().int().nonnegative(), omissionRate: z.number().finite(), commissionCount: z.number().int().nonnegative(), commissionRate: z.number().finite(), meanReactionTime: z.number().finite(), reactionTimeSD: z.number().finite(),
+    // Kanaka et al. (2008) parameters; optional so earlier saved results stay valid.
+    targetCancelCount: z.number().int().nonnegative().optional(), nonTargetCancelCount: z.number().int().nonnegative().optional(), falseAlarmRate: z.number().finite().optional(),
+    cvrt: z.number().finite().optional(), dPrime: z.number().finite().optional(), lnBeta: z.number().finite().optional() }),
+  trials: z.array(z.object({ trialIndex: z.number().int(), stimulus: z.number().int(), isTarget: z.boolean(), responded: z.boolean(), hit: z.boolean(), omission: z.boolean(), commission: z.boolean(), reactionTime: z.number().finite().nullable(), startTime: z.number().finite(), anticipatory: z.boolean().optional() })),
 })
 export const createGameAssessmentSchema = z.discriminatedUnion('gameType', [
   z.object({ resultId: z.string().uuid(), gameType: z.literal('monkey'), assessmentDate: assessmentDateSchema, completedAt: z.string().datetime(), summary: z.string().trim().min(1).max(20_000), age: z.number().int().min(5).max(18), result: monkeyResultSchema }),

@@ -25,3 +25,7 @@
 .assessment-record-view .game-record-counts dd{white-space:nowrap}
 .assessment-record-view .summary-card-group{display:block}
 .assessment-record-view .summary-block h4{margin:14px 0 8px;font-size:.95rem;color:#405153}
+
+.game-record-comment{margin:0;padding:14px 16px;line-height:1.8;background:#f3f6f6;border-left:4px solid #1f6f6c;border-radius:8px}
+.game-record-section .cpt-report h3{font-size:1rem}
+.game-record-section .cpt-report h4{margin:0 0 4px}

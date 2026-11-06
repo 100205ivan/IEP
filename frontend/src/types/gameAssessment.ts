@@ -35,6 +35,8 @@ export interface CptTrial {
   commission: boolean
   reactionTime: number | null
   startTime: number
+  /** Responded within 150 ms of onset: a cancellation, neither hit nor commission (Kanaka et al., 2008). */
+  anticipatory?: boolean
 }
 
 export interface CptMetrics {
@@ -45,6 +47,14 @@ export interface CptMetrics {
   commissionRate: number
   meanReactionTime: number
   reactionTimeSD: number
+  // Kanaka et al. (2008) parameters; absent from results saved before they were added.
+  targetCancelCount?: number
+  nonTargetCancelCount?: number
+  falseAlarmRate?: number
+  /** Coefficient of variation of correct-response RT, in percent. */
+  cvrt?: number
+  dPrime?: number
+  lnBeta?: number
 }
 
 export interface CptResults {

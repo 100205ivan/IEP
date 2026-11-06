@@ -21,7 +21,7 @@ export class GeminiRequestError extends Error {
 }
 
 export type GeminiRequestMetadata = {
-  source: 'document' | 'domain' | 'education-summary'
+  source: 'document' | 'domain' | 'education-summary' | 'cpt-comment'
   schemaName: string
   referenceCount?: number
 }

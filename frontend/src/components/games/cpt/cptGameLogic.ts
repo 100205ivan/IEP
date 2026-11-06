@@ -1,7 +1,11 @@
 import type { CptMetrics, CptResults, CptTrial } from '../../../types/gameAssessment'
 
-export const TOTAL_TRIALS = 100
+// CPT-X as in Kanaka et al. (2008): 400 digits 1–9, target 7 at 20% (80),
+// 1500 ± 500 ms per stimulus (about 13 min 20 s in total).
+export const TOTAL_TRIALS = 400
 export const TARGET_RATIO = .20
+/** A press sooner than this after onset is anticipatory (a "cancellation"). */
+export const CANCEL_MS = 150
 export const TARGET_NUMBER = 7
 export const PRACTICE_TRIALS = 10
 export const PRACTICE_TARGETS = 3
@@ -32,17 +36,43 @@ export function randomDuration() {
   return Math.round(STIMULUS_MIN_MS + Math.random() * (STIMULUS_MAX_MS - STIMULUS_MIN_MS))
 }
 
+/** Inverse standard normal CDF (Acklam's rational approximation, |error| < 1.2e-9). */
+export function inverseNormal(p: number): number {
+  const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239]
+  const b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572]
+  const c = [-.007784894002430293, -.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783]
+  const d = [.007784695709041462, .3224671290700398, 2.445134137142996, 3.754408661907416]
+  const low = .02425
+  if (p < low) { const q = Math.sqrt(-2 * Math.log(p)); return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1) }
+  if (p > 1 - low) return -inverseNormal(1 - p)
+  const q = p - .5, r = q * q
+  return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1)
+}
+
+/** The Kanaka et al. (2008) parameters. d′ = z(Hit) − z(False) and
+ * lnβ = ln(φ(z(Hit)) / φ(z(False))); rates of exactly 0 or 1 use the
+ * standard 1/(2N) correction so both stay finite. */
 export function summarizeTrials(trials: CptTrial[]): CptMetrics {
   const targets = trials.filter(t => t.isTarget), nonTargets = trials.filter(t => !t.isTarget)
   const hits = trials.filter(t => t.hit), omissions = trials.filter(t => t.omission), commissions = trials.filter(t => t.commission)
+  const targetCancels = targets.filter(t => t.anticipatory).length, nonTargetCancels = nonTargets.filter(t => t.anticipatory).length
   const rts = hits.map(t => t.reactionTime!)
   const mean = rts.length ? rts.reduce((a, b) => a + b, 0) / rts.length : 0
   const sd = rts.length ? Math.sqrt(rts.reduce((sum, v) => sum + (v - mean) ** 2, 0) / rts.length) : 0
+  const hitRate = targets.length ? hits.length / targets.length : 0
+  const falseAlarmRate = nonTargets.length ? (nonTargetCancels + commissions.length) / nonTargets.length : 0
+  const bounded = (rate: number, n: number) => Math.min(1 - 1 / (2 * n), Math.max(1 / (2 * n), rate))
+  const zHit = targets.length ? inverseNormal(bounded(hitRate, targets.length)) : 0
+  const zFalse = nonTargets.length ? inverseNormal(bounded(falseAlarmRate, nonTargets.length)) : 0
   return {
-    hitRate: hits.length / targets.length,
-    omissionCount: omissions.length, omissionRate: omissions.length / targets.length,
-    commissionCount: commissions.length, commissionRate: commissions.length / nonTargets.length,
+    hitRate,
+    omissionCount: omissions.length, omissionRate: targets.length ? omissions.length / targets.length : 0,
+    commissionCount: commissions.length, commissionRate: nonTargets.length ? commissions.length / nonTargets.length : 0,
     meanReactionTime: mean, reactionTimeSD: sd,
+    targetCancelCount: targetCancels, nonTargetCancelCount: nonTargetCancels, falseAlarmRate,
+    cvrt: mean ? sd / mean * 100 : 0,
+    dPrime: zHit - zFalse,
+    lnBeta: (zFalse ** 2 - zHit ** 2) / 2,
   }
 }
 
@@ -110,7 +140,11 @@ export class CptSession {
     if (!this.active || !trial || trial.responded) return
     trial.responded = true
     trial.reactionTime = Math.round(performance.now() - trial.startTime)
-    if (trial.isTarget) {
+    if (trial.reactionTime < CANCEL_MS) {
+      // Too fast to have seen the digit: counted apart, as in the paper.
+      trial.anticipatory = true
+      if (this.showFeedback) this.callbacks.onFeedback('太快了！看清楚數字再按喔！', 'bad')
+    } else if (trial.isTarget) {
       trial.hit = true
       if (this.showFeedback) this.callbacks.onFeedback('正確！你抓到 7 了！', 'good')
     } else {

@@ -34,11 +34,14 @@ const clockScript = `(() => {
     next(){const [id,t]=[...pending].sort((a,b)=>a[1].due-b[1].due)[0]||[]; if(!t)throw Error('No pending timer'); pending.delete(id);now=t.due;t.fn();return t.delay},
     endSpeech(){const u=spoken.at(-1);if(!u)throw Error('No speech');u.onend()},
   };
+  // Keep the checks offline and deterministic: the CPT AI comment falls back to the rule-based text.
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = (input, init) => String(input).includes('/api/cpt-comment') ? Promise.reject(new Error('offline')) : originalFetch(input, init);
 })();`
 
 async function main() {
   const attentionChecks = process.argv.includes('--attention')
-  const watchdog = setTimeout(() => { console.error('Browser checks timed out'); process.exit(1) }, 120000)
+  const watchdog = setTimeout(() => { console.error('Browser checks timed out'); process.exit(1) }, 480000)
   const cache = path.join(root, 'node_modules/.cache')
   fs.mkdirSync(cache, { recursive: true })
   const profile = fs.mkdtempSync(path.join(cache, 'eyeep-browser-'))
@@ -128,7 +131,8 @@ async function main() {
     else { await navigate('/iep'); await click('二、學生能力現況評量紀錄'); await click('EyeEP 遊戲評量') }
     await waitText('Monkey Game')
     assert.equal(await evaluate('location.pathname'),'/iep/game-assessment')
-    assert.equal(await evaluate('document.querySelectorAll(".game-selection-card").length'),2)
+    assert.equal(await evaluate('document.querySelectorAll(".game-selection-card:not(.game-demo-card)").length'),2)
+    assert.equal(await evaluate('document.querySelectorAll(".game-demo-card").length'),2) // 展示版 section below
     await evaluate('document.querySelector(\'a[href="/iep/game-assessment/monkey"]\').click()')
     await waitText('猴子工作記憶遊戲')
     if (attentionChecks) {
@@ -203,8 +207,8 @@ async function main() {
     await click('8 歲');await click('開始正式測驗')
     const stimuli=[];let targets=0,nonTargets=0
     const space=repeat=>evaluate(`document.dispatchEvent(new KeyboardEvent('keydown',{code:'Space',repeat:${repeat},bubbles:true,cancelable:true}))`)
-    for(let i=1;i<=100;i++){
-      await waitText(`第 ${i} / 100 題`)
+    for(let i=1;i<=400;i++){
+      await waitText(`第 ${i} / 400 題`)
       if (attentionChecks && i===1) {
         // Only the camera picture stays beside the game during the test, still
         // showing the same stream, with no buttons the child's Space could press;
@@ -223,17 +227,20 @@ async function main() {
       }
       const stimulus=await evaluate('Number(document.querySelector(".stimulus").textContent)');stimuli.push(stimulus)
       const respond=stimulus===7?(++targets%2===0):(++nonTargets%4===0)
+      // The first target is pressed within 150 ms: a T-cancel, neither hit nor omission.
+      const anticipate=stimulus===7&&targets===1
       await space(true) // repeated keydown must not respond, even before first reaction
+      if(anticipate){await evaluate('window.__gameClock.elapse(100)');await space(false)}
       if(respond){
-        await evaluate('window.__gameClock.elapse(123.4)')
+        await evaluate('window.__gameClock.elapse(323.4)')
         if(i%2) await space(false);else await click('按下！也可按 Space')
         await evaluate('window.__gameClock.elapse(50)');await space(false)
-        await waitText(`第 ${i} / 100 題`)
+        await waitText(`第 ${i} / 400 題`)
       }
       assert.equal(await evaluate('document.querySelector(".practice-feedback").textContent'),'')
       const delay=await tick();assert.ok(delay>=1000&&delay<=2000)
     }
-    assert.equal(targets,20);assert.equal(nonTargets,80)
+    assert.equal(targets,80);assert.equal(nonTargets,320)
     assert.ok(stimuli.every((n,i)=>n!==stimuli[i-1]))
     await waitText('持續注意力測驗結果')
     if (attentionChecks) {
@@ -241,25 +248,31 @@ async function main() {
       await openAttentionDetails(); assert.ok((await text()).includes('數字作答'))
       assert.equal(await evaluate('window.__cameraStreams.every(s=>s.getTracks().every(t=>t.readyState==="ended"))'),true)
     }
-    const metrics=await evaluate('Object.fromEntries([...document.querySelectorAll(".metric")].map(d=>[d.querySelector("span").textContent,d.querySelector("strong").textContent]))')
-    assert.deepEqual({...metrics,'測驗時間':undefined},{命中率:'50%',漏答:'10 次',漏答率:'50.0%',誤按:'20 次',誤按率:'25.0%',平均反應時間:'123 ms','反應時間 SD':'0 ms','測驗時間':undefined})
-    assert.ok((await text()).includes('8 歲・共 100 題'));assert.ok((await text()).includes('Z-score'))
+    // Kanaka et al. (2008) parameters against the 8-year-old reference.
+    const table=await evaluate('Object.fromEntries([...document.querySelectorAll(".cpt-norm-table tbody tr")].map(r=>[r.querySelector("th").firstChild.textContent,[...r.querySelectorAll("td")].map(td=>td.textContent)]))')
+    assert.deepEqual(Object.fromEntries(Object.entries(table).map(([k,v])=>[k,v[0]])),{'命中率（Hit）':'50.0%','漏答（Omission）':'39 次','誤按（Commission）':'80 次','搶先按 7（T-cancel）':'1 次','搶先按其他數字（N-cancel）':'0 次','錯誤警報率（False）':'25.00%','平均反應時間（RT）':'323 ms','反應穩定度（CVRT）':'0.0%','辨別力（d′）':'0.67','作答傾向（lnβ）':'0.23'})
+    assert.deepEqual(table['命中率（Hit）'].slice(1),['98.0%（SD 3.0%）','-16.00','明顯需留意'])
+    assert.deepEqual(table['平均反應時間（RT）'].slice(1),['599 ms（SD 66.2）','-4.17','優於同齡'])
+    assert.equal(table['錯誤警報率（False）'][3],'僅供對照')
+    assert.ok((await text()).includes('8 歲・共 400 題'));assert.ok((await text()).includes('Kanaka'))
+    await waitText('評語');assert.ok((await text()).includes('與 8 歲研究樣本相比'))
+    assert.ok((await text()).includes('與 8 歲同齡孩子比較'));assert.equal(await evaluate('document.querySelectorAll(\'.cpt-report-group\').length'),4)
     await click('再玩一次');await waitText('數字注意力挑戰')
     await click('開始練習');await waitText('第 1 / 10 題');await click('← 返回遊戲選擇頁');await waitText('Monkey Game')
     assert.equal(await evaluate('window.__gameClock.pending.size'),0)
     await click('← 返回 IEP 評量紀錄');await waitText('（一）評量資料與紀錄')
     if (!attentionChecks) assert.equal(await evaluate('document.querySelectorAll(".assessment-table-row").length'),6)
     assert.equal(await evaluate('localStorage.length'),0)
-    console.log('PASS Browser CPT: 10+100, target counts/adjacency, Button/Space/repeat/first response, 1000–2000ms, RT, all metrics, age/result/restart/return/cleanup; no IEP writes')
+    console.log('PASS Browser CPT: 10+400 (Kanaka 2008), T-cancel, norm table, rule-based comment, target counts/adjacency, Button/Space/repeat/first response, 1000–2000ms, RT, all metrics, age/result/restart/return/cleanup; no IEP writes')
 
     // Direct-entry routes, mobile layout, zero-hit results, and a fresh Monkey restart.
     await navigate('/iep/game-assessment/cpt');await waitText('數字注意力挑戰')
     await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true})
     assert.ok(await evaluate('document.documentElement.scrollWidth<=390'))
     await click('開始練習');for(let i=0;i<10;i++)await tick()
-    await click('選擇年齡並開始');await click('12 歲');await click('開始正式測驗');for(let i=0;i<100;i++)await tick()
+    await click('選擇年齡並開始');await click('12 歲');await click('開始正式測驗');for(let i=0;i<400;i++)await tick()
     await waitText('持續注意力測驗結果')
-    assert.ok((await text()).includes('無 Hit'));assert.ok((await text()).includes('沒有正確 Hit，無法計算。'))
+    assert.ok((await text()).includes('本次沒有正確命中，無法計算反應時間與變異係數。'))
     assert.ok(await evaluate('document.documentElement.scrollWidth<=390'))
     await navigate('/iep/game-assessment/monkey');await waitText('猴子工作記憶遊戲')
     assert.ok(await evaluate('document.documentElement.scrollWidth<=390'))

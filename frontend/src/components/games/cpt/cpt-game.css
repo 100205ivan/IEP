@@ -337,3 +337,12 @@
 .cpt-game .demo-metrics small { display:block; margin-top:6px; color:#68748b; font-size:.85rem; line-height:1.4; }
 .cpt-game .demo-full-link { display:block; margin-top:14px; color:#52658c; font-weight:700; }
 @media (max-width:480px) { .cpt-game .demo-metrics { grid-template-columns:1fr; } }
+
+/* Norm comparison (Kanaka et al., 2008) and AI comment */
+
+.cpt-game .cpt-comment { margin:18px 0; padding:18px 20px; text-align:left; background:#f4f6ff; border-left:4px solid #7b8cf0; border-radius:12px; }
+.cpt-game .cpt-comment h3 { margin:0 0 8px; }
+.cpt-game .cpt-comment p { margin:0; line-height:1.8; }
+.cpt-game .cpt-comment small { display:block; margin-top:8px; color:#68748b; }
+.cpt-game .comparison .cpt-report h3 { text-align:left; }
+.cpt-game .comparison .cpt-report p { margin:8px 0; }

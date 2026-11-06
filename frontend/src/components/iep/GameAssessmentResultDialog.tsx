@@ -3,10 +3,14 @@ import type { AssessmentRecord } from '../../types/assessmentRecord'
 import type { AttentionReport } from '../../types/attention'
 import type { CptResults, MonkeyResults, StoredGameAssessmentResult } from '../../types/gameAssessment'
 import { expressionLabels } from '../games/attention/attentionLabels'
+import { evaluateCpt } from '../games/cpt/cptNorms'
+import { CptNormReport } from '../games/cpt/CptNormReport'
 
 const gameNames = { monkey: 'Monkey 工作記憶遊戲', cpt: '數字注意力挑戰（CPT）' } as const
 const sourceLabels = { monkey: 'Monkey', cpt: 'CPT' } as const
 const seconds = (ms: number) => `${(ms / 1000).toFixed(1)} 秒`
+/** The CPT comment (AI or rule-based) saved in the summary as 「評語：…」, up to the camera note. */
+const commentFrom = (summary: string) => /評語：([\s\S]+?)(?:\s*攝影機觀察（|$)/.exec(summary)?.[1].trim() ?? ''
 
 /** 評量紀錄 for a game: record details, then the game result, then every
  * camera label with its count. `record` adds the saved record's own wording. */
@@ -14,6 +18,7 @@ export function GameAssessmentResultDialog({ result, record, onClose }: { result
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => { const dialogNode = ref.current; dialogNode?.showModal(); return () => dialogNode?.close() }, [])
   const type = record ? (record.assessmentType === '其他' ? record.otherAssessmentType : record.assessmentType) : result.gameType === 'monkey' ? '工作記憶遊戲評量' : '注意力遊戲評量'
+  const comment = commentFrom(result.summary || record?.summary || '')
   return <dialog className="assessment-record-dialog game-record-dialog" ref={ref} onCancel={event => { event.preventDefault(); onClose() }}>
     <header><h2>評量紀錄</h2><button className="text-button" type="button" onClick={onClose}>關閉</button></header>
     <div className="game-record-scroll">
@@ -27,8 +32,12 @@ export function GameAssessmentResultDialog({ result, record, onClose }: { result
       <section className="game-record-section" aria-labelledby="game-record-result">
         <h3 id="game-record-result">遊戲測驗結果</h3>
         <p>完成時間：{new Date(result.completedAt).toLocaleString('zh-TW')}；測驗年齡：{result.age} 歲</p>
-        {result.gameType === 'monkey' ? <MonkeyDetail result={result.result as MonkeyResults} /> : <CptDetail result={result.result as CptResults} />}
+        {result.gameType === 'monkey' ? <MonkeyDetail result={result.result as MonkeyResults} /> : <CptDetail result={result.result as CptResults} age={result.age} />}
       </section>
+      {comment && <section className="game-record-section" aria-labelledby="game-record-comment">
+        <h3 id="game-record-comment">評語</h3>
+        <p className="game-record-comment">{comment}</p>
+      </section>}
       <section className="game-record-section" aria-labelledby="game-record-camera">
         <h3 id="game-record-camera">鏡頭偵測結果</h3>
         <CameraCounts report={result.result.attention} />
@@ -47,8 +56,14 @@ function MonkeyDetail({ result }: { result: MonkeyResults }) {
   </>
 }
 
-function CptDetail({ result }: { result: CptResults }) {
+function CptDetail({ result, age }: { result: CptResults; age: number }) {
   const metrics = result.metrics
+  // Results saved since the Kanaka et al. (2008) rules carry d′ and the other parameters.
+  if (metrics.dPrime !== undefined) return <>
+    <p>測驗時間：{Math.floor(result.durationMs / 60000)} 分 {Math.round((result.durationMs % 60000) / 1000)} 秒；共 {result.trials.length} 題</p>
+    <CptNormReport rows={evaluateCpt(metrics, age)} age={age} />
+    <TrialList result={result} />
+  </>
   return <>
     <dl className="game-record-counts">
       <div><dt>命中率（Hit）</dt><dd>{Math.round(metrics.hitRate * 100)}%</dd></div>
@@ -58,8 +73,12 @@ function CptDetail({ result }: { result: CptResults }) {
       <div><dt>反應時間變異（RTV）</dt><dd>{Math.round(metrics.reactionTimeSD)} ms</dd></div>
       <div><dt>測驗時間</dt><dd>{Math.round(result.durationMs / 1000)} 秒</dd></div>
     </dl>
-    <details><summary>查看每題結果（{result.trials.length} 題）</summary><ol>{result.trials.map(trial => <li key={trial.trialIndex}>第 {trial.trialIndex} 題：{trial.isTarget ? '目標刺激' : '非目標刺激'}；{trial.hit ? 'Hit' : trial.omission ? 'Omission' : trial.commission ? 'Commission' : '正確未反應'}{trial.reactionTime === null ? '' : `；RT ${Math.round(trial.reactionTime)} ms`}</li>)}</ol></details>
+    <TrialList result={result} />
   </>
+}
+
+function TrialList({ result }: { result: CptResults }) {
+  return <details><summary>查看每題結果（{result.trials.length} 題）</summary><ol>{result.trials.map(trial => <li key={trial.trialIndex}>第 {trial.trialIndex} 題：{trial.isTarget ? '目標刺激' : '非目標刺激'}；{trial.anticipatory ? '預期反應（150 ms 內）' : trial.hit ? 'Hit' : trial.omission ? 'Omission' : trial.commission ? 'Commission' : '正確未反應'}{trial.reactionTime === null ? '' : `；RT ${Math.round(trial.reactionTime)} ms`}</li>)}</ol></details>
 }
 
 /** Every head-orientation and expression label with its count,

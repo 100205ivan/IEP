@@ -1,0 +1,53 @@
+/* CPT norm report, shared by the result page and the assessment record dialog. */
+.cpt-report { --report-ink:#263a60; --report-muted:#5f6b80; --report-line:#e3e7f0; --report-band:#dfe4ee;
+  --typical:#3f4f73; --typical-bg:#eef1f8; --better:#1f7a57; --better-bg:#e2f5ec; --watch:#8a5a00; --watch-bg:#fff3d6; --concern:#b3263f; --concern-bg:#fde3e7;
+  text-align:left; color:var(--report-ink); }
+.cpt-report h3 { margin:0 0 12px; font-size:1.1rem; }
+.cpt-report-overview { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.cpt-report-tile { padding:12px 10px; border-radius:12px; text-align:center; }
+.cpt-report-tile strong { display:block; font-size:1.7rem; line-height:1.1; font-variant-numeric:tabular-nums; }
+.cpt-report-tile span { font-size:.85rem; }
+.cpt-report-tile--typical { background:var(--typical-bg); color:var(--typical); }
+.cpt-report-tile--better { background:var(--better-bg); color:var(--better); }
+.cpt-report-tile--flagged { background:var(--watch-bg); color:var(--watch); }
+.cpt-report-sentence { margin:12px 0 4px; font-weight:700; line-height:1.6; }
+.cpt-report-how { margin:0 0 6px; color:var(--report-muted); font-size:.88rem; line-height:1.7; }
+.cpt-report-how-band { display:inline-block; width:22px; height:8px; margin:0 4px 1px 0; border-radius:4px; background:var(--report-band); vertical-align:middle; }
+.cpt-report-how-dot { display:inline-block; width:10px; height:10px; margin:0 4px 1px 2px; border-radius:50%; background:var(--typical); vertical-align:middle; }
+.cpt-report-group { margin-top:16px; }
+.cpt-report-group h4 { margin:0 0 4px; padding-bottom:6px; border-bottom:2px solid var(--report-line); font-size:1rem; }
+.cpt-report .cpt-report-group h4 small { display:block; margin-top:2px; color:var(--report-muted); font-size:.82rem; font-weight:400; }
+.cpt-report-row { display:grid; grid-template-columns:minmax(0,1.6fr) 4.6em minmax(90px,1fr) 6.2em; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--report-line); }
+.cpt-report-name strong { display:block; font-size:.92rem; }
+.cpt-report .cpt-report-name small { display:block; margin-top:2px; color:var(--report-muted); font-size:.78rem; line-height:1.4; }
+.cpt-report-value { font-weight:700; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+.cpt-report-bar { position:relative; height:12px; border-radius:6px; background:#f4f5f8; }
+/* The typical band: −1 to +1 SD of the −3 to +3 SD track. */
+.cpt-report-band { position:absolute; inset:0 33.333%; border-radius:6px; background:var(--report-band); }
+.cpt-report-dot { position:absolute; top:50%; width:14px; height:14px; border:2px solid #fff; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 1px 3px rgba(0,0,0,.25); }
+.cpt-report-dot--typical { background:var(--typical); }
+.cpt-report-dot--better { background:var(--better); }
+.cpt-report-dot--watch { background:#d99500; }
+.cpt-report-dot--concern { background:var(--concern); }
+.cpt-report-bar--none { height:auto; background:none; color:var(--report-muted); font-size:.75rem; line-height:1.3; }
+.cpt-report-level { justify-self:start; padding:2px 9px; border-radius:999px; font-size:.8rem; font-weight:700; white-space:nowrap; }
+.cpt-report-level--typical { background:var(--typical-bg); color:var(--typical); }
+.cpt-report-level--better { background:var(--better-bg); color:var(--better); }
+.cpt-report-level--watch { background:var(--watch-bg); color:var(--watch); }
+.cpt-report-level--concern { background:var(--concern-bg); color:var(--concern); }
+.cpt-report-level--reference { background:#f2f2f2; color:#6b6b6b; }
+.cpt-report-details { margin-top:16px; }
+.cpt-report-details summary { cursor:pointer; font-weight:700; color:var(--report-muted); }
+.cpt-report-details p { color:var(--report-muted); font-size:.85rem; }
+.cpt-report .cpt-norm-table-wrap { overflow-x:auto; }
+.cpt-report .cpt-norm-table { width:100%; border-collapse:collapse; font-size:.86rem; }
+.cpt-report .cpt-norm-table th, .cpt-report .cpt-norm-table td { padding:7px 6px; border-bottom:1px solid var(--report-line); text-align:left; }
+.cpt-report .cpt-norm-table thead th { color:var(--report-muted); font-weight:600; white-space:nowrap; }
+.cpt-report .cpt-norm-table td { font-variant-numeric:tabular-nums; white-space:nowrap; }
+.cpt-report .cpt-norm-table td:nth-child(3) { white-space:normal; }
+.cpt-report-source { margin-top:14px; color:var(--report-muted); font-size:.78rem; line-height:1.6; }
+/* Narrow screens: name, value and level on one line, the bar below. */
+@media (max-width:560px) {
+  .cpt-report-row { grid-template-columns:minmax(0,1fr) auto auto; row-gap:6px; }
+  .cpt-report-bar { grid-column:1 / -1; grid-row:2; }
+}

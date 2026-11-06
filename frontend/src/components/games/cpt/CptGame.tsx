@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import type { CptResults } from '../../../types/gameAssessment'
-import { CptSession, rateLabel, TOTAL_TRIALS, type CptFrame } from './cptGameLogic'
-import { CPT_NORMS } from './cptNorms'
+import { CptSession, TOTAL_TRIALS, type CptFrame } from './cptGameLogic'
+import { CPT_LEVEL_LABELS, evaluateCpt, ruleBasedCptComment, type CptEvaluationRow } from './cptNorms'
+import { CptNormReport } from './CptNormReport'
+import { requestCptComment } from '../../../services/assessmentRecordsApi'
 import { GameAssessmentImport } from '../GameAssessmentImport'
 import { localDateString } from '../../../utils/localDate'
 import './cpt-game.css'
@@ -12,28 +14,37 @@ import { AttentionPanel } from '../attention/AttentionPanel'
 import { AttentionSummary } from '../attention/AttentionSummary'
 import { attentionSummaryText } from '../attention/attentionLogic'
 
+/** The AI comment on the norm comparison; the rule-based text stands in when AI is unavailable. */
+function useCptComment(rows: CptEvaluationRow[], age: number) {
+  const [state, setState] = useState<{ status: 'loading' | 'ai' | 'fallback'; text: string }>({ status: 'loading', text: '' })
+  useEffect(() => {
+    let active = true
+    requestCptComment({ age, rows: rows.map(({ label, value, reference, z, level }) => ({ label, value, reference, z, level })) })
+      .then(({ comment }) => { if (active) setState({ status: 'ai', text: comment }) })
+      .catch(() => { if (active) setState({ status: 'fallback', text: ruleBasedCptComment(rows, age) }) })
+    return () => { active = false }
+  }, [rows, age])
+  return state
+}
+
 function Results({ result, age, onRestart, resultId, assessmentDate, completedAt }: { result: CptResults; age: number; onRestart: () => void; resultId: string; assessmentDate: string; completedAt: string }) {
-  const m = result.metrics, n = CPT_NORMS[age]
-  const hasHits = result.trials.some(t => t.hit)
-  const metrics = [
-    ['命中率', `${Math.round(m.hitRate * 100)}%`], ['漏答', `${m.omissionCount} 次`],
-    ['漏答率', `${(m.omissionRate * 100).toFixed(1)}%`], ['誤按', `${m.commissionCount} 次`],
-    ['誤按率', `${(m.commissionRate * 100).toFixed(1)}%`],
-    ['平均反應時間', hasHits ? `${Math.round(m.meanReactionTime)} ms` : '無 Hit'],
-    ['反應時間 SD', hasHits ? `${Math.round(m.reactionTimeSD)} ms` : '—'],
-    ['測驗時間', `${Math.floor(result.durationMs / 60000)} 分 ${Math.round((result.durationMs % 60000) / 1000)} 秒`],
-  ]
-  const summary = `Hit ${Math.round(m.hitRate * 100)}%；Omission ${m.omissionCount} 次；Commission ${m.commissionCount} 次；RT ${hasHits ? Math.round(m.meanReactionTime) + ' ms' : '無 Hit'}；RTV ${hasHits ? Math.round(m.reactionTimeSD) + ' ms' : '—'}。` + attentionSummaryText(result.attention)
+  const m = result.metrics
+  const hasHits = m.hitRate > 0
+  const rows = useMemo(() => evaluateCpt(m, age), [m, age])
+  const comment = useCptComment(rows, age)
+  const duration = `${Math.floor(result.durationMs / 60000)} 分 ${Math.round((result.durationMs % 60000) / 1000)} 秒`
+  const summary = `Hit ${(m.hitRate * 100).toFixed(1)}%；Omission ${m.omissionCount} 次；Commission ${m.commissionCount} 次；RT ${hasHits ? Math.round(m.meanReactionTime) + ' ms' : '無 Hit'}；CVRT ${hasHits ? (m.cvrt ?? 0).toFixed(1) + '%' : '—'}；d′ ${(m.dPrime ?? 0).toFixed(2)}。`
+    + (rows.some(row => row.level === 'watch' || row.level === 'concern') ? `需留意：${rows.filter(row => row.level === 'watch' || row.level === 'concern').map(row => `${row.label.replace(/（.*）/, '')}（${CPT_LEVEL_LABELS[row.level]}）`).join('、')}。` : '各項指標在同齡一般範圍內。')
+    + (comment.status === 'loading' ? '' : `評語：${comment.text}`) + attentionSummaryText(result.attention)
   return <section className="card results">
-    <div className="badge">✦ 完成挑戰</div><h2>持續注意力測驗結果</h2><p className="muted">{age} 歲・共 {TOTAL_TRIALS} 題</p>
-    <div className="metric-grid">{metrics.map(([label, value]) => <div className="metric" key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
-    <div className="comparison"><h3>與同齡研究參考比較</h3>
-      <p>命中表現：{rateLabel((m.hitRate - n.hit.mean) / n.hit.sd)}</p>
-      <p>漏答率：{(m.omissionRate * 100).toFixed(1)}%（本原型為 100 題，不能直接以 400 題研究的漏答次數常模計算 Z-score）</p>
-      <p>誤按率：{(m.commissionRate * 100).toFixed(1)}%（本原型為 100 題，不能直接以 400 題研究的誤按次數常模計算 Z-score）</p>
-      <p>{hasHits ? `反應時間：比同齡平均${m.meanReactionTime >= n.rt.mean ? '慢' : '快'} ${Math.abs((m.meanReactionTime - n.rt.mean) / n.rt.sd).toFixed(1)} SD` : '反應時間：沒有正確 Hit，無法計算。'}</p>
+    <div className="badge">✦ 完成挑戰</div><h2>持續注意力測驗結果</h2><p className="muted">{age} 歲・共 {TOTAL_TRIALS} 題・測驗時間 {duration}</p>
+    <div className="cpt-comment" aria-live="polite"><h3>評語</h3>
+      <p>{comment.status === 'loading' ? '正在依照常模標準撰寫評語…' : comment.text}</p>
     </div>
-    <p className="note">這是 100 題遊戲原型，僅供注意力練習與研究參考，不作任何診斷用途。</p>
+    <div className="comparison cpt-norms">
+      <CptNormReport rows={rows} age={age} />
+      {!hasHits && <p>本次沒有正確命中，無法計算反應時間與變異係數。</p>}
+    </div>
     <AttentionSummary report={result.attention} />
     <GameAssessmentImport tool="數字注意力挑戰（CPT）" result={{ resultId, gameType: 'cpt', assessmentDate, completedAt, age, result, summary }} /><button type="button" className="primary-btn" onClick={onRestart}>再玩一次</button>
   </section>
@@ -55,8 +66,8 @@ function DemoResults({ result, onRestart, fullTestLink }: { result: CptResults; 
     <div className="badge">✦ 展示完成</div><h2>你的展示版結果</h2><p className="muted">展示版共 {DEMO_TRIALS} 題，約 30 秒</p>
     <div className="demo-metrics">{rows.map(([label, value, meaning]) => <div className="metric" key={label}><span>{label}</span><strong>{value}</strong><small>{meaning}</small></div>)}</div>
     <div className="comparison"><h3>正式版還會做什麼</h3>
-      <p>・100 題、約 2.5 分鐘，正式測驗不顯示對錯</p>
-      <p>・依年齡與研究參考資料比較，並計算反應時間變異（RTV）</p>
+      <p>・400 題、約 13 分鐘（依 Kanaka 等人 2008 年研究），正式測驗不顯示對錯</p>
+      <p>・10 項指標與同齡常模比較，並依標準產生評語</p>
       <p>・可開啟鏡頭，記錄面向螢幕的時間與表情</p>
       <p>・結果可一鍵匯入學生的 IEP 評量紀錄</p>
     </div>

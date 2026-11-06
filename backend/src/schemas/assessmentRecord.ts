@@ -47,6 +47,8 @@ export const attentionReportSchema = observationDurations.safeExtend({
 })
 const monkeyResultSchema = z.object({
   attention: attentionReportSchema.optional(),
+  // School grade for the Van de Weijer-Bergsma et al. (2016) norms; optional so age-based results stay valid.
+  grade: z.number().int().min(1).max(6).optional(),
   totalScore: z.number().finite(),
   correctPositions: z.number().int().nonnegative(),
   totalPositions: z.number().int().nonnegative(),

@@ -41,7 +41,9 @@ export function summarizeResults(answers: MonkeyQuestionResult[]): MonkeyResults
     const subset = answers.filter(result => result.level === level)
     return subset.reduce((sum, result) => sum + result.score, 0) / subset.length
   })
-  return { totalScore: correctPositions / totalPositions, correctPositions, totalPositions, levelScores, questionResults: answers }
+  // As in Van de Weijer-Bergsma et al. (2016): the mean of each question's proportion correct.
+  const totalScore = answers.length ? answers.reduce((sum, result) => sum + result.score, 0) / answers.length : 0
+  return { totalScore, correctPositions, totalPositions, levelScores, questionResults: answers }
 }
 
 // The speech chain follows the HTML onend/onerror timers, including the delay

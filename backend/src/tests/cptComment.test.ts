@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { cptCommentRequestSchema } from '../schemas/cptComment.js'
-import { cptCommentInput, generateCptComment } from '../services/geminiCptComment.js'
+import { cptCommentRequestSchema, monkeyCommentRequestSchema } from '../schemas/cptComment.js'
+import { cptCommentInput, generateCptComment, generateMonkeyComment, monkeyCommentInput } from '../services/geminiCptComment.js'
 import { GeminiResponseInvalidError } from '../services/geminiDocumentAnalysis.js'
 
 const request = { age: 8, rows: [
@@ -25,4 +25,18 @@ test('CPT comment input carries each precomputed level and the model reply is va
   assert.equal(await generateCptComment(request, async () => JSON.stringify({ comment })), comment)
   await assert.rejects(generateCptComment(request, async () => '{"comment":"短"}'), GeminiResponseInvalidError)
   await assert.rejects(generateCptComment(request, async () => 'not json'), GeminiResponseInvalidError)
+})
+
+test('Monkey comment request uses the school grade and the same validated reply', async () => {
+  const monkey = { grade: 3, rows: [
+    { label: '工作記憶總分（各題平均答對比例）', value: '55.4%', reference: '51%（SD 14%）', z: .31, level: 'typical' as const },
+    { label: 'Level 5（6 個詞）答對比例', value: '21%', reference: '無同年級資料', z: null, level: 'reference' as const },
+  ] }
+  assert.equal(monkeyCommentRequestSchema.safeParse(monkey).success, true)
+  assert.equal(monkeyCommentRequestSchema.safeParse({ ...monkey, grade: 7 }).success, false)
+  assert.equal(monkeyCommentRequestSchema.safeParse({ ...monkey, studentName: '王小明' }).success, false)
+  assert.match(monkeyCommentInput(monkey), /受測年級：國小 3 年級/)
+  assert.match(monkeyCommentInput(monkey), /工作記憶總分（各題平均答對比例）：55.4%／51%（SD 14%）／0.31／一般範圍/)
+  const comment = '工作記憶總分落在同年級一般範圍內，四個詞以內大致能正確倒序；六個詞時錯誤增加。結果僅供參考。'
+  assert.equal(await generateMonkeyComment(monkey, async () => JSON.stringify({ comment })), comment)
 })

@@ -8,7 +8,7 @@ import { runMigrations } from './db/migrate.js'
 import { iepAttachmentsRouter } from './routes/iepAttachments.js'
 import { educationSummaryRouter } from './routes/educationSummary.js'
 import { domainAnalysisRouter } from './routes/domainAnalysis.js'
-import { cptCommentRouter } from './routes/cptComment.js'
+import { cptCommentRouter, monkeyCommentRouter } from './routes/cptComment.js'
 
 const port = 3001
 const app = express()
@@ -19,6 +19,7 @@ app.get('/api/health', (_request, response) => response.status(200).json({ ok: t
 app.use('/api/assessment-document', assessmentDocumentRouter)
 app.use('/api/education-summary', educationSummaryRouter)
 app.use('/api/cpt-comment', cptCommentRouter)
+app.use('/api/monkey-comment', monkeyCommentRouter)
 app.use('/api', domainAnalysisRouter)
 app.use('/api', assessmentRecordRouter)
 app.use('/api', studentIepRouter)

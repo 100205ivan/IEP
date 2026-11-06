@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import type { MonkeyQuestion, MonkeyQuestionResult, MonkeyResults, MonkeyWord } from '../../../types/gameAssessment'
 import { makePractice, makeQuestions, makeSequence, MONKEY_TIMING, playQuestion, scoreAnswer, summarizeResults, WORD_EMOJI, WORDS, type PracticeQuestion } from './monkeyGameLogic'
-import { describeMonkeyPerformance, MONKEY_NORMS, monkeyPerformanceNote } from './monkeyNorms'
+import { evaluateMonkey, GRADE_LABELS, gradeLabel, gradeToAge, monkeyCommentRows, monkeySummaryText, ruleBasedMonkeyComment, type MonkeyEvaluation } from './monkeyNorms'
+import { MonkeyNormReport } from './MonkeyNormReport'
+import { requestMonkeyComment } from '../../../services/assessmentRecordsApi'
 import { GameAssessmentImport } from '../GameAssessmentImport'
 import { localDateString } from '../../../utils/localDate'
 import './monkey-game.css'
@@ -83,18 +85,29 @@ function TestQuestion({ question, index, total, demo = false, onComplete, onPhas
   </section>
 }
 
-function Results({ results, age, onRestart, resultId, assessmentDate, completedAt }: { results: MonkeyResults; age: number; onRestart: () => void; resultId: string; assessmentDate: string; completedAt: string }) {
-  const norm = MONKEY_NORMS[age]
-  const z = (results.totalScore - norm.mean) / norm.sd
-  const note = monkeyPerformanceNote(z)
-  const summary = `工作記憶總分 ${Math.round(results.totalScore * 100)}%（${results.correctPositions} / ${results.totalPositions} 個位置）；同齡比較：與平均相差 ${z.toFixed(2)} SD，相對表現：${describeMonkeyPerformance(z)}。` + attentionSummaryText(results.attention)
+/** The comment on the norm comparison; the rule-based text stands in when the service is unavailable. */
+function useMonkeyComment(results: MonkeyResults, evaluation: MonkeyEvaluation) {
+  const [state, setState] = useState<{ status: 'loading' | 'done'; text: string }>({ status: 'loading', text: '' })
+  useEffect(() => {
+    let active = true
+    requestMonkeyComment({ grade: evaluation.grade, rows: monkeyCommentRows(results, evaluation) })
+      .then(({ comment }) => { if (active) setState({ status: 'done', text: comment }) })
+      .catch(() => { if (active) setState({ status: 'done', text: ruleBasedMonkeyComment(results, evaluation) }) })
+    return () => { active = false }
+  }, [results, evaluation])
+  return state
+}
+
+function Results({ results, grade, onRestart, resultId, assessmentDate, completedAt }: { results: MonkeyResults; grade: number; onRestart: () => void; resultId: string; assessmentDate: string; completedAt: string }) {
+  const evaluation = useMemo(() => evaluateMonkey(results, grade)!, [results, grade])
+  const comment = useMonkeyComment(results, evaluation)
+  const summary = monkeySummaryText(results, evaluation, comment.status === 'done' ? comment.text : undefined) + attentionSummaryText(results.attention)
   return <section className="card">
-    <div className="mascot">🏆</div><h1>完成測驗！</h1><p>以下是與同齡研究樣本相比的工作記憶表現。</p>
-    <div className="score-box"><span>工作記憶總分</span><strong>{Math.round(results.totalScore * 100)}%</strong><small>（{results.correctPositions} / {results.totalPositions} 個位置）</small></div>
-    <h2>各 Level 表現</h2><div className="levels">{results.levelScores.map((value, index) => <div key={index}><span>Level {index + 1}（{index + 2} 個詞）</span><b>{Math.round(value * 100)}%</b></div>)}</div>
-    <div className="norm"><h2>同齡比較（{age} 歲）</h2><p>研究平均：{norm.mean.toFixed(2)}{'\u3000'}SD：{norm.sd.toFixed(2)}</p><p>與平均相差：<strong>{z.toFixed(2)} SD</strong></p><p>相對表現：<strong>{describeMonkeyPerformance(z)}</strong></p>{note && <p className="note">{note}</p>}</div>
+    <div className="mascot">🏆</div><h1>完成測驗！</h1><p>{gradeLabel(grade)}・共 20 題</p>
+    <div className="monkey-comment" aria-live="polite"><h2>評語</h2><p>{comment.status === 'loading' ? '正在依照常模標準撰寫評語…' : comment.text}</p></div>
+    <div className="norm monkey-norm"><MonkeyNormReport results={results} evaluation={evaluation} /></div>
     <AttentionSummary report={results.attention} />
-    <GameAssessmentImport tool="猴子工作記憶遊戲" result={{ resultId, gameType: 'monkey', assessmentDate, completedAt, age, result: results, summary }} /><button type="button" className="primary" onClick={onRestart}>再玩一次</button><p className="fine">此結果僅供遊戲與研究樣本比較參考。</p>
+    <GameAssessmentImport tool="猴子工作記憶遊戲" result={{ resultId, gameType: 'monkey', assessmentDate, completedAt, age: gradeToAge(grade), result: results, summary }} /><button type="button" className="primary" onClick={onRestart}>再玩一次</button>
   </section>
 }
 
@@ -112,7 +125,7 @@ function DemoResults({ answers, attention, onRestart, fullTestLink }: { answers:
       <p><strong>工作記憶</strong>：把聽到的詞記在腦中，再倒過來說出來。詞越多越難，能記住的長度就是工作記憶的容量。</p>
       <h2>正式版還會做什麼</h2>
       <p>・先練習 4 題，再正式測 20 題（2～6 個詞，共 5 個 Level）</p>
-      <p>・依年齡和同齡研究樣本比較，算出相對表現</p>
+      <p>・依年級和同年級研究樣本比較，並依標準產生評語</p>
       <p>・可開啟鏡頭，記錄聆聽和作答時面向螢幕的時間與表情</p>
       <p>・結果可一鍵匯入學生的 IEP 評量紀錄</p>
     </div>
@@ -129,7 +142,7 @@ export function MonkeyGame() {
   const demo = useSearchParams()[0].get('demo') === '1'
   const [demoDone, setDemoDone] = useState(false)
   const [view, setView] = useState<'home' | 'age' | 'practice' | 'test' | 'results'>('home')
-  const [age, setAge] = useState<number | null>(null)
+  const [grade, setGrade] = useState<number | null>(null)
   const [practice, setPractice] = useState<PracticeQuestion[]>([])
   const [practiceIndex, setPracticeIndex] = useState(0)
   const [questions, setQuestions] = useState<MonkeyQuestion[]>([])
@@ -140,14 +153,14 @@ export function MonkeyGame() {
   const [assessmentDate, setAssessmentDate] = useState('')
   const [completedAt, setCompletedAt] = useState('')
   const beginDemo = () => { tracker.begin('listening'); setQuestions(makeDemoQuestions()); setAnswers([]); setTestIndex(0); setDemoDone(false); setView('test') }
-  const restart = () => { tracker.reset(); setDemoDone(false); setAge(null); setPractice([]); setQuestions([]); setAnswers([]); setResults(null); setView('home') }
+  const restart = () => { tracker.reset(); setDemoDone(false); setGrade(null); setPractice([]); setQuestions([]); setAnswers([]); setResults(null); setView('home') }
   return <div className="monkey-game">
     <nav className="game-return"><Link to={studentId && iepId ? `/students/${studentId}/ieps/${iepId}/game-assessment` : '/iep/game-assessment'}>← 返回遊戲選擇頁</Link></nav>
     <main className="app">
       <AttentionPanel tracker={tracker} playing={view === 'test' || view === 'practice'} recording={view === 'test'} finished={view === 'results'} />
       {view === 'home' && demo && <section className="card"><div className="mascot">🐒</div><p className="demo-badge">展示版・約 1 分鐘</p><h1>猴子工作記憶遊戲</h1><p className="lead">聽一串詞語，再把它們用<strong>相反順序</strong>點回來！</p><div className="rules"><span>🔊 請打開聲音</span><span>🔄 從最後一個開始點</span><span>✅ 每題都會告訴你答案</span></div><p className="demo-purpose">例如聽到「貓 → 狗」，就要依序點「狗、貓」。這個遊戲在測<strong>工作記憶</strong>。</p><button type="button" className="primary" onClick={beginDemo}>開始展示</button></section>}
       {view === 'home' && !demo && <section className="card"><div className="mascot">🐒</div><h1>猴子工作記憶遊戲</h1><p className="lead">聽一串詞語，再把它們用<strong>相反順序</strong>點回來！</p><div className="rules"><span>👂 仔細聽完詞語</span><span>🔄 從最後一個開始點</span><span>🎯 盡力完成每一題</span></div><button type="button" className="primary" onClick={() => setView('age')}>開始遊戲</button></section>}
-      {view === 'age' && <section className="card"><h1>選擇你的年齡</h1><p>這會用來和同齡研究樣本比較結果。</p><div className="age-grid">{[6, 7, 8, 9, 10, 11, 12].map(value => <button type="button" className="age" key={value} onClick={() => { setAge(value); setPracticeIndex(0); setPractice(makePractice()); setView('practice') }}>{value}<small>歲</small></button>)}</div><button type="button" className="text" onClick={() => setView('home')}>← 回首頁</button></section>}
+      {view === 'age' && <section className="card"><h1>選擇你的年級</h1><p>這會用來和同年級研究樣本比較結果。</p><div className="age-grid">{[1, 2, 3, 4, 5, 6].map(value => <button type="button" className="age" key={value} onClick={() => { setGrade(value); setPracticeIndex(0); setPractice(makePractice()); setView('practice') }}>{GRADE_LABELS[value]}<small>年級</small></button>)}</div><button type="button" className="text" onClick={() => setView('home')}>← 回首頁</button></section>}
       {view === 'practice' && <Practice key={practiceIndex} item={practice[practiceIndex]} index={practiceIndex} onNext={() => {
         if (practiceIndex === 3) { tracker.begin('listening'); setQuestions(makeQuestions()); setAnswers([]); setTestIndex(0); setView('test') }
         else setPracticeIndex(practiceIndex + 1)
@@ -156,11 +169,11 @@ export function MonkeyGame() {
         const next = [...answers, answer]
         setAnswers(next)
         if (demo && testIndex === questions.length - 1) { setResults({ ...summarizeResults(next), attention: tracker.finish() }); setDemoDone(true); setView('results') }
-        else if (testIndex === 19) { setResults({ ...summarizeResults(next), attention: tracker.finish() }); setResultId(crypto.randomUUID()); setAssessmentDate(localDateString()); setCompletedAt(new Date().toISOString()); setView('results') }
+        else if (testIndex === 19) { setResults({ ...summarizeResults(next), grade: grade ?? undefined, attention: tracker.finish() }); setResultId(crypto.randomUUID()); setAssessmentDate(localDateString()); setCompletedAt(new Date().toISOString()); setView('results') }
         else setTestIndex(testIndex + 1)
       }} />}
       {view === 'results' && results && demoDone && <DemoResults answers={answers} attention={results.attention} onRestart={restart} fullTestLink={studentId && iepId ? `/students/${studentId}/ieps/${iepId}/game-assessment/monkey` : '/iep/game-assessment/monkey'} />}
-      {view === 'results' && results && !demoDone && age !== null && <Results results={results} age={age} resultId={resultId} assessmentDate={assessmentDate} completedAt={completedAt} onRestart={restart} />}
+      {view === 'results' && results && !demoDone && grade !== null && <Results results={results} grade={grade} resultId={resultId} assessmentDate={assessmentDate} completedAt={completedAt} onRestart={restart} />}
     </main>
   </div>
 }

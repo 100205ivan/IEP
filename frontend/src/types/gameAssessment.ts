@@ -18,6 +18,9 @@ export interface MonkeyQuestionResult extends MonkeyQuestion {
 
 export interface MonkeyResults {
   attention?: AttentionReport
+  /** School grade 1–6, compared with Van de Weijer-Bergsma et al. (2016); absent from earlier age-based results. */
+  grade?: number
+  /** Mean of each question's proportion correct (the paper's outcome measure). */
   totalScore: number
   correctPositions: number
   totalPositions: number

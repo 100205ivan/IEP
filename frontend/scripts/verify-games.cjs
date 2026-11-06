@@ -27,8 +27,7 @@ const monkeySource = fs.readFileSync(path.join(refs, 'game/monkey/monkey-game/sc
 const monkeyReference = { document: { querySelector: () => ({}) }, Math: Object.create(Math) }
 vm.runInNewContext(monkeySource.slice(monkeySource.indexOf('  const words'), monkeySource.indexOf('  const stopSpeech')) + '\nglobalThis.api={words,emoji,norms,makePractice,makeQuestions,scoreAnswer}', monkeyReference)
 const monkey = load('src/components/games/monkey/monkeyGameLogic.ts')
-const monkeyNorms = load('src/components/games/monkey/monkeyNorms.ts').exports
-assert.deepEqual(json(monkeyNorms.MONKEY_NORMS), json(monkeyReference.api.norms))
+// Norms are now Van de Weijer-Bergsma et al. (2016), Table 2, by grade (see the browser checks), not the HTML prototype's age table.
 assert.deepEqual(json(monkey.exports.WORDS), json(monkeyReference.api.words))
 assert.deepEqual(json(monkey.exports.WORD_EMOJI), json(monkeyReference.api.emoji))
 for (let seed = 1; seed <= 200; seed++) {
@@ -50,17 +49,15 @@ for (let seed = 1; seed <= 200; seed++) {
   })
   const result = monkey.exports.summarizeResults(answers)
   const correctPositions = answers.reduce((sum, r) => sum + r.correctPositions, 0)
-  assert.equal(result.totalScore, correctPositions / 80)
+  assert.equal(result.correctPositions, correctPositions); assert.equal(result.totalPositions, 80)
+  // The paper's outcome: the mean of each question's proportion correct.
+  assert.ok(Math.abs(result.totalScore - answers.reduce((s, r) => s + r.score, 0) / 20) < 1e-12)
   assert.deepEqual(json(result.levelScores), [1,2,3,4,5].map(level => {
     const subset = answers.filter(r => r.level === level)
     return subset.reduce((s, r) => s + r.score, 0) / subset.length
   }))
 }
-for (const z of [-3, -2, -1.0001, -1, 0, 1, 1.0001, 2, 3]) {
-  assert.equal(monkeyNorms.describeMonkeyPerformance(z), z < -1 ? '較弱' : z > 1 ? '較強' : '一般範圍')
-  assert.equal(monkeyNorms.monkeyPerformanceNote(z), z < -2 ? '明顯低於同齡研究平均' : z > 2 ? '明顯高於同齡研究平均' : '')
-}
-console.log('PASS Monkey: 200 seeded HTML-equivalent question sets, practice, levels, scoring, norms, classification')
+console.log('PASS Monkey: 200 seeded HTML-equivalent question sets, practice, levels, mean proportion scoring')
 
 const cptSource = fs.readFileSync(path.join(refs, 'game/Continuous Performance Test/script.js'), 'utf8')
 const cptReference = { Math: Object.create(Math) }

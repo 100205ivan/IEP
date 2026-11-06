@@ -22,3 +22,5 @@ export function deleteGameAssessment(assessmentId: string, iepId: string) { retu
 
 /** A short AI comment on a CPT result, from the de-identified norm comparison only. */
 export function requestCptComment(body: { age: number; rows: { label: string; value: string; reference: string; z: number | null; level: string }[] }) { return request<{ comment: string }>('/api/cpt-comment', { method: 'POST', body: JSON.stringify(body) }) }
+/** A short comment on a Monkey result against the same-grade norm, de-identified. */
+export function requestMonkeyComment(body: { grade: number; rows: { label: string; value: string; reference: string; z: number | null; level: string }[] }) { return request<{ comment: string }>('/api/monkey-comment', { method: 'POST', body: JSON.stringify(body) }) }

@@ -5,11 +5,13 @@ import type { CptResults, MonkeyResults, StoredGameAssessmentResult } from '../.
 import { expressionLabels } from '../games/attention/attentionLabels'
 import { evaluateCpt } from '../games/cpt/cptNorms'
 import { CptNormReport } from '../games/cpt/CptNormReport'
+import { evaluateMonkey, gradeLabel } from '../games/monkey/monkeyNorms'
+import { MonkeyNormReport } from '../games/monkey/MonkeyNormReport'
 
 const gameNames = { monkey: 'Monkey 工作記憶遊戲', cpt: '數字注意力挑戰（CPT）' } as const
 const sourceLabels = { monkey: 'Monkey', cpt: 'CPT' } as const
 const seconds = (ms: number) => `${(ms / 1000).toFixed(1)} 秒`
-/** The CPT comment (AI or rule-based) saved in the summary as 「評語：…」, up to the camera note. */
+/** The game comment (AI or rule-based) saved in the summary as 「評語：…」, up to the camera note. */
 const commentFrom = (summary: string) => /評語：([\s\S]+?)(?:\s*攝影機觀察（|$)/.exec(summary)?.[1].trim() ?? ''
 
 /** 評量紀錄 for a game: record details, then the game result, then every
@@ -31,7 +33,7 @@ export function GameAssessmentResultDialog({ result, record, onClose }: { result
       </dl>
       <section className="game-record-section" aria-labelledby="game-record-result">
         <h3 id="game-record-result">遊戲測驗結果</h3>
-        <p>完成時間：{new Date(result.completedAt).toLocaleString('zh-TW')}；測驗年齡：{result.age} 歲</p>
+        <p>完成時間：{new Date(result.completedAt).toLocaleString('zh-TW')}；{result.gameType === 'monkey' && (result.result as MonkeyResults).grade ? `受測年級：${gradeLabel((result.result as MonkeyResults).grade!)}` : `測驗年齡：${result.age} 歲`}</p>
         {result.gameType === 'monkey' ? <MonkeyDetail result={result.result as MonkeyResults} /> : <CptDetail result={result.result as CptResults} age={result.age} />}
       </section>
       {comment && <section className="game-record-section" aria-labelledby="game-record-comment">
@@ -47,6 +49,12 @@ export function GameAssessmentResultDialog({ result, record, onClose }: { result
 }
 
 function MonkeyDetail({ result }: { result: MonkeyResults }) {
+  // Results saved since the grade-based norms carry the grade.
+  const evaluation = result.grade ? evaluateMonkey(result, result.grade) : null
+  if (evaluation) return <>
+    <MonkeyNormReport results={result} evaluation={evaluation} />
+    <details><summary>查看每題結果（{result.questionResults.length} 題）</summary><ol>{result.questionResults.map(question => <li key={question.id}>Level {question.level}：聽到 {question.sequence.join('、')}；作答 {question.playerAnswer.join('、') || '—'}；答對 {question.correctPositions}／{question.totalPositions} 個位置</li>)}</ol></details>
+  </>
   return <>
     <dl className="game-record-counts">
       <div><dt>總分</dt><dd>{Math.round(result.totalScore * 100)}%（{result.correctPositions}／{result.totalPositions} 個位置）</dd></div>

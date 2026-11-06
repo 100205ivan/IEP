@@ -34,9 +34,9 @@ const clockScript = `(() => {
     next(){const [id,t]=[...pending].sort((a,b)=>a[1].due-b[1].due)[0]||[]; if(!t)throw Error('No pending timer'); pending.delete(id);now=t.due;t.fn();return t.delay},
     endSpeech(){const u=spoken.at(-1);if(!u)throw Error('No speech');u.onend()},
   };
-  // Keep the checks offline and deterministic: the CPT AI comment falls back to the rule-based text.
+  // Keep the checks offline and deterministic: the game comments fall back to the rule-based text.
   const originalFetch = window.fetch.bind(window);
-  window.fetch = (input, init) => String(input).includes('/api/cpt-comment') ? Promise.reject(new Error('offline')) : originalFetch(input, init);
+  window.fetch = (input, init) => ['/api/cpt-comment','/api/monkey-comment'].some(path => String(input).includes(path)) ? Promise.reject(new Error('offline')) : originalFetch(input, init);
 })();`
 
 async function main() {
@@ -141,7 +141,7 @@ async function main() {
       await evaluate('window.__denyCamera=false'); await click('重試開啟偵測'); await waitText('校準正面朝向'); await click('關閉偵測')
       await calibrateCamera()
     }
-    await click('開始遊戲'); await click('6歲')
+    await click('開始遊戲'); await click('一年級')
     for (let i=0;i<4;i++) {
       await waitText(`練習題 ${i+1} / 4`)
       const sequence=await evaluate('[...document.querySelectorAll(".sequence span")].map(s=>s.textContent)')
@@ -185,9 +185,11 @@ async function main() {
       assert.equal(await evaluate('window.__cameraStreams.every(s=>s.getTracks().every(t=>t.readyState==="ended"))'),true)
     }
     assert.ok((await text()).includes('80 / 80 個位置'))
-    assert.equal(await evaluate('document.querySelector(".score-box strong").textContent'),'100%')
-    assert.deepEqual(await evaluate('[...document.querySelectorAll(".levels b")].map(b=>b.textContent)'),Array(5).fill('100%'))
-    assert.ok((await text()).includes('3.88 SD'));assert.ok((await text()).includes('明顯高於同齡研究平均'))
+    // Grade-based norms (Van de Weijer-Bergsma et al., 2016): all correct in Grade 1 is (1 − .38) / .16 = 3.88 SD.
+    assert.equal(await evaluate('document.querySelector(".cpt-report-tile strong").textContent'),'100.0%')
+    assert.deepEqual(await evaluate('[...document.querySelectorAll(".monkey-level-row .cpt-report-value")].map(b=>b.textContent)'),Array(5).fill('100%'))
+    assert.ok((await evaluate('document.querySelector(".cpt-report-details").textContent')).includes('3.88'));assert.ok((await text()).includes('優於同齡'));assert.ok((await text()).includes('Van de Weijer-Bergsma'))
+    await waitText('與國小一年級研究樣本相比')
     await click('再玩一次');await waitText('猴子工作記憶遊戲')
     await click('← 返回遊戲選擇頁');await waitText('Monkey Game')
     console.log('PASS Browser Monkey: React Router, 4 practice + 20 test, reverse/order, undo/confirm, full speech/timing, score/norm/result/restart/return')
@@ -276,7 +278,7 @@ async function main() {
     assert.ok(await evaluate('document.documentElement.scrollWidth<=390'))
     await navigate('/iep/game-assessment/monkey');await waitText('猴子工作記憶遊戲')
     assert.ok(await evaluate('document.documentElement.scrollWidth<=390'))
-    await click('開始遊戲');await click('12歲');await waitText('練習題 1 / 4')
+    await click('開始遊戲');await click('六年級');await waitText('練習題 1 / 4')
     await click('← 返回遊戲選擇頁');await waitText('Monkey Game')
     assert.equal(await evaluate('window.__gameClock.pending.size'),0)
     assert.deepEqual(errors,[])

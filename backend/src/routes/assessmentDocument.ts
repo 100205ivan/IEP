@@ -18,7 +18,7 @@ assessmentDocumentRouter.post('/analyze', async (request, response) => {
     return response.status(200).json({ ok: true, data: analysis })
   } catch (error) {
     if (error instanceof GeminiResponseInvalidError) {
-      console.error('Document analysis failed', { code: 'AI_RESPONSE_INVALID' })
+      console.error('Document analysis response invalid', { code: 'AI_RESPONSE_INVALID', httpStatus: 502, kind: error.diagnostic?.kind ?? 'UNKNOWN_RESPONSE_INVALID', issues: error.diagnostic?.issues })
       return response.status(502).json({ ok: false, error: { code: 'AI_RESPONSE_INVALID', message: '分析結果格式不符合要求，請重新分析。' } })
     }
     if (error instanceof GeminiRequestError) {

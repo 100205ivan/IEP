@@ -76,8 +76,7 @@ export function AssessmentDocumentAnalysisDialog({ studentName, onClose, onConfi
     }
   }
   const confirm = async () => {
-    if (!document) return
-    pending.current?.abort()
+    if (!document || pending.current) return
     const controller = new AbortController()
     pending.current = controller
     try {

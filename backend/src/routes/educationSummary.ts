@@ -11,7 +11,10 @@ export function createEducationSummaryRouter(generate = generateEducationSummary
     try {
       return response.json({ ok: true, data: await generate(parsed.data.deidentifiedText) })
     } catch (error) {
-      if (error instanceof GeminiResponseInvalidError) return response.status(502).json({ ok: false, error: { code: 'AI_RESPONSE_INVALID', message: 'AI 摘要格式不完整，請重新產生。' } })
+      if (error instanceof GeminiResponseInvalidError) {
+        console.error('Education summary response invalid', { code: 'AI_RESPONSE_INVALID', httpStatus: 502, kind: error.diagnostic?.kind ?? 'UNKNOWN_RESPONSE_INVALID', issues: error.diagnostic?.issues })
+        return response.status(502).json({ ok: false, error: { code: 'AI_RESPONSE_INVALID', message: 'AI 摘要格式不完整，請重新產生。' } })
+      }
       if (error instanceof GeminiRequestError) {
         console.error('Education summary failed', { code: 'AI_UNAVAILABLE', ...error.diagnostic })
         const missing = error.diagnostic.reason === 'MISSING_API_KEY'
